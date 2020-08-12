@@ -1,0 +1,8 @@
+flake8
+flake8-docstrings>=0.2.7  # pinned
+pydocstyle==3.0.0  # pinned
+pyflakes
+pylint==2.3.1  # pinned
+pytest
+pytest-coverage
+tox
