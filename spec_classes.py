@@ -172,7 +172,7 @@ class spec_class:
             self.spec_attrs[self.spec_key] = Any
 
         # Check for private attr specification, and if found, raise!
-        private_attrs = [attr.startswith('_') for attr in self.managed_attrs]
+        private_attrs = [attr for attr in self.managed_attrs if attr.startswith('_')]
         if private_attrs:
             raise ValueError(f"`spec_cls` cannot be used to generate helper methods for private attributes (got: {private_attrs}).")
 
