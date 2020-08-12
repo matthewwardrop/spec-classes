@@ -199,6 +199,11 @@ class spec_class:
             if not attr.startswith('_')
         }
 
+        # Add spec_key to managed_attrs now that we have resolved whether we are
+        # using an explicit subset of attributes.
+        if self.spec_key and self.spec_key not in managed_attrs:
+            managed_attrs.add(self.spec_key)
+
         spec_cls.__is_spec_class__ = True
         spec_cls.__spec_class_key__ = self.spec_key
 
