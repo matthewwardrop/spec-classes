@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import copy
 import functools
 import inspect
 import numbers
 import textwrap
 import typing
-from copy import copy, deepcopy
 from dataclasses import dataclass
 from inspect import cleandoc, Signature, Parameter
 from typing import Any, Callable, Dict, Type, Union
@@ -359,7 +359,7 @@ class spec_class:
         if value is MISSING:
             return self
         if not inplace:
-            self = copy(self)
+            self = copy.deepcopy(self)
         attr_type = self.__spec_class_annotations__[name]
         if not cls._check_type(value, attr_type):
             raise TypeError(f"Attempt to set `{cls.__name__}.{name}` with an invalid type [got `{repr(value)}`; expecting `{attr_type}`].")
@@ -393,7 +393,7 @@ class spec_class:
                 constructor = constructor.__origin__
             value = constructor(**(attrs or {}))
         elif value not in (None, MISSING) and attrs:
-            value = deepcopy(value)
+            value = copy.deepcopy(value)
             mutate_safe = True
             if getattr(value, '__is_spec_class__', False):
                 for attr, attr_value in attrs.items():
@@ -417,7 +417,7 @@ class spec_class:
         # If `attr_transforms` is provided, transform attributes
         if attr_transforms:
             if not mutate_safe:
-                value = deepcopy(value)
+                value = copy.deepcopy(value)
             if getattr(value, '__is_spec_class__', False):
                 for attr, attr_transform in attr_transforms.items():
                     if attr not in value.__spec_class_annotations__:
@@ -455,7 +455,7 @@ class spec_class:
         if collection in (None, MISSING):
             collection = collection_constructor()
         else:
-            collection = copy(collection)
+            collection = copy.deepcopy(collection)
         index, old_item = extractor(collection, value_or_index)
         new_item = cls._get_updated_value(old_item, new_value=new_item, constructor=constructor, transform=transform, attrs=attrs, attr_transforms=attr_transforms, replace=replace)
         inserter(collection, index, new_item)
@@ -613,7 +613,7 @@ class spec_class:
 
         def without_attr_item(self, _value_or_index, *, _by_index=False, _inplace=False):
             old_value = getattr(self, attr_name, MISSING)
-            new_value = copy(old_value)
+            new_value = copy.deepcopy(old_value)
             index, _ = extractor(new_value, _value_or_index, by_index=_by_index)
             del new_value[index]
             return cls._with_attr(self, attr_name, new_value, inplace=_inplace)
@@ -711,7 +711,7 @@ class spec_class:
             if isinstance(_key, item_type):
                 _key = getattr(_key, item_type.__spec_class_key__)
             old_value = getattr(self, attr_name, MISSING)
-            new_value = copy(old_value)
+            new_value = copy.deepcopy(old_value)
             del new_value[_key]
             return cls._with_attr(self, attr_name, new_value, inplace=_inplace)
 
@@ -797,7 +797,7 @@ class spec_class:
 
         def without_attr_item(self, _item, *, _inplace=False):
             old_value = getattr(self, attr_name, MISSING)
-            new_value = copy(old_value)
+            new_value = copy.deepcopy(old_value)
             new_value.discard(_item)
             return cls._with_attr(self, attr_name, new_value, inplace=_inplace)
 
