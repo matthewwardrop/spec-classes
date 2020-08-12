@@ -6,9 +6,8 @@ import inspect
 import numbers
 import textwrap
 import typing
-from dataclasses import dataclass
 from inspect import cleandoc, Signature, Parameter
-from typing import Any, Callable, Dict, Type, Union
+from typing import Any, Callable, Dict, Type, Tuple, Union
 
 import inflect
 
@@ -151,28 +150,41 @@ class spec_class:
             return spec_class()(args[0])
         return super().__new__(cls)
 
-    def __init__(self, *attrs: str, _key: str = None, **attrs_typed: Any):
+    def __init__(
+            self, *attrs: str, _key: str = None, _init: bool = True,
+            _repr: bool = True, _eq: bool = True, **attrs_typed: Any
+    ):
         """
         Args:
-            *attrs: The attrs for which this `spec_cls` should add helper methods.
-            _key: The name of the attribute which can be used to uniquely identify
-                a particular specification.
-            **attrs_typed: Additional attributes for which this `spec_cls` should
-                add helper methods, with the type of the attr taken to be as
-                specified, overriding (if present) any other type annotations for
-                that attribute (e.g. List[int], Dict[str, int], Set[int], etc).
+            *attrs: The attrs for which this `spec_cls` should add helper
+                methods.
+            _key: The name of the attribute which can be used to uniquely
+                identify a particular specification.
+            _init: Whether to add an `__init__` method if one does not already
+                exist.
+            _repr: Whether to add a `__repr__` method if one does not already
+                exist.
+            _eq: Whether to add an `__eq__` method if one does not already
+                exist.
+            **attrs_typed: Additional attributes for which this `spec_cls`
+                should add helper methods, with the type of the attr taken to be
+                as specified, overriding (if present) any other type annotations
+                for that attribute (e.g. List[int], Dict[str, int], Set[int], etc).
         """
+        self.attrs_set_explicitly = attrs or attrs_typed
+        self.spec_key = _key
         self.spec_attrs = {
             **{attr: Any for attr in attrs},
             **attrs_typed
         }
-        self.managed_attrs = set(self.spec_attrs)
-        self.spec_key = _key
-        if self.spec_key and self.spec_key not in self.spec_attrs:
-            self.spec_attrs[self.spec_key] = Any
+        self.spec_cls_methods = {
+            '__init__': _init,
+            '__repr__': _repr,
+            '__eq__': _eq,
+        }
 
         # Check for private attr specification, and if found, raise!
-        private_attrs = [attr for attr in self.managed_attrs if attr.startswith('_')]
+        private_attrs = [attr for attr in self.spec_attrs if attr.startswith('_')]
         if private_attrs:
             raise ValueError(f"`spec_cls` cannot be used to generate helper methods for private attributes (got: {private_attrs}).")
 
@@ -186,23 +198,17 @@ class spec_class:
         Returns:
             `spec_cls`, with the helper methods added.
         """
-        # Convert spec_cls to a dataclass. This is a no-op if the class already
-        # implements __init__, __repr__, and __eq__.
-        dataclass(spec_cls)
-
         # Attrs to be considered are those explicitly passed into constructor, or if none,
         # all of the type annotated fields if the class is not a subclass of an already
         # annotated spec class, or else none.
-        managed_attrs = {
-            attr
-            for attr in (self.managed_attrs or spec_cls.__annotations__)
-            if not attr.startswith('_')
-        }
-
-        # Add spec_key to managed_attrs now that we have resolved whether we are
-        # using an explicit subset of attributes.
-        if self.spec_key and self.spec_key not in managed_attrs:
-            managed_attrs.add(self.spec_key)
+        if self.attrs_set_explicitly:
+            managed_attrs = set(self.spec_attrs)
+        else:
+            managed_attrs = {
+                attr
+                for attr in getattr(spec_cls, "__annotations__", {})
+                if not attr.startswith('_')
+            }
 
         spec_cls.__is_spec_class__ = True
         spec_cls.__spec_class_key__ = self.spec_key
@@ -210,6 +216,8 @@ class spec_class:
         # Update annotations
         if not hasattr(spec_cls, '__annotations__'):
             spec_cls.__annotations__ = {}
+        if self.spec_key and self.spec_key not in spec_cls.__annotations__:
+            spec_cls.__annotations__[self.spec_key] = Any
         spec_cls.__annotations__.update({
             field: annotation
             for field, annotation in self.spec_attrs.items()
@@ -221,8 +229,13 @@ class spec_class:
         spec_cls.__spec_class_annotations__.update({
             field: annotation
             for field, annotation in typing.get_type_hints(spec_cls, localns={spec_cls.__name__: spec_cls}).items()
-            if field in managed_attrs
+            if field in {self.spec_key} | managed_attrs
         })
+
+        # Register class-level methods
+        self.register_methods(spec_cls, self.get_methods_for_spec_class(spec_cls))
+
+        self._validate_spec_cls(spec_cls)
 
         # For each new attribute to be managed by `spec_cls`, generate helper methods.
         for attr_name in managed_attrs:
@@ -231,6 +244,69 @@ class spec_class:
             ))
 
         return spec_cls
+
+    @staticmethod
+    def _validate_spec_cls(spec_cls):
+        spec_annotations = spec_cls.__spec_class_annotations__
+        if hasattr(spec_cls, '__init__'):
+            init_sig = Signature.from_callable(spec_cls.__init__)
+            missing_args = set(spec_annotations).difference(init_sig.parameters)
+            if missing_args:
+                raise ValueError(f"`{spec_cls.__name__}.__init__()` is missing required arguments to populate attributes: {missing_args}.")
+        else:
+            raise ValueError(f"`{spec_cls.__name__}.__init__()` is missing, and is required for full functionality.")
+
+    def get_methods_for_spec_class(self, spec_cls: type) -> Dict[str, Callable]:
+        """
+        Generate any required `__init__`, `__repr__` and `__eq__` methods. Will
+        only be added if these methods do not already exist on the class.
+        """
+        def init_impl(self, **kwargs):
+            for attr in self.__spec_class_annotations__:
+                if attr in kwargs:
+                    setattr(self, attr, copy.deepcopy(kwargs[attr]))
+                elif attr in self.__class__.__dict__:
+                    setattr(self, attr, copy.deepcopy(self.__class__.__dict__[attr]))
+                else:
+                    setattr(self, attr, None)
+
+        def __repr__(self):
+            values = []
+            for attr in self.__spec_class_annotations__:
+                value = getattr(self, attr, MISSING)
+                if inspect.ismethod(value):
+                    values.append(f"{attr}={value.__name__}()")
+                else:
+                    values.append(f"{attr}={repr(getattr(self, attr, MISSING))}")
+            return f"{self.__class__.__name__}({', '.join(values)})"
+
+        def __eq__(self, other):
+            if not isinstance(other, self.__class__):
+                return False
+            for attr in self.__spec_class_annotations__:
+                if getattr(self, attr) != getattr(other, attr):
+                    return False
+            return True
+
+        methods = {
+            '__init__': (
+                _MethodBuilder('__init__', init_impl)
+                .with_preamble(f"Initialise this `{spec_cls.__name__}` instance.")
+                .with_arg(
+                    self.spec_key, f"The value to use for the `{self.spec_key}` key attribute.",
+                    default=spec_cls.__dict__.get(self.spec_key, Parameter.empty), annotation=spec_cls.__annotations__.get(self.spec_key),
+                    only_if=self.spec_key
+                )
+                .with_spec_attrs_for(spec_cls, defaults=True)
+            ),
+            '__repr__': __repr__,
+            '__eq__': __eq__,
+        }
+        return {
+            name: method
+            for name, method in methods.items()
+            if self.spec_cls_methods.get(name, False)
+        }
 
     @classmethod
     def get_methods_for_attribute(cls, spec_cls: type, attr_name: str, attr_type: Type) -> Dict[str, Callable]:
@@ -281,7 +357,7 @@ class spec_class:
             name: The name of the method to add.
             method: The method to add.
         """
-        if hasattr(spec_cls, name):
+        if name in spec_cls.__dict__:
             return
         if isinstance(method, _MethodBuilder):
             method = method.build()
@@ -855,7 +931,7 @@ class _MethodBuilder:
         self.preamble = ""
         self.args = []
         self.returns = ""
-        self.return_type = Any
+        self.return_type = None
         self.notes = []
         self.parameters = [Parameter("self", Parameter.POSITIONAL_OR_KEYWORD)]
         self.parameters_sig_only = []
@@ -873,35 +949,52 @@ class _MethodBuilder:
             return self
 
         self.args.append('\n'.join(textwrap.wrap(f"{name}: {desc}", subsequent_indent='    ')))
-
-        ptype = Parameter.KEYWORD_ONLY if keyword_only else Parameter.POSITIONAL_OR_KEYWORD
-        kwargs = {'default': default} if default is not Parameter.empty else {}
-        self.parameters.append(Parameter(name, ptype, **kwargs))
+        self.parameters.append(Parameter(
+            name,
+            kind=Parameter.KEYWORD_ONLY if keyword_only else Parameter.POSITIONAL_OR_KEYWORD,
+            default=default,
+        ))
 
         return self
 
-    def with_attrs(self, args: Dict[str, Type], template: str = "", only_if: bool = True):
+    def with_attrs(self, args: Dict[str, Type], template: str = "", defaults: Dict[str, Any] = None, only_if: bool = True):
         """
         Add **attrs to signature, and record valid keywords as specified in `args`.
         """
         if not only_if or not args:
             return self
 
+        # Remove any arguments that already exist in the function signature.
+        args = args.copy()
+        current_sig = self.signature
+        for arg in list(args):
+            if arg in current_sig.parameters:
+                args.pop(arg)
+
         self.args.extend([
             "{}: {}".format(name, template.format(name)) for name in list(args)
         ])
         if not self.parameters_sig_only:
             self.parameters.append(Parameter('attrs', kind=Parameter.VAR_KEYWORD))
-        self.parameters_sig_only.extend([Parameter(name, Parameter.KEYWORD_ONLY, annotation=arg_type, default=None) for name, arg_type in args.items()])
+        defaults = defaults or {}
+        self.parameters_sig_only.extend([
+            Parameter(name, Parameter.KEYWORD_ONLY, annotation=arg_type, default=defaults.get(name))
+            for name, arg_type in args.items()
+        ])
         return self
 
-    def with_spec_attrs_for(self, spec_cls: type, template: str = "", only_if: bool = True):
+    def with_spec_attrs_for(self, spec_cls: type, template: str = "", defaults=None, only_if: bool = True):
         """
         Add **attrs based on the attributes of a spec_class.
         """
         if not only_if or not getattr(spec_cls, '__is_spec_class__', False):
             return self
-        return self.with_attrs(spec_cls.__spec_class_annotations__, template=template)
+        if defaults is True:
+            defaults = {
+                attr: spec_cls.__dict__.get(attr, None)
+                for attr in spec_cls.__spec_class_annotations__
+            }
+        return self.with_attrs(spec_cls.__spec_class_annotations__, template=template, defaults=defaults)
 
     def with_returns(self, desc: str, annotation: Type = Parameter.empty, only_if: bool = True):
         """
@@ -1023,17 +1116,44 @@ class _MethodBuilder:
             if extra_attrs:
                 raise TypeError(f"{self.name}() got unexpected keyword arguments: {repr(extra_attrs)}.")
 
+        str_signature, defaults = self.__call_signature_str(signature)
+
         exec(textwrap.dedent(f"""
             from __future__ import annotations
-            def {self.name}{self.signature} -> {str(self.return_type.__name__)}:
+            def {self.name}{str_signature} { "-> " + str(self.return_type.__name__) if self.return_type is not None else ""}:
                 {"validate_attrs(attrs)" if self.parameters_sig_only else ""}
                 return implementation({self.__call_implementation_str(self.signature)})
-        """), {'implementation': self.implementation, 'MISSING': MISSING, 'validate_attrs': validate_attrs}, namespace)
+        """), {'implementation': self.implementation, 'MISSING': MISSING, 'validate_attrs': validate_attrs, 'DEFAULTS': defaults}, namespace)
 
         method = namespace[self.name]
         method.__doc__ = self.docstring
         method.__signature__ = signature_advertised
         return method
+
+    @staticmethod
+    def __call_signature_str(signature: Signature) -> Tuple[str, Dict[str, Any]]:
+        """
+        Return a string representation of the signature that can be used in exec.
+        """
+        out = []
+        defaults = {}
+        done_kw_only = False
+        for p in signature.parameters.values():
+            if p.kind is Parameter.VAR_POSITIONAL:
+                done_kw_only = True
+            elif p.kind is Parameter.KEYWORD_ONLY and not done_kw_only:
+                done_kw_only = True
+                out.append('*')
+            param = str(p).split(':')[0]
+            if p.default is not Parameter.empty:
+                param = param.split('=')[0]
+                out.append(
+                    f'{param}=DEFAULTS["{p.name}"]'
+                )
+                defaults[p.name] = p.default
+            else:
+                out.append(param)
+        return f'({", ".join(out)})', defaults
 
     @staticmethod
     def __call_implementation_str(signature: Signature):
