@@ -180,6 +180,7 @@ class spec_class:
         self.spec_cls_methods = {
             '__init__': _init,
             '__repr__': _repr,
+            '__spec_class_repr__': _repr,
             '__eq__': _eq,
         }
 
@@ -270,15 +271,59 @@ class spec_class:
                 else:
                     setattr(self, attr, None)
 
-        def __repr__(self):
-            values = []
-            for attr in self.__spec_class_annotations__:
-                value = getattr(self, attr, MISSING)
-                if inspect.ismethod(value):
-                    values.append(f"{attr}={value.__name__}()")
-                else:
-                    values.append(f"{attr}={repr(getattr(self, attr, MISSING))}")
-            return f"{self.__class__.__name__}({', '.join(values)})"
+        def __repr__(self, include_attrs=None, indent=None, indent_threshold=100):
+            """
+            Args:
+                include_attrs: An ordered iterable of attrs to include in the
+                    representation.
+                indent: Whether to indent. If `True`, indenting is always
+                    performed. If `False`, indenting is never performed. If
+                    `None`, indenting is performed when output otherwise exceeds
+                    `indent_threshold` characters. (default: None)
+                indent_threshold: The threshold at which to switch to indented
+                    representations (see above).
+            """
+            include_attrs = include_attrs or list(self.__spec_class_annotations__)
+
+            def object_repr(obj, indent=False):
+                if inspect.ismethod(obj):
+                    return f"{obj.__name__}()"
+
+                if indent:
+                    if isinstance(obj, list):
+                        if not obj:
+                            return "[]"
+                        items_repr = textwrap.indent(",\n".join([object_repr(item, indent=indent) for item in obj]), '    ')
+                        return f"[\n{items_repr}\n]"
+                    if isinstance(obj, dict):
+                        if not obj:
+                            return "{}"
+                        items_repr = textwrap.indent(",\n".join([f"{repr(key)}: {object_repr(item, indent=indent)}" for key, item in obj.items()]), '    ')
+                        return f"{{\n{items_repr}\n}}"
+                    if isinstance(obj, set):
+                        if not obj:
+                            return "set()"
+                        items_repr = textwrap.indent(",\n".join([object_repr(item, indent=indent) for item in obj]), '    ')
+                        return f"{{\n{items_repr}\n}}"
+
+                return repr(obj)
+
+            # Collect unindented representations
+            if not indent:
+                unindented_attrs = ', '.join([
+                    f"{attr}={object_repr(getattr(self, attr, MISSING))}"
+                    for attr in include_attrs
+                ])
+                unindented_repr = f"{self.__class__.__name__}({unindented_attrs})"
+                if indent is False or (len(unindented_repr) <= indent_threshold and not any('\n' in attr_repr for attr_repr in unindented_attrs)):
+                    return unindented_repr
+
+            # Collected indented representation
+            indented_attrs = textwrap.indent(',\n'.join([
+                f"{attr}={object_repr(getattr(self, attr, MISSING), indent=True)}"
+                for attr in include_attrs
+            ]), '    ')
+            return f"{self.__class__.__name__}(\n{indented_attrs}\n)"
 
         def __eq__(self, other):
             if not isinstance(other, self.__class__):
@@ -300,6 +345,7 @@ class spec_class:
                 .with_spec_attrs_for(spec_cls, defaults=True)
             ),
             '__repr__': __repr__,
+            '__spec_class_repr__': __repr__,
             '__eq__': __eq__,
         }
         return {
