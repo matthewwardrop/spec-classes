@@ -429,24 +429,32 @@ class spec_class:
         """
         Check whether a given object `value` matches the provided `attr_type`.
         """
-        if value is None or attr_type is Any:
+        if value is None or attr_type is Any:  # We always allow null values
             return True
 
-        if not isinstance(value, attr_type.__origin__ if hasattr(attr_type, '__origin__') else attr_type):
-            return False
+        if hasattr(attr_type, '__origin__'):  # we are dealing with a `typing` object.
 
-        if isinstance(attr_type, typing._GenericAlias) and attr_type._name in ('List', 'Set') and not isinstance(attr_type.__args__[0], typing.TypeVar):  # pylint: disable=protected-access
-            for item in value:
-                if not cls._check_type(item, attr_type.__args__[0]):
-                    return False
-        elif isinstance(attr_type, typing._GenericAlias) and attr_type._name == 'Dict' and not isinstance(attr_type.__args__[0], typing.TypeVar):  # pylint: disable=protected-access
-            for k, v in value.items():
-                if not cls._check_type(k, attr_type.__args__[0]):
-                    return False
-                if not cls._check_type(v, attr_type.__args__[1]):
-                    return False
+            if attr_type.__origin__ is Union:
+                return any(cls._check_type(value, type_) for type_ in attr_type.__args__)
 
-        return True
+            if isinstance(attr_type, typing._GenericAlias):  # pylint: disable=protected-access
+                if not isinstance(value, attr_type.__origin__):
+                    return False
+                if attr_type._name in ('List', 'Set') and not isinstance(attr_type.__args__[0], typing.TypeVar):  # pylint: disable=protected-access
+                    for item in value:
+                        if not cls._check_type(item, attr_type.__args__[0]):
+                            return False
+                elif attr_type._name == 'Dict' and not isinstance(attr_type.__args__[0], typing.TypeVar):  # pylint: disable=protected-access
+                    for k, v in value.items():
+                        if not cls._check_type(k, attr_type.__args__[0]):
+                            return False
+                        if not cls._check_type(v, attr_type.__args__[1]):
+                            return False
+                return True
+
+            return isinstance(value, attr_type.__origin__)
+
+        return isinstance(value, attr_type)
 
     @classmethod
     def _get_collection_item_type(cls, container_type: Type) -> Type:
@@ -454,12 +462,33 @@ class spec_class:
         Return the type of object inside a typing container (List, Set, Dict),
         or `None` if this isn't annotated.
         """
-        if not hasattr(container_type, '__args__'):
+        if not hasattr(container_type, '__args__'):  # i.e. this is not a `typing` container
             return None
         if cls._type_match(container_type, dict) and len(container_type.__args__) >= 2:
             return container_type.__args__[1]
         if len(container_type.__args__) >= 1:
             return container_type.__args__[0]
+        return None
+
+    @classmethod
+    def _get_spec_class_for_type(cls, attr_type: Type) -> Union[Type, None]:
+        """
+        Get the spec class to associated with a given attribute type. This is
+        useful when `attr_type` is a polymorphic type, e.g.
+        Union[SpecClass, str]. It works by finding the spec class type in the
+        polymorphic type. If there is not exactly one spec class type, `None` is
+        returned.
+        """
+        if getattr(attr_type, '__origin__', None) is Union:
+            spec_classes = [
+                typ
+                for typ in attr_type.__args__
+                if getattr(typ, '__is_spec_class__', False)
+            ]
+            if len(spec_classes) == 1:
+                return spec_classes[0]
+        elif getattr(attr_type, '__is_spec_class__', False):
+            return attr_type
         return None
 
     @staticmethod
@@ -592,7 +621,7 @@ class spec_class:
 
     @classmethod
     def _get_methods_for_scalar(cls, spec_cls: type, attr_name: str, attr_type: Type):
-        attr_is_spec = getattr(attr_type, '__is_spec_class__', False)
+        attr_spec_type = cls._get_spec_class_for_type(attr_type)
 
         def with_attr(self, _new_value=MISSING, *, _replace=False, _inplace=False, **attrs):
             old_value = getattr(self, attr_name, MISSING)
@@ -604,15 +633,15 @@ class spec_class:
             new_value = cls._get_updated_value(old_value, transform=_transform, constructor=attr_type, attr_transforms=attr_transforms)
             return cls._with_attr(self, attr_name, new_value, inplace=_inplace)
 
-        or_its_attributes = " or its attributes" if attr_is_spec else ""
-        none_if_spec = None if attr_is_spec else MISSING
+        or_its_attributes = " or its attributes" if attr_spec_type else ""
+        none_if_spec = None if attr_spec_type else MISSING
         return {
             f'with_{attr_name}': (
                 _MethodBuilder(f'with_{attr_name}', with_attr)
                 .with_preamble(f"Return a `{spec_cls.__name__}` instance identical to this one except with `{attr_name}`{or_its_attributes} mutated.")
                 .with_arg("_new_value", f"The new value for `{attr_name}`.", default=none_if_spec)
                 .with_arg("_replace", f"If True, build a new {cls._attr_type_label(attr_type)} from scratch. Otherwise, modify the old value.",
-                          only_if=attr_is_spec, default=False, keyword_only=True)
+                          only_if=attr_spec_type, default=False, keyword_only=True)
                 .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True)
                 .with_spec_attrs_for(attr_type, template=f"An optional new value for {attr_name}.{{}}.")
                 .with_returns(f"A reference to the mutated `{spec_cls.__name__}` instance.", annotation=spec_cls)
@@ -661,15 +690,15 @@ class spec_class:
         """
         singular_name = cls._get_singular_form(attr_name)
         item_type = cls._get_collection_item_type(attr_type)
-        item_is_spec = getattr(item_type, '__is_spec_class__', False)
-        item_is_keyed_spec = item_is_spec and item_type.__spec_class_key__ is not None
+        item_spec_type = cls._get_spec_class_for_type(item_type)
+        item_spec_type_is_keyed = item_spec_type and item_spec_type.__spec_class_key__ is not None
 
         # Check that keyed item type does not have an numeric key
-        if item_is_keyed_spec:
-            item_key_type = item_type.__spec_class_annotations__[item_type.__spec_class_key__]
+        if item_spec_type_is_keyed:
+            item_key_type = item_spec_type.__spec_class_annotations__[item_spec_type.__spec_class_key__]
             while hasattr(item_key_type, '__origin__'):
                 item_key_type = item_key_type.__origin__
-            if isinstance(item_key_type, type) and issubclass(item_type.__spec_class_annotations__[item_type.__spec_class_key__], numbers.Number):
+            if isinstance(item_key_type, type) and issubclass(item_spec_type.__spec_class_annotations__[item_spec_type.__spec_class_key__], numbers.Number):
                 raise ValueError(
                     f"List containers do not support keyed spec classes with numeric keys. Check "
                     f"`{spec_cls.__name__}.{attr_name}` and consider using a `Dict` container instead."
@@ -680,47 +709,48 @@ class spec_class:
                 return None, MISSING
 
             if by_index:
-                if item_is_keyed_spec and not isinstance(value_or_index, int):
+                if item_spec_type_is_keyed and not isinstance(value_or_index, int):
                     for i, item in enumerate(collection):
-                        if getattr(item, item_type.__spec_class_key__) == value_or_index:
+                        if isinstance(item, item_spec_type) and getattr(item, item_spec_type.__spec_class_key__) == value_or_index:
                             return i, item
                     return None, MISSING
                 return value_or_index, collection[value_or_index] if value_or_index is not None and value_or_index < len(collection) else MISSING
 
-            if item_is_keyed_spec:
-                if isinstance(value_or_index, item_type):
-                    value_or_index = getattr(value_or_index, item_type.__spec_class_key__)
+            if item_spec_type_is_keyed:
+                if isinstance(value_or_index, item_spec_type):
+                    value_or_index = getattr(value_or_index, item_spec_type.__spec_class_key__)
                 for i, item in enumerate(collection):
-                    if getattr(item, item_type.__spec_class_key__) == value_or_index:
+                    if getattr(item, item_spec_type.__spec_class_key__) == value_or_index:
                         return i, item
                 return None, MISSING
             return collection.index(value_or_index), value_or_index
 
         def inserter(collection, index, new_item, insert=False):
             if not cls._check_type(new_item, item_type):
-                raise ValueError(f"Attempted to add an invalid item `{repr(new_item)}` to `{spec_cls.__name__}.{attr_name}`. Expected item of type `{item_type.__name__}`.")
+                raise ValueError(f"Attempted to add an invalid item `{repr(new_item)}` to `{spec_cls.__name__}.{attr_name}`. Expected item of type `{item_type}`.")
             if index is None:
                 collection.append(new_item)
             elif insert:
                 collection.insert(index, new_item)
             else:
                 collection[index] = new_item
-            if item_is_keyed_spec and new_item is not None:
-                key = getattr(new_item, item_type.__spec_class_key__)
-                if sum([1 for item in collection if getattr(item, item_type.__spec_class_key__) == key]) > 1:
+            if item_spec_type_is_keyed and isinstance(new_item, item_spec_type):
+                key = getattr(new_item, item_spec_type.__spec_class_key__)
+                if sum([1 for item in collection if isinstance(item, item_spec_type) and getattr(item, item_spec_type.__spec_class_key__) == key]) > 1:
                     raise ValueError(f"Adding {new_item} to list would result in more than instance with the same key: {repr(key)}.")
 
         def with_attr_item(self, _item=MISSING, *, _index=MISSING, _insert=False, _replace=False, _inplace=False, **attrs):
             old_value = getattr(self, attr_name, MISSING)
 
-            if item_is_keyed_spec:
+            if item_spec_type_is_keyed:
                 if _index is MISSING:
-                    _index = (isinstance(_item, item_type) and getattr(_item, item_type.__spec_class_key__)) or attrs.get(item_type.__spec_class_key__) or _item
-                    if item_is_keyed_spec and isinstance(_index, int):
+                    _index = (isinstance(_item, item_spec_type) and getattr(_item, item_spec_type.__spec_class_key__)) or attrs.get(item_spec_type.__spec_class_key__)
+                    if item_spec_type_is_keyed and isinstance(_index, int):
                         raise ValueError("Lists of keyed spec classes cannot deal with integer keys.")
-                if _item is not MISSING and not isinstance(_item, item_type):
-                    if not any([getattr(item, item_type.__spec_class_key__) == _item for item in (old_value or [])]):
-                        _item = item_type(**{item_type.__spec_class_key__: _item})
+                    _index = MISSING if isinstance(_item, int) else _index
+                if _item is not MISSING and not cls._check_type(_item, item_type):
+                    if not any([isinstance(item, item_spec_type) and getattr(item, item_spec_type.__spec_class_key__) == _item for item in (old_value or [])]):
+                        _item = item_spec_type(**{item_spec_type.__spec_class_key__: _item})
                     else:
                         _item = MISSING
 
@@ -749,25 +779,25 @@ class spec_class:
             f'with_{singular_name}': (
                 _MethodBuilder(f'with_{singular_name}', with_attr_item)
                 .with_preamble(f"Return a `{spec_cls.__name__}` instance identical to this one except with an item added to or updated in `{attr_name}`.")
-                .with_arg("_item", f"A new `{cls._attr_type_label(item_type)}` instance for {attr_name}.", default=MISSING if item_is_spec else Parameter.empty)
+                .with_arg("_item", f"A new `{cls._attr_type_label(item_type)}` instance for {attr_name}.", default=MISSING if item_spec_type else Parameter.empty)
                 .with_arg("_index", "Index for which to insert or replace, depending on `insert`; if not provided, append.", default=MISSING, keyword_only=True)
                 .with_arg("_insert", f"Insert item before {attr_name}[index], otherwise replace this index.", default=False, keyword_only=True)
                 .with_arg(
                     "_replace", f"If True, and if replacing an old item, build a new {cls._attr_type_label(item_type)} from scratch. Otherwise, apply changes on top of the old value.",
-                    only_if=item_is_spec, default=False, keyword_only=True
+                    only_if=item_spec_type, default=False, keyword_only=True
                 )
                 .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True)
-                .with_spec_attrs_for(item_type, template=f"An optional new value for `{singular_name}.{{}}`.")
+                .with_spec_attrs_for(item_spec_type, template=f"An optional new value for `{singular_name}.{{}}`.")
                 .with_returns(f"A reference to the mutated `{spec_cls.__name__}` instance.", annotation=spec_cls)
             ),
             f'transform_{singular_name}': (
                 _MethodBuilder(f'transform_{singular_name}', transform_attr_item)
                 .with_preamble(f"Return a `{spec_cls.__name__}` instance identical to this one except with an item transformed in `{attr_name}`.")
                 .with_arg("_value_or_index", "The value to transform, or (if `by_index=True`) its index.")
-                .with_arg("_transform", "A function that takes the old item as input, and returns the new item.", default=MISSING if item_is_spec else Parameter.empty, annotation=Callable)
+                .with_arg("_transform", "A function that takes the old item as input, and returns the new item.", default=MISSING if item_spec_type else Parameter.empty, annotation=Callable)
                 .with_arg("_by_index", "If True, value_or_index is the index of the item to transform.", keyword_only=True, default=False, annotation=bool)
                 .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True)
-                .with_spec_attrs_for(item_type, template=f"An optional transformer for `{singular_name}.{{}}`.")
+                .with_spec_attrs_for(item_spec_type, template=f"An optional transformer for `{singular_name}.{{}}`.")
                 .with_returns(f"A reference to the mutated `{spec_cls.__name__}` instance.", annotation=spec_cls)
             ),
             f'without_{singular_name}': (
@@ -800,26 +830,26 @@ class spec_class:
         """
         singular_name = cls._get_singular_form(attr_name)
         item_type = cls._get_collection_item_type(attr_type)
-        item_is_spec = getattr(item_type, '__is_spec_class__', False)
-        item_is_keyed_spec = item_is_spec and item_type.__spec_class_key__ is not None
+        item_spec_type = cls._get_spec_class_for_type(item_type)
+        item_spec_type_is_keyed = item_spec_type and item_spec_type.__spec_class_key__ is not None
 
         def extractor(collection, value_or_index):
-            if item_is_keyed_spec and isinstance(value_or_index, item_type):
-                value_or_index = getattr(value_or_index, item_type.__spec_class_key__)
+            if item_spec_type_is_keyed and isinstance(value_or_index, item_spec_type):
+                value_or_index = getattr(value_or_index, item_spec_type.__spec_class_key__)
             return value_or_index, collection.get(value_or_index, MISSING)
 
         def inserter(collection, index, new_item):
             if not cls._check_type(new_item, item_type):
-                raise ValueError(f"Attempted to add an invalid item `{repr(new_item)}` to `{spec_cls.__name__}.{attr_name}`. Expected item of type `{item_type.__name__}`.")
-            if item_is_keyed_spec:
-                index = getattr(new_item, item_type.__spec_class_key__)
+                raise ValueError(f"Attempted to add an invalid item `{repr(new_item)}` to `{spec_cls.__name__}.{attr_name}`. Expected item of type `{item_type}`.")
+            if item_spec_type_is_keyed:
+                index = getattr(new_item, item_spec_type.__spec_class_key__)
             collection[index] = new_item
 
         def with_attr_item(self, _key=None, _value=None, _replace=False, _inplace=False, **attrs):
             old_value = getattr(self, attr_name, MISSING)
-            if item_is_keyed_spec:
-                _key = (isinstance(_value, item_type) and getattr(_value, item_type.__spec_class_key__)) or attrs.get(item_type.__spec_class_key__) or _value
-                _value = _value if isinstance(_value, item_type) else (MISSING if old_value and _value in old_value else item_type(**{item_type.__spec_class_key__: _value}))
+            if item_spec_type_is_keyed:
+                _key = (isinstance(_value, item_spec_type) and getattr(_value, item_spec_type.__spec_class_key__)) or attrs.get(item_spec_type.__spec_class_key__) or _value
+                _value = _value if cls._check_type(_value, item_type) else (MISSING if old_value and _value in old_value else item_type(**{item_spec_type.__spec_class_key__: _value}))
             new_value = cls._get_updated_collection(
                 old_value, collection_constructor=dict, value_or_index=_key, extractor=extractor, inserter=inserter,
                 new_item=_value, constructor=item_type, attrs=attrs, replace=_replace
@@ -835,8 +865,8 @@ class spec_class:
             return cls._with_attr(self, attr_name, new_value, inplace=_inplace)
 
         def without_attr_item(self, _key, *, _inplace=False):
-            if isinstance(_key, item_type):
-                _key = getattr(_key, item_type.__spec_class_key__)
+            if item_spec_type_is_keyed and isinstance(_key, item_spec_type):
+                _key = getattr(_key, item_spec_type.__spec_class_key__)
             old_value = getattr(self, attr_name, MISSING)
             new_value = copy.deepcopy(old_value)
             del new_value[_key]
@@ -846,23 +876,23 @@ class spec_class:
             f'with_{singular_name}': (
                 _MethodBuilder(f'with_{singular_name}', with_attr_item)
                 .with_preamble(f"Return a `{spec_cls.__name__}` instance identical to this one except with an item added to or updated in `{attr_name}`.")
-                .with_arg("_key", "The key for the item to be inserted or updated.", only_if=not item_is_keyed_spec)
-                .with_arg("_value", f"A new `{cls._attr_type_label(item_type)}` instance for {attr_name}.", default=MISSING if item_is_spec else Parameter.empty)
+                .with_arg("_key", "The key for the item to be inserted or updated.", only_if=not item_spec_type_is_keyed)
+                .with_arg("_value", f"A new `{cls._attr_type_label(item_type)}` instance for {attr_name}.", default=MISSING if item_spec_type else Parameter.empty)
                 .with_arg(
                     "_replace", f"If True, and if replacing an old item, build a new {cls._attr_type_label(item_type)} from scratch. Otherwise, apply changes on top of the old value.",
-                    only_if=item_is_spec, default=False, keyword_only=True
+                    only_if=item_spec_type, default=False, keyword_only=True
                 )
                 .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True)
-                .with_spec_attrs_for(item_type, template=f"An optional new value for `{singular_name}.{{}}`.")
+                .with_spec_attrs_for(item_spec_type, template=f"An optional new value for `{singular_name}.{{}}`.")
                 .with_returns(f"A reference to the mutated `{spec_cls.__name__}` instance.", annotation=spec_cls)
             ),
             f'transform_{singular_name}': (
                 _MethodBuilder(f'transform_{singular_name}', transform_attr_item)
                 .with_preamble(f"Return a `{spec_cls.__name__}` instance identical to this one except with an item transformed in `{attr_name}`.")
                 .with_arg("_key", "The key for the item to be inserted or updated.")
-                .with_arg("_transform", "A function that takes the old item as input, and returns the new item.", default=MISSING if item_is_spec else Parameter.empty, annotation=Callable)
+                .with_arg("_transform", "A function that takes the old item as input, and returns the new item.", default=MISSING if item_spec_type else Parameter.empty, annotation=Callable)
                 .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True)
-                .with_spec_attrs_for(item_type, template=f"An optional transformer for `{singular_name}.{{}}`.")
+                .with_spec_attrs_for(item_spec_type, template=f"An optional transformer for `{singular_name}.{{}}`.")
                 .with_returns(f"A reference to the mutated `{spec_cls.__name__}` instance.", annotation=spec_cls)
             ),
             f'without_{singular_name}': (
@@ -894,14 +924,14 @@ class spec_class:
         """
         singular_name = cls._get_singular_form(attr_name)
         item_type = cls._get_collection_item_type(attr_type)
-        item_is_spec = getattr(item_type, '__is_spec_class__', False)
+        item_spec_type = cls._get_spec_class_for_type(item_type)
 
         def extractor(collection, value_or_index):
             return value_or_index, value_or_index if value_or_index in collection else MISSING
 
         def inserter(collection, index, new_item, replace=False):
             if not cls._check_type(new_item, item_type):
-                raise ValueError(f"Attempted to add an invalid item `{repr(new_item)}` to `{spec_cls.__name__}.{attr_name}`. Expected item of type `{item_type.__name__}`.")
+                raise ValueError(f"Attempted to add an invalid item `{repr(new_item)}` to `{spec_cls.__name__}.{attr_name}`. Expected item of type `{item_type}`.")
             if replace:
                 collection.discard(index)
             collection.add(new_item)
@@ -932,22 +962,22 @@ class spec_class:
             f'with_{singular_name}': (
                 _MethodBuilder(f'with_{singular_name}', with_attr_item)
                 .with_preamble(f"Return a `{spec_cls.__name__}` instance identical to this one except with an item added to `{attr_name}`.")
-                .with_arg("_item", f"A new `{cls._attr_type_label(item_type)}` instance for {attr_name}.", default=MISSING if item_is_spec else Parameter.empty)
+                .with_arg("_item", f"A new `{cls._attr_type_label(item_type)}` instance for {attr_name}.", default=MISSING if item_spec_type else Parameter.empty)
                 .with_arg(
                     "_replace", f"If True, and if replacing an old item, build a new {cls._attr_type_label(item_type)} from scratch. Otherwise, apply changes on top of the old value.",
-                    only_if=item_is_spec, default=False, keyword_only=True
+                    only_if=item_spec_type, default=False, keyword_only=True
                 )
                 .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True)
-                .with_spec_attrs_for(item_type, template=f"An optional new value for `{singular_name}.{{}}`.")
+                .with_spec_attrs_for(item_spec_type, template=f"An optional new value for `{singular_name}.{{}}`.")
                 .with_returns(f"A reference to the mutated `{spec_cls.__name__}` instance.", annotation=spec_cls)
             ),
             f'transform_{singular_name}': (
                 _MethodBuilder(f'transform_{singular_name}', transform_attr_item)
                 .with_preamble(f"Return a `{spec_cls.__name__}` instance identical to this one except with an item transformed in `{attr_name}`.")
                 .with_arg("_item", "The value to transform.")
-                .with_arg("_transform", "A function that takes the old item as input, and returns the new item.", default=MISSING if item_is_spec else Parameter.empty, annotation=Callable)
+                .with_arg("_transform", "A function that takes the old item as input, and returns the new item.", default=MISSING if item_spec_type else Parameter.empty, annotation=Callable)
                 .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True)
-                .with_spec_attrs_for(item_type, template=f"An optional transformer for `{singular_name}.{{}}`.")
+                .with_spec_attrs_for(item_spec_type, template=f"An optional transformer for `{singular_name}.{{}}`.")
                 .with_returns(f"A reference to the mutated `{spec_cls.__name__}` instance.", annotation=spec_cls)
             ),
             f'without_{singular_name}': (
