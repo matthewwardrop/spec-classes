@@ -161,6 +161,10 @@ class spec_class:
             _key: The name of the attribute which can be used to uniquely
                 identify a particular specification.
             _skip: Attributes which should not be considered by this `spec_cls`.
+                If `None`, and `attrs` and/or `attrs_typed` are specified, then
+                it is assumed that all attributes not listed should be skipped.
+                To interpret passed `attrs` and `attrs_typed` as incremental/
+                overrides, pass a (potentially empty) iterable.
             _init: Whether to add an `__init__` method if one does not already
                 exist.
             _repr: Whether to add a `__repr__` method if one does not already
@@ -172,7 +176,7 @@ class spec_class:
                 as specified, overriding (if present) any other type annotations
                 for that attribute (e.g. List[int], Dict[str, int], Set[int], etc).
         """
-        self.attrs_set_explicitly = attrs or attrs_typed
+        self.inherit_annotations = not (attrs or attrs_typed) or _skip is not None
         self.spec_key = _key
         self.spec_attrs = {
             **{attr: Any for attr in attrs},
@@ -204,14 +208,13 @@ class spec_class:
         # Attrs to be considered are those explicitly passed into constructor, or if none,
         # all of the type annotated fields if the class is not a subclass of an already
         # annotated spec class, or else none.
-        if self.attrs_set_explicitly:
-            managed_attrs = set(self.spec_attrs)
-        else:
-            managed_attrs = {
+        managed_attrs = set(self.spec_attrs)
+        if self.inherit_annotations:
+            managed_attrs.update({
                 attr
                 for attr in getattr(spec_cls, "__annotations__", {})
-                if not attr.startswith('_') and not attr in self.spec_skip_attrs
-            }
+                if not attr.startswith('_') and attr not in self.spec_skip_attrs
+            })
 
         spec_cls.__is_spec_class__ = True
         spec_cls.__spec_class_key__ = self.spec_key
@@ -222,17 +225,17 @@ class spec_class:
         if self.spec_key and self.spec_key not in spec_cls.__annotations__:
             spec_cls.__annotations__[self.spec_key] = Any
         spec_cls.__annotations__.update({
-            field: annotation
-            for field, annotation in self.spec_attrs.items()
-            if field not in spec_cls.__annotations__
+            attr: annotation
+            for attr, annotation in self.spec_attrs.items()
+            if attr not in spec_cls.__annotations__  # Do not override class annotations
         })
 
         # Generate and record managed annotations subset
+        parsed_type_hints = typing.get_type_hints(spec_cls, localns={spec_cls.__name__: spec_cls})
         spec_cls.__spec_class_annotations__ = getattr(spec_cls, '__spec_class_annotations__', {}).copy()
         spec_cls.__spec_class_annotations__.update({
-            field: annotation
-            for field, annotation in typing.get_type_hints(spec_cls, localns={spec_cls.__name__: spec_cls}).items()
-            if field in {self.spec_key} | managed_attrs
+            attr: self.spec_attrs[attr] if self.spec_attrs.get(attr, Any) is not Any else parsed_type_hints.get(attr, Any)
+            for attr in ({self.spec_key} | managed_attrs).difference([None])
         })
 
         # Register class-level methods
