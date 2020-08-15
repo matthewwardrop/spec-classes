@@ -7,7 +7,7 @@ import numbers
 import textwrap
 import typing
 from inspect import cleandoc, Signature, Parameter
-from typing import Any, Callable, Dict, Type, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, Type, Tuple, Union
 
 import inflect
 
@@ -151,7 +151,7 @@ class spec_class:
         return super().__new__(cls)
 
     def __init__(
-            self, *attrs: str, _key: str = None, _init: bool = True,
+            self, *attrs: str, _key: str = None, _skip: Iterable[str] = None, _init: bool = True,
             _repr: bool = True, _eq: bool = True, **attrs_typed: Any
     ):
         """
@@ -160,6 +160,7 @@ class spec_class:
                 methods.
             _key: The name of the attribute which can be used to uniquely
                 identify a particular specification.
+            _skip: Attributes which should not be considered by this `spec_cls`.
             _init: Whether to add an `__init__` method if one does not already
                 exist.
             _repr: Whether to add a `__repr__` method if one does not already
@@ -177,6 +178,7 @@ class spec_class:
             **{attr: Any for attr in attrs},
             **attrs_typed
         }
+        self.spec_skip_attrs = set(_skip or set())
         self.spec_cls_methods = {
             '__init__': _init,
             '__repr__': _repr,
@@ -208,7 +210,7 @@ class spec_class:
             managed_attrs = {
                 attr
                 for attr in getattr(spec_cls, "__annotations__", {})
-                if not attr.startswith('_')
+                if not attr.startswith('_') and not attr in self.spec_skip_attrs
             }
 
         spec_cls.__is_spec_class__ = True
