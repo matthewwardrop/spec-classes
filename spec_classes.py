@@ -749,7 +749,7 @@ class spec_class:
 
             if item_spec_type_is_keyed:
                 if _index is MISSING:
-                    _index = (isinstance(_item, item_spec_type) and getattr(_item, item_spec_type.__spec_class_key__)) or attrs.get(item_spec_type.__spec_class_key__)
+                    _index = (isinstance(_item, item_spec_type) and getattr(_item, item_spec_type.__spec_class_key__)) or attrs.get(item_spec_type.__spec_class_key__)  # pylint: disable=consider-using-ternary
                     if item_spec_type_is_keyed and isinstance(_index, int):
                         raise ValueError("Lists of keyed spec classes cannot deal with integer keys.")
                     _index = MISSING if isinstance(_item, int) else _index
