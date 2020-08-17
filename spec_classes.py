@@ -786,11 +786,12 @@ class spec_class:
                     if item_spec_type_is_keyed and isinstance(_index, int):
                         raise ValueError("Lists of keyed spec classes cannot deal with integer keys.")
                     _index = MISSING if isinstance(_item, int) else _index
-                if _item is not MISSING and not cls._check_type(_item, item_type):
-                    if not any([isinstance(item, item_spec_type) and getattr(item, item_spec_type.__spec_class_key__) == _item for item in (old_value or [])]):
+                if _item is not MISSING and not isinstance(_item, item_spec_type):
+                    if (
+                            not any([isinstance(item, item_spec_type) and getattr(item, item_spec_type.__spec_class_key__) == _item for item in (old_value or [])])
+                            or attrs
+                    ):
                         _item = item_spec_type(**{item_spec_type.__spec_class_key__: _item})
-                    else:
-                        _item = MISSING
 
             new_value = cls._get_updated_collection(
                 old_value, collection_constructor=list, value_or_index=_index, extractor=functools.partial(extractor, by_index=True), inserter=functools.partial(inserter, insert=_insert),
