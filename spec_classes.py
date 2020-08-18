@@ -690,15 +690,14 @@ class spec_class:
             return cls._with_attr(self, attr_name, new_value, inplace=_inplace)
 
         or_its_attributes = " or its attributes" if attr_spec_type else ""
-        none_if_spec = None if attr_spec_type else MISSING
         return {
             f'with_{attr_name}': (
                 _MethodBuilder(f'with_{attr_name}', with_attr)
                 .with_preamble(f"Return a `{spec_cls.__name__}` instance identical to this one except with `{attr_name}`{or_its_attributes} mutated.")
-                .with_arg("_new_value", f"The new value for `{attr_name}`.", default=none_if_spec)
+                .with_arg("_new_value", f"The new value for `{attr_name}`.", default=MISSING, annotation=attr_type)
                 .with_arg("_replace", f"If True, build a new {cls._attr_type_label(attr_type)} from scratch. Otherwise, modify the old value.",
-                          only_if=attr_spec_type, default=False, keyword_only=True)
-                .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True)
+                          only_if=attr_spec_type, default=False, keyword_only=True, annotation=bool)
+                .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True, annotation=bool)
                 .with_spec_attrs_for(attr_type, template=f"An optional new value for {attr_name}.{{}}.")
                 .with_returns(f"A reference to the mutated `{spec_cls.__name__}` instance.", annotation=spec_cls)
             ),
@@ -706,8 +705,8 @@ class spec_class:
                 _MethodBuilder(f'transform_{attr_name}', transform_attr)
                 .with_preamble(f"Return a `{spec_cls.__name__}` instance identical to this one except with `{attr_name}`{or_its_attributes} transformed.")
                 .with_arg("_transform", f"A function that takes the old value for {attr_name} as input, and returns the new value.",
-                          default=none_if_spec)
-                .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True)
+                          default=MISSING if attr_spec_type else Parameter.empty, annotation=Callable)
+                .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True, annotation=bool)
                 .with_spec_attrs_for(attr_type, template=f"An optional transformer for {attr_name}.{{}}.")
                 .with_returns(f"A reference to the mutated `{spec_cls.__name__}` instance.", annotation=spec_cls)
             ),
@@ -837,28 +836,35 @@ class spec_class:
             del new_value[index]
             return cls._with_attr(self, attr_name, new_value, inplace=_inplace)
 
+        # types for function signatures
+        fn_item_type = item_type
+        fn_index_type = int
+        if item_spec_type_is_keyed:
+            fn_item_type = Union[item_spec_type.__spec_class_annotations__[item_spec_type.__spec_class_key__], fn_item_type]
+            fn_index_type = Union[item_spec_type.__spec_class_annotations__[item_spec_type.__spec_class_key__], fn_index_type]
+
         return {
             f'with_{singular_name}': (
                 _MethodBuilder(f'with_{singular_name}', with_attr_item)
                 .with_preamble(f"Return a `{spec_cls.__name__}` instance identical to this one except with an item added to or updated in `{attr_name}`.")
-                .with_arg("_item", f"A new `{cls._attr_type_label(item_type)}` instance for {attr_name}.", default=MISSING if item_spec_type else Parameter.empty)
-                .with_arg("_index", "Index for which to insert or replace, depending on `insert`; if not provided, append.", default=MISSING, keyword_only=True)
-                .with_arg("_insert", f"Insert item before {attr_name}[index], otherwise replace this index.", default=False, keyword_only=True)
+                .with_arg("_item", f"A new `{cls._attr_type_label(item_type)}` instance for {attr_name}.", default=MISSING, annotation=fn_item_type)
+                .with_arg("_index", "Index for which to insert or replace, depending on `insert`; if not provided, append.", default=MISSING, keyword_only=True, annotation=fn_index_type)
+                .with_arg("_insert", f"Insert item before {attr_name}[index], otherwise replace this index.", default=False, keyword_only=True, annotation=bool)
                 .with_arg(
                     "_replace", f"If True, and if replacing an old item, build a new {cls._attr_type_label(item_type)} from scratch. Otherwise, apply changes on top of the old value.",
-                    only_if=item_spec_type, default=False, keyword_only=True
+                    only_if=item_spec_type, default=False, keyword_only=True, annotation=bool
                 )
-                .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True)
+                .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True, annotation=bool)
                 .with_spec_attrs_for(item_spec_type, template=f"An optional new value for `{singular_name}.{{}}`.")
                 .with_returns(f"A reference to the mutated `{spec_cls.__name__}` instance.", annotation=spec_cls)
             ),
             f'transform_{singular_name}': (
                 _MethodBuilder(f'transform_{singular_name}', transform_attr_item)
                 .with_preamble(f"Return a `{spec_cls.__name__}` instance identical to this one except with an item transformed in `{attr_name}`.")
-                .with_arg("_value_or_index", "The value to transform, or (if `by_index=True`) its index.")
+                .with_arg("_value_or_index", "The value to transform, or (if `by_index=True`) its index.", annotation=Union[fn_item_type, fn_index_type])
                 .with_arg("_transform", "A function that takes the old item as input, and returns the new item.", default=MISSING if item_spec_type else Parameter.empty, annotation=Callable)
                 .with_arg("_by_index", "If True, value_or_index is the index of the item to transform.", keyword_only=True, default=False, annotation=bool)
-                .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True)
+                .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True, annotation=bool)
                 .with_spec_attrs_for(item_spec_type, template=f"An optional transformer for `{singular_name}.{{}}`.")
                 .with_returns(f"A reference to the mutated `{spec_cls.__name__}` instance.", annotation=spec_cls)
             ),
@@ -867,9 +873,9 @@ class spec_class:
                 .with_preamble(
                     f"Return a `{spec_cls.__name__}` instance identical to this one except with an item removed from `{attr_name}`."
                 )
-                .with_arg("_value_or_index", "The value to remove, or (if `by_index=True`) its index.")
-                .with_arg("_by_index", "If True, value_or_index is the index of the item to remove.", default=False, keyword_only=True)
-                .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True)
+                .with_arg("_value_or_index", "The value to remove, or (if `by_index=True`) its index.", annotation=Union[fn_item_type, fn_index_type])
+                .with_arg("_by_index", "If True, value_or_index is the index of the item to remove.", default=False, keyword_only=True, annotation=bool)
+                .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True, annotation=bool)
                 .with_returns(f"A reference to the mutated `{spec_cls.__name__}` instance.", annotation=spec_cls)
             ),
         }
@@ -937,26 +943,35 @@ class spec_class:
             del new_value[_key]
             return cls._with_attr(self, attr_name, new_value, inplace=_inplace)
 
+        # types for function signatures
+        if item_spec_type_is_keyed:
+            fn_key_type = fn_value_type = Union[item_spec_type.__spec_class_annotations__[item_spec_type.__spec_class_key__], item_type]
+        else:
+            fn_key_type = Any
+            if hasattr(attr_type, '__args__') and not isinstance(attr_type.__args__[0], typing.TypeVar):
+                fn_key_type = attr_type.__args__[0]
+            fn_value_type = item_type
+
         return {
             f'with_{singular_name}': (
                 _MethodBuilder(f'with_{singular_name}', with_attr_item)
                 .with_preamble(f"Return a `{spec_cls.__name__}` instance identical to this one except with an item added to or updated in `{attr_name}`.")
-                .with_arg("_key", "The key for the item to be inserted or updated.", only_if=not item_spec_type_is_keyed)
-                .with_arg("_value", f"A new `{cls._attr_type_label(item_type)}` instance for {attr_name}.", default=MISSING if item_spec_type else Parameter.empty)
+                .with_arg("_key", "The key for the item to be inserted or updated.", annotation=fn_key_type, only_if=not item_spec_type_is_keyed)
+                .with_arg("_value", f"A new `{cls._attr_type_label(item_type)}` instance for {attr_name}.", default=MISSING if item_spec_type else Parameter.empty, annotation=fn_value_type)
                 .with_arg(
                     "_replace", f"If True, and if replacing an old item, build a new {cls._attr_type_label(item_type)} from scratch. Otherwise, apply changes on top of the old value.",
-                    only_if=item_spec_type, default=False, keyword_only=True
+                    only_if=item_spec_type, default=False, keyword_only=True, annotation=bool
                 )
-                .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True)
+                .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True, annotation=bool)
                 .with_spec_attrs_for(item_spec_type, template=f"An optional new value for `{singular_name}.{{}}`.")
                 .with_returns(f"A reference to the mutated `{spec_cls.__name__}` instance.", annotation=spec_cls)
             ),
             f'transform_{singular_name}': (
                 _MethodBuilder(f'transform_{singular_name}', transform_attr_item)
                 .with_preamble(f"Return a `{spec_cls.__name__}` instance identical to this one except with an item transformed in `{attr_name}`.")
-                .with_arg("_key", "The key for the item to be inserted or updated.")
+                .with_arg("_key", "The key for the item to be inserted or updated.", annotation=fn_key_type)
                 .with_arg("_transform", "A function that takes the old item as input, and returns the new item.", default=MISSING if item_spec_type else Parameter.empty, annotation=Callable)
-                .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True)
+                .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True, annotation=bool)
                 .with_spec_attrs_for(item_spec_type, template=f"An optional transformer for `{singular_name}.{{}}`.")
                 .with_returns(f"A reference to the mutated `{spec_cls.__name__}` instance.", annotation=spec_cls)
             ),
@@ -965,8 +980,8 @@ class spec_class:
                 .with_preamble(
                     f"Return a `{spec_cls.__name__}` instance identical to this one except with an item removed from `{attr_name}`."
                 )
-                .with_arg("_key", "The key of the item to remove.")
-                .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True)
+                .with_arg("_key", "The key of the item to remove.", annotation=fn_key_type)
+                .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True, annotation=bool)
                 .with_returns(f"A reference to the mutated `{spec_cls.__name__}` instance.", annotation=spec_cls)
             ),
         }
@@ -1027,21 +1042,21 @@ class spec_class:
             f'with_{singular_name}': (
                 _MethodBuilder(f'with_{singular_name}', with_attr_item)
                 .with_preamble(f"Return a `{spec_cls.__name__}` instance identical to this one except with an item added to `{attr_name}`.")
-                .with_arg("_item", f"A new `{cls._attr_type_label(item_type)}` instance for {attr_name}.", default=MISSING if item_spec_type else Parameter.empty)
+                .with_arg("_item", f"A new `{cls._attr_type_label(item_type)}` instance for {attr_name}.", default=MISSING if item_spec_type else Parameter.empty, annotation=item_type)
                 .with_arg(
                     "_replace", f"If True, and if replacing an old item, build a new {cls._attr_type_label(item_type)} from scratch. Otherwise, apply changes on top of the old value.",
-                    only_if=item_spec_type, default=False, keyword_only=True
+                    only_if=item_spec_type, default=False, keyword_only=True, annotation=bool
                 )
-                .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True)
+                .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True, annotation=bool)
                 .with_spec_attrs_for(item_spec_type, template=f"An optional new value for `{singular_name}.{{}}`.")
                 .with_returns(f"A reference to the mutated `{spec_cls.__name__}` instance.", annotation=spec_cls)
             ),
             f'transform_{singular_name}': (
                 _MethodBuilder(f'transform_{singular_name}', transform_attr_item)
                 .with_preamble(f"Return a `{spec_cls.__name__}` instance identical to this one except with an item transformed in `{attr_name}`.")
-                .with_arg("_item", "The value to transform.")
+                .with_arg("_item", "The value to transform.", annotation=item_type)
                 .with_arg("_transform", "A function that takes the old item as input, and returns the new item.", default=MISSING if item_spec_type else Parameter.empty, annotation=Callable)
-                .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True)
+                .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True, annotation=bool)
                 .with_spec_attrs_for(item_spec_type, template=f"An optional transformer for `{singular_name}.{{}}`.")
                 .with_returns(f"A reference to the mutated `{spec_cls.__name__}` instance.", annotation=spec_cls)
             ),
@@ -1050,8 +1065,8 @@ class spec_class:
                 .with_preamble(
                     f"Return a `{spec_cls.__name__}` instance identical to this one except with an item removed from `{attr_name}`."
                 )
-                .with_arg("_item", "The value to remove.")
-                .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True)
+                .with_arg("_item", "The value to remove.", annotation=item_type)
+                .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True, annotation=bool)
                 .with_returns(f"A reference to the mutated `{spec_cls.__name__}` instance.", annotation=spec_cls)
             ),
         }
