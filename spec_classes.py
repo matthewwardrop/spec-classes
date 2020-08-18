@@ -3,7 +3,6 @@ from __future__ import annotations
 import copy
 import functools
 import inspect
-import numbers
 import textwrap
 import typing
 from inspect import cleandoc, Signature, Parameter
@@ -244,7 +243,7 @@ class spec_class:
         if not hasattr(spec_cls, '__annotations__'):
             spec_cls.__annotations__ = {}
         if self.spec_key and self.spec_key not in spec_cls.__annotations__:
-            spec_cls.__annotations__[self.spec_key] = Any
+            spec_cls.__annotations__[self.spec_key] = self.spec_attrs.get(self.spec_key, Any)
         spec_cls.__annotations__.update({
             attr: annotation
             for attr, annotation in self.spec_attrs.items()
@@ -256,7 +255,8 @@ class spec_class:
         spec_cls.__spec_class_annotations__ = getattr(spec_cls, '__spec_class_annotations__', {}).copy()
         spec_cls.__spec_class_annotations__.update({
             attr: self.spec_attrs[attr] if self.spec_attrs.get(attr, Any) is not Any else parsed_type_hints.get(attr, Any)
-            for attr in ({self.spec_key} | managed_attrs).difference([None])
+            for attr in spec_cls.__annotations__
+            if attr in ({self.spec_key} | managed_attrs).difference([None])
         })
 
         # Register class-level methods
@@ -275,13 +275,11 @@ class spec_class:
     @staticmethod
     def _validate_spec_cls(spec_cls):
         spec_annotations = spec_cls.__spec_class_annotations__
-        if hasattr(spec_cls, '__init__'):
-            init_sig = Signature.from_callable(spec_cls.__init__)
-            missing_args = set(spec_annotations).difference(init_sig.parameters)
-            if missing_args:
-                raise ValueError(f"`{spec_cls.__name__}.__init__()` is missing required arguments to populate attributes: {missing_args}.")
-        else:
-            raise ValueError(f"`{spec_cls.__name__}.__init__()` is missing, and is required for full functionality.")
+        init_sig = Signature.from_callable(spec_cls.__init__)
+        missing_args = set(spec_annotations).difference(init_sig.parameters)
+
+        if missing_args:
+            raise ValueError(f"`{spec_cls.__name__}.__init__()` is missing required arguments to populate attributes: {missing_args}.")
 
     @classmethod
     def get_methods_for_spec_class(cls, spec_cls: type, methods_filter: Dict[str, bool]) -> Dict[str, Callable]:
@@ -296,10 +294,10 @@ class spec_class:
                     cls._with_attr(self, attr, copier(kwargs[attr]), inplace=True)
                 else:
                     attr_value = getattr(self.__class__, attr, None)
-                    if cls._check_type(attr_value, self.__spec_class_annotations__[attr]) and not inspect.isfunction(attr_value) and not inspect.isdatadescriptor(attr_value):
-                        cls._with_attr(self, attr, copier(attr_value), inplace=True)
+                    if inspect.isfunction(attr_value) or inspect.isdatadescriptor(attr_value):
+                        continue  # Methods will already be bound to instance from class
                     else:
-                        cls._with_attr(self, attr, None)
+                        cls._with_attr(self, attr, copier(attr_value), inplace=True)
 
         def __repr__(self, include_attrs=None, indent=None, indent_threshold=100):
             """
@@ -316,8 +314,10 @@ class spec_class:
             include_attrs = include_attrs or list(self.__spec_class_annotations__)
 
             def object_repr(obj, indent=False):
-                if inspect.ismethod(obj):
-                    return f"{obj.__name__}()"
+                if inspect.ismethod(obj) and obj.__self__ is self:
+                    return f"<bound method {obj.__name__} of self>"
+                if hasattr(obj, '__repr__') and 'indent' in Signature.from_callable(obj.__repr__).parameters:
+                    return obj.__repr__(indent=indent)
 
                 if indent:
                     if isinstance(obj, list):
@@ -359,6 +359,8 @@ class spec_class:
             if not isinstance(other, self.__class__):
                 return False
             for attr in self.__spec_class_annotations__:
+                if inspect.ismethod(getattr(self, attr)) and inspect.ismethod(getattr(other, attr)):
+                    return getattr(self, attr).__func__ is getattr(other, attr).__func__
                 if getattr(self, attr) != getattr(other, attr):
                     return False
             return True
@@ -455,8 +457,6 @@ class spec_class:
         a parameterized generic type.
         """
         while hasattr(type_input, '__origin__'):
-            if type_input._name == 'Union':  # pylint: disable=protected-access
-                return False
             type_input = type_input.__origin__
         return isinstance(type_input, type) and issubclass(type_input, type_reference)
 
@@ -488,7 +488,7 @@ class spec_class:
                             return False
                 return True
 
-            return isinstance(value, attr_type.__origin__)
+            return isinstance(value, attr_type.__origin__)  # pragma: no cover; This is here as a fallback currently, just in case!
 
         return isinstance(value, attr_type)
 
@@ -500,11 +500,15 @@ class spec_class:
         """
         if not hasattr(container_type, '__args__'):  # i.e. this is not a `typing` container
             return None
-        if cls._type_match(container_type, dict) and len(container_type.__args__) >= 2:
-            return container_type.__args__[1]
-        if len(container_type.__args__) >= 1:
-            return container_type.__args__[0]
-        return None
+
+        item_type = None
+        if cls._type_match(container_type, dict) and len(container_type.__args__) == 2:
+            item_type = container_type.__args__[1]
+        elif len(container_type.__args__) == 1:
+            item_type = container_type.__args__[0]
+        if isinstance(item_type, typing.TypeVar):
+            item_type = None
+        return item_type
 
     @classmethod
     def _get_spec_class_for_type(cls, attr_type: Type) -> Union[Type, None]:
@@ -580,30 +584,44 @@ class spec_class:
         if new_value is not MISSING:
             value = new_value
 
-        # If `value` is None or `MISSING`, construct a value using constructor using
-        # `attrs` if we have a constructor and replace is True.
-        if value in (None, MISSING) or replace and constructor is not None:
+        # If `value` is None or `MISSING`, or `replace` is True, and we have a
+        # constructor, create a new instance with existing attrs. Any attrs not
+        # found in the constructor will be assigned later.
+        if (value in (None, MISSING) or replace) and constructor is not None:
             mutate_safe = True
             while hasattr(constructor, '__origin__'):
                 constructor = constructor.__origin__
-            value = constructor(**(attrs or {}))
-        elif value not in (None, MISSING) and attrs:
-            value = copy.deepcopy(value)
-            mutate_safe = True
+            try:
+                constructor_args = set(inspect.Signature.from_callable(constructor).parameters)
+            except ValueError:
+                constructor_args = set()
+            value = constructor(**{attr: value for attr, value in (attrs or {}).items() if attr in constructor_args})
+            attrs = {
+                attr: value
+                for attr, value in (attrs or {}).items()
+                if attr not in constructor_args
+            }
+
+        # If there are any attributes to apply to our value, we do so here,
+        # special casing any spec classes.
+        if value not in (None, MISSING) and attrs:
+            if not mutate_safe:
+                value = copy.deepcopy(value)
+                mutate_safe = True
             if getattr(value, '__is_spec_class__', False):
                 for attr, attr_value in attrs.items():
                     if attr not in value.__spec_class_annotations__:
                         raise TypeError(f"Invalid attribute `{attr}` for spec class `{value.__class__.__name__}`.")
                     setter = getattr(value, f'with_{attr}', None)
                     if setter is None:
-                        setattr(value, attr, attr_value)
+                        setattr(value, attr, attr_value)  # pragma: no cover; This should never happen, but it is here just in case!
                     else:
                         value = setter(attr_value, _inplace=True)
             else:
                 for attr, attr_value in attrs.items():
                     setattr(value, attr, attr_value)
         elif attrs:
-            raise ValueError("Cannot use attrs without a constructor.")
+            raise ValueError("Cannot use attrs on a missing value without a constructor.")
 
         # If `transform` is provided, transform `value`
         if transform:
@@ -618,7 +636,7 @@ class spec_class:
                     if attr not in value.__spec_class_annotations__:
                         raise TypeError(f"Invalid attribute `{attr}` for spec class `{value.__class__.__name__}`.")
                     transformer = getattr(value, f'transform_{attr}', None)
-                    if transformer is None:
+                    if transformer is None:  # pragma: no cover; This should never happen, but it is here just in case!
                         setattr(value, attr, attr_transform(getattr(value, attr)))
                     else:
                         value = transformer(attr_transform, _inplace=True)
@@ -731,16 +749,17 @@ class spec_class:
         item_spec_type = cls._get_spec_class_for_type(item_type)
         item_spec_type_is_keyed = item_spec_type and item_spec_type.__spec_class_key__ is not None
 
-        # Check that keyed item type does not have an numeric key
+        # Check that keyed item type does not have an integral key
+        def abort_due_to_integer_keys():
+            raise ValueError(
+                "List containers do not support keyed spec classes with integral keys. Check "
+                f"`{spec_cls.__name__}.{attr_name}` and consider using a `Dict` container instead."
+            )
+
         if item_spec_type_is_keyed:
             item_key_type = item_spec_type.__spec_class_annotations__[item_spec_type.__spec_class_key__]
-            while hasattr(item_key_type, '__origin__'):
-                item_key_type = item_key_type.__origin__
-            if isinstance(item_key_type, type) and issubclass(item_spec_type.__spec_class_annotations__[item_spec_type.__spec_class_key__], numbers.Number):
-                raise ValueError(
-                    f"List containers do not support keyed spec classes with numeric keys. Check "
-                    f"`{spec_cls.__name__}.{attr_name}` and consider using a `Dict` container instead."
-                )
+            if cls._type_match(item_key_type, int):
+                abort_due_to_integer_keys()
 
         def extractor(collection, value_or_index, by_index=False):
             if value_or_index is MISSING:
@@ -760,7 +779,7 @@ class spec_class:
                 for i, item in enumerate(collection):
                     if getattr(item, item_spec_type.__spec_class_key__) == value_or_index:
                         return i, item
-                return None, MISSING
+                return None, item_spec_type(**{item_spec_type.__spec_class_key__: value_or_index})
             return collection.index(value_or_index), value_or_index
 
         def inserter(collection, index, new_item, insert=False):
@@ -783,15 +802,19 @@ class spec_class:
             if item_spec_type_is_keyed:
                 if _index is MISSING:
                     _index = (isinstance(_item, item_spec_type) and getattr(_item, item_spec_type.__spec_class_key__)) or attrs.get(item_spec_type.__spec_class_key__)  # pylint: disable=consider-using-ternary
-                    if item_spec_type_is_keyed and isinstance(_index, int):
-                        raise ValueError("Lists of keyed spec classes cannot deal with integer keys.")
-                    _index = MISSING if isinstance(_item, int) else _index
+                    if isinstance(_index, int):
+                        abort_due_to_integer_keys()
+                    _index = MISSING if isinstance(_item, int) else (_index or _item)
                 if _item is not MISSING and not isinstance(_item, item_spec_type):
                     if (
                             not any([isinstance(item, item_spec_type) and getattr(item, item_spec_type.__spec_class_key__) == _item for item in (old_value or [])])
                             or attrs
                     ):
+                        if isinstance(_item, int):
+                            abort_due_to_integer_keys()
                         _item = item_spec_type(**{item_spec_type.__spec_class_key__: _item})
+                    elif not cls._check_type(_item, item_type):
+                        _item = MISSING
 
             new_value = cls._get_updated_collection(
                 old_value, collection_constructor=list, value_or_index=_index, extractor=functools.partial(extractor, by_index=True), inserter=functools.partial(inserter, insert=_insert),
@@ -873,9 +896,12 @@ class spec_class:
         item_spec_type_is_keyed = item_spec_type and item_spec_type.__spec_class_key__ is not None
 
         def extractor(collection, value_or_index):
-            if item_spec_type_is_keyed and isinstance(value_or_index, item_spec_type):
-                value_or_index = getattr(value_or_index, item_spec_type.__spec_class_key__)
-            return value_or_index, collection.get(value_or_index, MISSING)
+            default = MISSING
+            if item_spec_type_is_keyed:
+                if isinstance(value_or_index, item_spec_type):
+                    value_or_index = getattr(value_or_index, item_spec_type.__spec_class_key__)
+                default = item_spec_type(**{item_spec_type.__spec_class_key__: value_or_index})
+            return value_or_index, collection.get(value_or_index, default)
 
         def inserter(collection, index, new_item):
             if not cls._check_type(new_item, item_type):
@@ -1031,7 +1057,7 @@ class spec_class:
         }
 
 
-class _MethodBuilder:
+class _MethodBuilder:  # pragma: no cover; This is an internal helper class only; so long as `spec_class` works, we are golden!
     """
     Build a method based on its signature, allowing more restrictive wrappers
     to be built around a more general `implementation`, that is replete with
@@ -1077,7 +1103,7 @@ class _MethodBuilder:
         """
         Add **attrs to signature, and record valid keywords as specified in `args`.
         """
-        if not only_if or not args:
+        if not only_if:
             return self
 
         # Remove any arguments that already exist in the function signature.
@@ -1086,6 +1112,9 @@ class _MethodBuilder:
         for arg in list(args):
             if arg in current_sig.parameters:
                 args.pop(arg)
+
+        if not args:
+            return self
 
         self.args.extend([
             "{}: {}".format(name, template.format(name)) for name in list(args)
