@@ -390,13 +390,17 @@ class TestMutationHelpers:
 
         # Nested types
         class Object:
-            attr = 'hi'
+            attr = 'default'
         assert spec_class._get_updated_value(MISSING, constructor=Object, attrs={'attr': 'value'}).attr == 'value'
-        assert spec_class._get_updated_value(MISSING, constructor=Object, attr_transforms={'attr': lambda x: f'{x}-transformed!'}).attr == 'hi-transformed!'
+        assert spec_class._get_updated_value(MISSING, constructor=Object, attr_transforms={'attr': lambda x: f'{x}-transformed!'}).attr == 'default-transformed!'
         with pytest.raises(AttributeError, match="'Object' object has no attribute 'missing_attr'"):
             assert spec_class._get_updated_value(MISSING, constructor=Object, attr_transforms={'missing_attr': lambda x: x})
 
-        assert spec_class._get_updated_value(MISSING, constructor=Spec, attrs={'key': 'key'}).key == 'key'
+        assert spec_class._get_updated_value(MISSING, constructor=Spec, attrs={'key': 'key', 'scalar': 10}).key == 'key'
+        assert spec_class._get_updated_value(MISSING, constructor=Spec, attrs={'key': 'key', 'scalar': 10}).scalar == 10
+        assert spec_class._get_updated_value(Spec(key='key', scalar=10), constructor=Spec, attrs={'list_values': [20]}).key == 'key'
+        assert spec_class._get_updated_value(Spec(key='key', scalar=10), constructor=Spec, attrs={'list_values': [20]}).scalar == 10
+        assert spec_class._get_updated_value(Spec(key='key', scalar=10), constructor=Spec, attrs={'list_values': [20]}).list_values == [20]
         with pytest.raises(TypeError, match="Invalid attribute `invalid_attr` for spec class"):
             assert spec_class._get_updated_value(MISSING, constructor=Spec, attrs={'invalid_attr': 'value'})
         assert spec_class._get_updated_value(MISSING, constructor=Spec, attr_transforms={'key': lambda x: 'override'}).key == 'override'
@@ -628,10 +632,10 @@ class TestKeyedSpecListAttribute:
         assert spec.with_keyed_spec_list_items([KeyedSpec('1')]).with_keyed_spec_list_item('2', _index=0, _insert=True).keyed_spec_list_items == [KeyedSpec(key='2'), KeyedSpec(key='1')]
 
         # replace
-        assert spec.with_keyed_spec_list_items([KeyedSpec('1')]).with_keyed_spec_list_item(_index='1', _insert=False, nested_scalar=10).keyed_spec_list_items == [KeyedSpec(key='1', nested_scalar=10)]
-        assert spec.with_keyed_spec_list_items([KeyedSpec('1')]).with_keyed_spec_list_item(_index=0, _insert=False, nested_scalar=10).keyed_spec_list_items == [KeyedSpec(key='1', nested_scalar=10)]
-        assert spec.with_keyed_spec_list_items([KeyedSpec('1')]).with_keyed_spec_list_item('2', _index=0, _insert=False, nested_scalar=10).keyed_spec_list_items == [KeyedSpec(key='2', nested_scalar=10)]
-        assert spec.with_keyed_spec_list_items([KeyedSpec('1')]).with_keyed_spec_list_item(_index=0, _insert=False, _replace=True, nested_scalar=10).keyed_spec_list_items == [KeyedSpec(key='key', nested_scalar=10)]
+        assert spec.with_keyed_spec_list_items([KeyedSpec('1', nested_scalar2="value")]).with_keyed_spec_list_item(_index='1', _insert=False, nested_scalar=10).keyed_spec_list_items == [KeyedSpec(key='1', nested_scalar=10, nested_scalar2="value")]
+        assert spec.with_keyed_spec_list_items([KeyedSpec('1', nested_scalar2="value")]).with_keyed_spec_list_item(_index=0, _insert=False, nested_scalar=10).keyed_spec_list_items == [KeyedSpec(key='1', nested_scalar=10, nested_scalar2="value")]
+        assert spec.with_keyed_spec_list_items([KeyedSpec('1', nested_scalar2="value")]).with_keyed_spec_list_item('1', _index=0, _insert=False, nested_scalar=10).keyed_spec_list_items == [KeyedSpec(key='1', nested_scalar=10, nested_scalar2="value")]
+        assert spec.with_keyed_spec_list_items([KeyedSpec('1', nested_scalar2="value")]).with_keyed_spec_list_item(_index=0, _insert=False, _replace=True, nested_scalar=10).keyed_spec_list_items == [KeyedSpec(key='key', nested_scalar=10, nested_scalar2="original value")]
 
     def test_transform(self, spec_cls):
 

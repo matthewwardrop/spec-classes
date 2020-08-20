@@ -805,10 +805,7 @@ class spec_class:
                         abort_due_to_integer_keys()
                     _index = MISSING if isinstance(_item, int) else (_index or _item)
                 if _item is not MISSING and not isinstance(_item, item_spec_type):
-                    if (
-                            not any([isinstance(item, item_spec_type) and getattr(item, item_spec_type.__spec_class_key__) == _item for item in (old_value or [])])
-                            or attrs
-                    ):
+                    if not any([isinstance(item, item_spec_type) and getattr(item, item_spec_type.__spec_class_key__) == _item for item in (old_value or [])]):
                         if isinstance(_item, int):
                             abort_due_to_integer_keys()
                         _item = item_spec_type(**{item_spec_type.__spec_class_key__: _item})
