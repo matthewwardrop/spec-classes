@@ -24,6 +24,10 @@ class _MissingType:
 MISSING = _MissingType()
 
 
+class FrozenInstanceError(RuntimeError):
+    pass
+
+
 class spec_class:
     """
     A class decorator that adds `with_<field>`, `transform_<field>` and
@@ -150,7 +154,7 @@ class spec_class:
         return super().__new__(cls)
 
     def __init__(
-            self, *attrs: str, _key: str = None, _skip: Iterable[str] = None, _deepcopy: bool = None,
+            self, *attrs: str, _key: str = None, _skip: Iterable[str] = None, _deepcopy: bool = None, _frozen: bool = False,
             _init: bool = True, _repr: bool = True, _eq: bool = True, **attrs_typed: Any
     ):
         """
@@ -172,6 +176,9 @@ class spec_class:
                 incoming attributes is made before assignment to the attribute).
                 If not specified, and not inherited from a subclass, this will
                 default to `True`.
+            _frozen: Whether to disallow direct modifications of attributes. If
+                not specified and not inherited from parent class, this will
+                default to `False`.
             _init: Whether to add an `__init__` method if one does not already
                 exist.
             _repr: Whether to add a `__repr__` method if one does not already
@@ -184,22 +191,25 @@ class spec_class:
                 for that attribute (e.g. List[int], Dict[str, int], Set[int], etc).
         """
         self.inherit_annotations = not (attrs or attrs_typed) or _skip is not None
-        self.spec_key = _key
-        self.spec_attrs = {
+        self.key = _key
+        self.attrs = {
             **{attr: Any for attr in attrs},
             **attrs_typed
         }
-        self.spec_skip_attrs = set(_skip or set())
+        self.skip = set(_skip or set())
         self.spec_cls_methods = {
             '__init__': _init,
             '__repr__': _repr,
             '__spec_class_repr__': _repr,
             '__eq__': _eq,
+            '__setattr__': True,
+            '__delattr__': True,
         }
-        self.spec_deepcopy = _deepcopy
+        self.deepcopy = _deepcopy
+        self.frozen = _frozen
 
         # Check for private attr specification, and if found, raise!
-        private_attrs = [attr for attr in self.spec_attrs if attr.startswith('_')]
+        private_attrs = [attr for attr in self.attrs if attr.startswith('_')]
         if private_attrs:
             raise ValueError(f"`spec_cls` cannot be used to generate helper methods for private attributes (got: {private_attrs}).")
 
@@ -216,14 +226,14 @@ class spec_class:
         # Attrs to be considered are those explicitly passed into constructor, or if none,
         # all of the type annotated fields if the class is not a subclass of an already
         # annotated spec class, or else none.
-        managed_attrs = set(self.spec_attrs)
+        managed_attrs = set(self.attrs)
         if self.inherit_annotations:
             managed_attrs.update({
                 attr
                 for attr in getattr(spec_cls, "__annotations__", {})
                 if (
                     not attr.startswith('_')
-                    and attr not in self.spec_skip_attrs
+                    and attr not in self.skip
                     and not (
                         isinstance(getattr(spec_cls, attr, None), property)
                         and getattr(spec_cls, attr).fset is None
@@ -232,21 +242,18 @@ class spec_class:
             })
 
         spec_cls.__is_spec_class__ = True
-        spec_cls.__spec_class_key__ = self.spec_key
-        spec_cls.__spec_class_deepcopy__ = (
-            getattr(spec_cls, '__spec_class_deepcopy__', True)
-            if self.spec_deepcopy is None else
-            self.spec_deepcopy
-        )
+        spec_cls.__spec_class_key__ = self.key
+        spec_cls.__spec_class_deepcopy__ = getattr(spec_cls, '__spec_class_deepcopy__', True if self.deepcopy is None else self.deepcopy)
+        spec_cls.__spec_class_frozen__ = getattr(spec_cls, '__spec_class_frozen__', False if self.frozen is None else self.frozen)
 
         # Update annotations
         if not hasattr(spec_cls, '__annotations__'):
             spec_cls.__annotations__ = {}
-        if self.spec_key and self.spec_key not in spec_cls.__annotations__:
-            spec_cls.__annotations__[self.spec_key] = self.spec_attrs.get(self.spec_key, Any)
+        if self.key and self.key not in spec_cls.__annotations__:
+            spec_cls.__annotations__[self.key] = self.attrs.get(self.key, Any)
         spec_cls.__annotations__.update({
             attr: annotation
-            for attr, annotation in self.spec_attrs.items()
+            for attr, annotation in self.attrs.items()
             if attr not in spec_cls.__annotations__  # Do not override class annotations
         })
 
@@ -254,9 +261,9 @@ class spec_class:
         parsed_type_hints = typing.get_type_hints(spec_cls, localns={spec_cls.__name__: spec_cls})
         spec_cls.__spec_class_annotations__ = getattr(spec_cls, '__spec_class_annotations__', {}).copy()
         spec_cls.__spec_class_annotations__.update({
-            attr: self.spec_attrs[attr] if self.spec_attrs.get(attr, Any) is not Any else parsed_type_hints.get(attr, Any)
+            attr: self.attrs[attr] if self.attrs.get(attr, Any) is not Any else parsed_type_hints.get(attr, Any)
             for attr in spec_cls.__annotations__
-            if attr in ({self.spec_key} | managed_attrs).difference([None])
+            if attr in ({self.key} | managed_attrs).difference([None])
         })
 
         # Register class-level methods
@@ -365,6 +372,26 @@ class spec_class:
                     return False
             return True
 
+        def __setattr__(self, attr, value, force=False):
+            # Abort if frozen
+            if not force and self.__spec_class_frozen__:
+                raise FrozenInstanceError(f"Cannot mutate attribute `{attr}` of frozen Spec Class `{self}`.")
+
+            # Check attr type if managed attribute
+            if not force and attr in self.__spec_class_annotations__:
+                attr_type = self.__spec_class_annotations__.get(attr, Any)
+                if not cls._check_type(value, attr_type):
+                    raise ValueError(f"Invalid type passed for attribute `{attr}` [Expected: `{attr_type}`, got `{type(value)}`].")
+
+            return super(self.__class__, self).__setattr__(attr, value)  # pylint: disable=bad-super-call
+
+        def __delattr__(self, attr, force=False):
+            # Abort if frozen
+            if not force and self.__spec_class_frozen__:
+                raise FrozenInstanceError(f"Cannot mutate attribute `{attr}` of frozen Spec Class `{self}`.")
+
+            return super(self.__class__, self).__delattr__(attr)  # pylint: disable=bad-super-call
+
         spec_class_key = spec_cls.__spec_class_key__
         key_default = Parameter.empty
         if spec_class_key:
@@ -386,6 +413,17 @@ class spec_class:
             '__repr__': __repr__,
             '__spec_class_repr__': __repr__,
             '__eq__': __eq__,
+            '__setattr__': (
+                _MethodBuilder('__setattr__', __setattr__)
+                .with_arg('attr', desc='Attribute to be mutated.', annotation=str)
+                .with_arg('value', desc='New value for attribute.', annotation=Any)
+                .with_arg('force', desc='Force mutation of frozen instance.', default=False, annotation=bool, only_if=spec_cls.__spec_class_frozen__)
+            ),
+            '__delattr__': (
+                _MethodBuilder('__delattr__', __delattr__)
+                .with_arg('attr', desc='Attribute to be deleted.', annotation=str)
+                .with_arg('force', desc='Force mutation of frozen instance.', default=False, annotation=bool, only_if=spec_cls.__spec_class_frozen__)
+            ),
         }
         return {
             name: method
@@ -560,7 +598,10 @@ class spec_class:
         if not cls._check_type(value, attr_type):
             raise TypeError(f"Attempt to set `{self.__class__.__name__}.{name}` with an invalid type [got `{repr(value)}`; expecting `{attr_type}`].")
         try:
-            setattr(self, name, value)
+            if 'force' in inspect.Signature.from_callable(self.__setattr__).parameters:
+                self.__setattr__(name, value, force=True)
+            else:
+                setattr(self, name, value)
         except AttributeError:
             raise AttributeError(f"Cannot set `{self.__class__.__name__}.{name}` to `{value}`. Is this a property without a setter?")
         return self

@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, List, Set, Union
 
 import pytest
 
-from spec_classes import MISSING, spec_class
+from spec_classes import MISSING, spec_class, FrozenInstanceError
 
 
 @spec_class
@@ -109,6 +109,9 @@ class TestFramework:
         assert Item.__annotations__ == {'x': 'str'}
         assert Item.__spec_class_annotations__ == {'x': int}
 
+        with pytest.raises(ValueError):
+            Item().x = 'invalid type'
+
     def test_spec_methods(self):
 
         assert hasattr(Spec, '__init__')
@@ -181,6 +184,18 @@ class TestFramework:
             "recursive=Spec(key='nested', scalar=None, list_values=None, dict_values=None, set_values=None, spec=None, "
             "spec_list_items=None, spec_dict_items=None, keyed_spec_list_items=None, keyed_spec_dict_items=None, recursive=None))"
         )
+
+        # Check that type checking works during direct mutation of elements
+        s = Spec(key="key")
+        s.scalar = 10
+        assert s.scalar == 10
+
+        with pytest.raises(ValueError):
+            s.scalar = 'string'
+
+        # Check that attribute deletion works
+        del s.scalar
+        assert 'scalar' not in s.__dict__
 
         # Test empty containers
         assert Spec(
@@ -307,6 +322,18 @@ class TestFramework:
         assert spec_class._get_singular_form('values') == 'value'
         assert spec_class._get_singular_form('classes') == 'class'
         assert spec_class._get_singular_form('collection') == 'collection_item'
+
+    def test_frozen(self):
+        @spec_class(_frozen=True)
+        class Item:
+            x: int = 1
+
+        assert Item(x=10).with_x(20).x == 20
+
+        with pytest.raises(FrozenInstanceError):
+            Item(x=10).x = 20
+        with pytest.raises(FrozenInstanceError):
+            del Item(x=10).x
 
 
 class TestTypeChecking:
