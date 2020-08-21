@@ -378,7 +378,10 @@ class spec_class:
         def __getattr__(self, attr):
             if attr in self.__spec_class_annotations__ and attr not in self.__dict__:
                 raise AttributeError(f"`{self.__class__.__name__}.{attr}` has not yet been assigned a value.")
-            return super(self.__class__, self).__getattr__(attr)
+            scls = self.__class__
+            while getattr(scls.__getattr__, '__module__', None) == cls.__module__:
+                scls = scls.mro()[1]
+            return scls.__getattr__(self, attr)  # pylint: disable=bad-super-call
 
         def __setattr__(self, attr, value, force=False):
             # Abort if frozen
@@ -387,7 +390,10 @@ class spec_class:
 
             # Check attr type if managed attribute
             if force or attr not in self.__spec_class_annotations__ or not hasattr(self, f'with_{attr}'):
-                object.__setattr__(self, attr, value)  # pylint: disable=bad-super-call
+                scls = self.__class__
+                while getattr(scls.__setattr__, '__module__', None) == cls.__module__:
+                    scls = scls.mro()[1]
+                scls.__setattr__(self, attr, value)  # pylint: disable=bad-super-call
             else:
                 getattr(self, f'with_{attr}')(value, _inplace=True)
 
@@ -396,7 +402,10 @@ class spec_class:
             if not force and self.__spec_class_frozen__:
                 raise FrozenInstanceError(f"Cannot mutate attribute `{attr}` of frozen Spec Class `{self}`.")
 
-            return super(self.__class__, self).__delattr__(attr)  # pylint: disable=bad-super-call
+            scls = self.__class__
+            while getattr(scls.__delattr__, '__module__', None) == cls.__module__:
+                scls = scls.mro()[1]
+            return scls.__delattr__(self, attr)  # pylint: disable=bad-super-call
 
         spec_class_key = spec_cls.__spec_class_key__
         key_default = Parameter.empty
@@ -772,7 +781,7 @@ class spec_class:
         assert hasattr(spec_cls, '__spec_class_key__'), f"`{spec_cls}` is not a keyed spec class instance."
         if isinstance(item, spec_cls):
             return getattr(item, spec_cls.__spec_class_key__, MISSING)
-        elif cls._check_type(item, spec_cls.__spec_class_annotations__[spec_cls.__spec_class_key__]):
+        if cls._check_type(item, spec_cls.__spec_class_annotations__[spec_cls.__spec_class_key__]):
             return item
         return (attrs or {}).get(spec_cls.__spec_class_key__, MISSING)
 
