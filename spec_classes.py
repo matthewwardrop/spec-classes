@@ -280,9 +280,20 @@ class spec_class:
 
         return spec_cls
 
-    @staticmethod
-    def _validate_spec_cls(spec_cls):
+    @classmethod
+    def _validate_spec_cls(cls, spec_cls):
         spec_annotations = spec_cls.__spec_class_annotations__
+
+        # Check that attribute types are satisfied by class defaults
+        for attr_name, attr_type in spec_annotations.items():
+            if (
+                attr_name in spec_cls.__dict__
+                and not inspect.isdatadescriptor(spec_cls.__dict__[attr_name])
+                and not cls._check_type(spec_cls.__dict__[attr_name], attr_type)
+            ):
+                raise TypeError(f"Class default `{repr(spec_cls.__dict__[attr_name])}` for `{spec_cls.__name__}.{attr_name}` does not match annotation type `{attr_type}`.")
+
+        # Check that constructor is present for all managed keys.
         init_sig = Signature.from_callable(spec_cls.__init__)
         missing_args = set(spec_annotations).difference(init_sig.parameters)
 
@@ -381,7 +392,7 @@ class spec_class:
             scls = self.__class__
             while getattr(scls.__getattr__, '__module__', None) == cls.__module__:
                 scls = scls.mro()[1]
-            return scls.__getattr__(self, attr)  # pylint: disable=bad-super-call
+            return scls.__getattr__(self, attr)  # pragma: no cover; pylint: disable=bad-super-call
 
         def __setattr__(self, attr, value, force=False):
             # Abort if frozen
@@ -510,7 +521,7 @@ class spec_class:
         """
         Check whether a given object `value` matches the provided `attr_type`.
         """
-        if value is None or attr_type is Any:  # We always allow null values
+        if attr_type is Any:
             return True
 
         if hasattr(attr_type, '__origin__'):  # we are dealing with a `typing` object.
@@ -608,7 +619,7 @@ class spec_class:
             if 'force' in inspect.Signature.from_callable(self.__setattr__).parameters:
                 self.__setattr__(name, value, force=True)
             else:
-                setattr(self, name, value)
+                setattr(self, name, value)  # pragma: no cover
         except AttributeError:
             raise AttributeError(f"Cannot set `{self.__class__.__name__}.{name}` to `{value}`. Is this a property without a setter?")
         return self
@@ -632,10 +643,10 @@ class spec_class:
         if new_value is not MISSING:
             value = new_value
 
-        # If `value` is None or `MISSING`, or `replace` is True, and we have a
+        # If `value` is `MISSING`, or `replace` is True, and we have a
         # constructor, create a new instance with existing attrs. Any attrs not
         # found in the constructor will be assigned later.
-        if (value in (None, MISSING) or replace) and constructor is not None:
+        if (value is MISSING or replace) and constructor is not None:
             mutate_safe = True
             while hasattr(constructor, '__origin__'):
                 constructor = constructor.__origin__
@@ -713,7 +724,7 @@ class spec_class:
         be the same `index` as that output by the extractor, and is not otherwise
         interpreted.
         """
-        if collection in (None, MISSING):
+        if collection is MISSING:
             collection = collection_constructor()
         else:
             collection = copy.deepcopy(collection)
@@ -1209,9 +1220,9 @@ class _MethodBuilder:  # pragma: no cover; This is an internal helper class only
         if defaults is True:
             defaults = {
                 attr: (
-                    getattr(spec_cls, attr, None)
+                    getattr(spec_cls, attr, MISSING)
                     if not inspect.isfunction(getattr(spec_cls, attr, None)) and not inspect.isdatadescriptor(getattr(spec_cls, attr, None)) else
-                    None
+                    MISSING
                 )
                 for attr in spec_cls.__spec_class_annotations__
             }

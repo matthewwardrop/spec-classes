@@ -24,17 +24,17 @@ class KeyedSpec:
 
 @spec_class(_key='key')
 class Spec:
-    key: str = None
-    scalar: int = None
-    list_values: List[int] = None
-    dict_values: Dict[str, int] = None
-    set_values: Set[str] = None
-    spec: UnkeyedSpec = None
-    spec_list_items: List[UnkeyedSpec] = None
-    spec_dict_items: Dict[str, UnkeyedSpec] = None
-    keyed_spec_list_items: List[KeyedSpec] = None
-    keyed_spec_dict_items: Dict[str, KeyedSpec] = None
-    recursive: Spec = None
+    key: str = 'key'
+    scalar: int
+    list_values: List[int]
+    dict_values: Dict[str, int]
+    set_values: Set[str]
+    spec: UnkeyedSpec
+    spec_list_items: List[UnkeyedSpec]
+    spec_dict_items: Dict[str, UnkeyedSpec]
+    keyed_spec_list_items: List[KeyedSpec]
+    keyed_spec_dict_items: Dict[str, KeyedSpec]
+    recursive: Spec
 
 
 @pytest.fixture
@@ -61,6 +61,12 @@ class TestFramework:
             'spec_list_items',
             'recursive',
         }
+
+    def test_invalid_default(self, spec_cls):
+        with pytest.raises(TypeError, match=r"Class default `1` for `InvalidTypes\.string` does not match annotation type `<class 'str'>`"):
+            @spec_class
+            class InvalidTypes:
+                string: str = 1
 
     def test_spec_inheritance(self):
 
@@ -132,7 +138,10 @@ class TestFramework:
             'spec_dict_items',
             'spec_list_items'
         }
-        assert inspect.Signature.from_callable(Spec.__init__).parameters['key'].default is None
+        assert inspect.Signature.from_callable(Spec.__init__).parameters['key'].default == 'key'
+        for attr, param in inspect.Signature.from_callable(Spec.__init__).parameters.items():
+            if attr not in {'self', 'key'}:
+                assert param.default is MISSING
 
         assert Spec(key="key").key == "key"
         assert repr(Spec(
@@ -141,7 +150,7 @@ class TestFramework:
         )) == textwrap.dedent("""
         Spec(
             key='key',
-            scalar=None,
+            scalar=MISSING,
             list_values=[
                 1,
                 2,
@@ -154,23 +163,23 @@ class TestFramework:
             set_values={
                 'a'
             },
-            spec=None,
-            spec_list_items=None,
-            spec_dict_items=None,
-            keyed_spec_list_items=None,
-            keyed_spec_dict_items=None,
+            spec=MISSING,
+            spec_list_items=MISSING,
+            spec_dict_items=MISSING,
+            keyed_spec_list_items=MISSING,
+            keyed_spec_dict_items=MISSING,
             recursive=Spec(
                 key='nested',
-                scalar=None,
-                list_values=None,
-                dict_values=None,
-                set_values=None,
-                spec=None,
-                spec_list_items=None,
-                spec_dict_items=None,
-                keyed_spec_list_items=None,
-                keyed_spec_dict_items=None,
-                recursive=None
+                scalar=MISSING,
+                list_values=MISSING,
+                dict_values=MISSING,
+                set_values=MISSING,
+                spec=MISSING,
+                spec_list_items=MISSING,
+                spec_dict_items=MISSING,
+                keyed_spec_list_items=MISSING,
+                keyed_spec_dict_items=MISSING,
+                recursive=MISSING
             )
         )
         """).strip()
@@ -179,10 +188,10 @@ class TestFramework:
             key="key", list_values=[1, 2, 3], dict_values={'a': 1, 'b': 2},
             recursive=Spec(key="nested"), set_values={'a'},  # sets are unordered, so we use one item to guarantee order
         ).__repr__(indent=False) == (
-            "Spec(key='key', scalar=None, list_values=[1, 2, 3], dict_values={'a': 1, 'b': 2}, set_values={'a'}, "
-            "spec=None, spec_list_items=None, spec_dict_items=None, keyed_spec_list_items=None, keyed_spec_dict_items=None, "
-            "recursive=Spec(key='nested', scalar=None, list_values=None, dict_values=None, set_values=None, spec=None, "
-            "spec_list_items=None, spec_dict_items=None, keyed_spec_list_items=None, keyed_spec_dict_items=None, recursive=None))"
+            "Spec(key='key', scalar=MISSING, list_values=[1, 2, 3], dict_values={'a': 1, 'b': 2}, set_values={'a'}, "
+            "spec=MISSING, spec_list_items=MISSING, spec_dict_items=MISSING, keyed_spec_list_items=MISSING, keyed_spec_dict_items=MISSING, "
+            "recursive=Spec(key='nested', scalar=MISSING, list_values=MISSING, dict_values=MISSING, set_values=MISSING, spec=MISSING, "
+            "spec_list_items=MISSING, spec_dict_items=MISSING, keyed_spec_list_items=MISSING, keyed_spec_dict_items=MISSING, recursive=MISSING))"
         )
 
         # Check that type checking works during direct mutation of elements
@@ -203,16 +212,16 @@ class TestFramework:
         ).__repr__(indent=True) == textwrap.dedent("""
             Spec(
                 key='key',
-                scalar=None,
+                scalar=MISSING,
                 list_values=[],
                 dict_values={},
                 set_values=set(),
-                spec=None,
-                spec_list_items=None,
-                spec_dict_items=None,
-                keyed_spec_list_items=None,
-                keyed_spec_dict_items=None,
-                recursive=None
+                spec=MISSING,
+                spec_list_items=MISSING,
+                spec_dict_items=MISSING,
+                keyed_spec_list_items=MISSING,
+                keyed_spec_dict_items=MISSING,
+                recursive=MISSING
             )
         """).strip()
 
@@ -293,7 +302,7 @@ class TestFramework:
                 self._x = x
 
         assert set(inspect.Signature.from_callable(Item2.__init__).parameters) == {'self', 'x'}
-        assert inspect.Signature.from_callable(Item2.__init__).parameters['x'].default is None
+        assert inspect.Signature.from_callable(Item2.__init__).parameters['x'].default is MISSING
         assert Item2().x == 1
         assert Item2(x=10).x == 10
 
@@ -306,7 +315,7 @@ class TestFramework:
                 return 1
 
         assert set(inspect.Signature.from_callable(Item3.__init__).parameters) == {'self', 'x'}
-        assert inspect.Signature.from_callable(Item3.__init__).parameters['x'].default is None
+        assert inspect.Signature.from_callable(Item3.__init__).parameters['x'].default is MISSING
 
         with pytest.raises(AttributeError, match="Cannot set `Item3.x` to `1`. Is this a property without a setter?"):
             assert Item3(x=1)
@@ -436,7 +445,7 @@ class TestMutationHelpers:
         assert spec_class._get_updated_value(MISSING, constructor=Spec, attr_transforms={'key': lambda x: 'override'}).key == 'override'
         with pytest.raises(TypeError, match="Invalid attribute `invalid_attr` for spec class"):
             assert spec_class._get_updated_value(MISSING, constructor=Spec, attr_transforms={'invalid_attr': 'value'})
-        assert spec_class._get_updated_value(Spec(key='key'), constructor=Spec, replace=True).key is None
+        assert spec_class._get_updated_value(Spec(key='my_key'), constructor=Spec, replace=True).key == 'key'
 
         with pytest.raises(ValueError, match="Cannot use attrs on a missing value without a constructor."):
             assert spec_class._get_updated_value(MISSING, attrs={'invalid_attr': 'value'})
@@ -477,10 +486,11 @@ class TestSpecAttribute:
         }
 
         # Constructors
-        assert spec.spec is None
+        assert 'spec' not in spec.__dict__
         assert isinstance(spec.with_spec().spec, UnkeyedSpec)
-        assert isinstance(spec.with_spec(None).spec, UnkeyedSpec)
         assert isinstance(spec.transform_spec(lambda x: x).spec, UnkeyedSpec)
+        with pytest.raises(TypeError, match=r"Attempt to set `Spec\.spec` with an invalid type"):
+            spec.with_spec(None)
 
         # Assignments
         nested_spec = UnkeyedSpec()
@@ -529,7 +539,7 @@ class TestListAttribute:
         }
 
         # Constructors
-        assert spec.list_values is None
+        assert 'list_values' not in spec.__dict__
         assert spec.with_list_values().list_values == []
         assert spec.with_list_value(1).list_values == [1]
 
@@ -588,7 +598,7 @@ class TestUnkeyedSpecListAttribute:
         }
 
         # Constructors
-        assert spec.spec_list_items is None
+        assert 'spec_list_items' not in spec.__dict__
         assert spec.with_spec_list_items().spec_list_items == []
         unkeyed = UnkeyedSpec()
         assert spec.with_spec_list_item(unkeyed).spec_list_items[0] is unkeyed
@@ -645,7 +655,7 @@ class TestKeyedSpecListAttribute:
         }
 
         # Constructors
-        assert spec.spec_list_items is None
+        assert 'keyed_spec_list_items' not in spec.__dict__
         assert spec.with_keyed_spec_list_items().keyed_spec_list_items == []
         keyed = KeyedSpec()
         assert spec.with_keyed_spec_list_item(keyed).keyed_spec_list_items[0] is keyed
@@ -746,7 +756,7 @@ class TestDictAttribute:
         }
 
         # constructors
-        assert spec.dict_values is None
+        assert 'dict_values' not in spec.__dict__
         assert spec.with_dict_values({}).dict_values == {}
         assert spec.with_dict_value('a', 1).dict_values == {'a': 1}
 
@@ -791,7 +801,7 @@ class TestUnkeyedSpecDictAttribute:
         }
 
         # Constructors
-        assert spec.spec_dict_items is None
+        assert 'spec_dict_items' not in spec.__dict__
         unkeyed = UnkeyedSpec()
         assert spec.with_spec_dict_item('a', unkeyed).spec_dict_items['a'] is unkeyed
         assert isinstance(spec.with_spec_dict_item('a').spec_dict_items['a'], UnkeyedSpec)
@@ -833,7 +843,7 @@ class TestKeyedSpecDictAttribute:
         }
 
         # Constructors
-        assert spec.keyed_spec_dict_items is None
+        assert 'keyed_spec_dict_items' not in spec.__dict__
         keyed = KeyedSpec('key')
         assert spec.with_keyed_spec_dict_item(keyed).keyed_spec_dict_items['key'] is keyed
         assert spec.with_keyed_spec_dict_item('a').keyed_spec_dict_items['a'] == KeyedSpec('a')
@@ -882,7 +892,7 @@ class TestSetAttribute:
         }
 
         # constructors
-        assert spec.set_values is None
+        assert 'set_values' not in spec.__dict__
         assert spec.with_set_values().set_values == set()
         assert spec.with_set_value('a').set_values == {'a'}
 
