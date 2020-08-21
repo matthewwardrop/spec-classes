@@ -372,7 +372,8 @@ class TestTypeChecking:
 
     def test_get_spec_class_for_type(self):
         assert spec_class._get_spec_class_for_type(Spec) is Spec
-        assert spec_class._get_spec_class_for_type(Union[str, Spec]) is Spec
+        assert spec_class._get_spec_class_for_type(Union[str, Spec]) is None
+        assert spec_class._get_spec_class_for_type(Union[str, Spec], allow_polymorphic=True) is Spec
         assert spec_class._get_spec_class_for_type(Union[str, Spec, UnkeyedSpec]) is None
 
         assert spec_class._get_spec_class_for_type(list) is None
@@ -650,15 +651,18 @@ class TestKeyedSpecListAttribute:
         assert spec.with_keyed_spec_list_item('mykey').keyed_spec_list_items == [KeyedSpec('mykey')]
 
         # append
-        assert spec.with_keyed_spec_list_item(key='1').with_keyed_spec_list_item(key='2').with_keyed_spec_list_item(key='3').keyed_spec_list_items == [
-            KeyedSpec('1'), KeyedSpec('2'), KeyedSpec('3')
+        assert spec.with_keyed_spec_list_item(key='1').with_keyed_spec_list_item('2').keyed_spec_list_items == [
+            KeyedSpec('1'), KeyedSpec('2')
         ]
 
         # insert
         assert spec.with_keyed_spec_list_items([KeyedSpec('1')]).with_keyed_spec_list_item(_index=1, _insert=True, key='2', nested_scalar=10).keyed_spec_list_items == [KeyedSpec('1'), KeyedSpec(key='2', nested_scalar=10)]
         assert spec.with_keyed_spec_list_items([KeyedSpec('1')]).with_keyed_spec_list_item('2', _index=0, _insert=True).keyed_spec_list_items == [KeyedSpec(key='2'), KeyedSpec(key='1')]
+        with pytest.raises(ValueError, match=r"Adding .* to list would result in more than instance with the same key: '1'"):
+            assert spec.with_keyed_spec_list_item('1').with_keyed_spec_list_item(KeyedSpec(key='1'), _insert=True).keyed_spec_list_items
 
-        # replace
+        # replace / update
+        assert spec.with_keyed_spec_list_items([KeyedSpec('1', nested_scalar2="value")]).with_keyed_spec_list_item('1', nested_scalar=10).keyed_spec_list_items == [KeyedSpec(key='1', nested_scalar=10, nested_scalar2="value")]
         assert spec.with_keyed_spec_list_items([KeyedSpec('1', nested_scalar2="value")]).with_keyed_spec_list_item(_index='1', _insert=False, nested_scalar=10).keyed_spec_list_items == [KeyedSpec(key='1', nested_scalar=10, nested_scalar2="value")]
         assert spec.with_keyed_spec_list_items([KeyedSpec('1', nested_scalar2="value")]).with_keyed_spec_list_item(_index=0, _insert=False, nested_scalar=10).keyed_spec_list_items == [KeyedSpec(key='1', nested_scalar=10, nested_scalar2="value")]
         assert spec.with_keyed_spec_list_items([KeyedSpec('1', nested_scalar2="value")]).with_keyed_spec_list_item('1', _index=0, _insert=False, nested_scalar=10).keyed_spec_list_items == [KeyedSpec(key='1', nested_scalar=10, nested_scalar2="value")]

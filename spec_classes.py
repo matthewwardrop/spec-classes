@@ -549,7 +549,7 @@ class spec_class:
         return item_type
 
     @classmethod
-    def _get_spec_class_for_type(cls, attr_type: Type) -> Union[Type, None]:
+    def _get_spec_class_for_type(cls, attr_type: Type, allow_polymorphic=False) -> Union[Type, None]:
         """
         Get the spec class to associated with a given attribute type. This is
         useful when `attr_type` is a polymorphic type, e.g.
@@ -557,7 +557,9 @@ class spec_class:
         polymorphic type. If there is not exactly one spec class type, `None` is
         returned.
         """
-        if getattr(attr_type, '__origin__', None) is Union:
+        if getattr(attr_type, '__is_spec_class__', False):
+            return attr_type
+        if allow_polymorphic and getattr(attr_type, '__origin__', None) is Union:
             spec_classes = [
                 typ
                 for typ in attr_type.__args__
@@ -565,8 +567,6 @@ class spec_class:
             ]
             if len(spec_classes) == 1:
                 return spec_classes[0]
-        elif getattr(attr_type, '__is_spec_class__', False):
-            return attr_type
         return None
 
     @staticmethod
@@ -767,6 +767,18 @@ class spec_class:
         return singular
 
     @classmethod
+    def _get_spec_key(cls, spec_cls, item, attrs=None):
+        """
+        Get the key associated with a spec class isntance or from attrs.
+        """
+        assert hasattr(spec_cls, '__spec_class_key__'), f"`{spec_cls}` is not a keyed spec class instance."
+        if isinstance(item, spec_cls):
+            return getattr(item, spec_cls.__spec_class_key__, MISSING)
+        elif cls._check_type(item, spec_cls.__spec_class_annotations__[spec_cls.__spec_class_key__]):
+            return item
+        return (attrs or {}).get(spec_cls.__spec_class_key__, MISSING)
+
+    @classmethod
     def _get_methods_for_list(cls, spec_cls: type, attr_name: str, attr_type: Type) -> Dict[str, Callable]:
         """
         Generate and return the methods for a list container. There are three
@@ -810,7 +822,7 @@ class spec_class:
                     for i, item in enumerate(collection):
                         if isinstance(item, item_spec_type) and getattr(item, item_spec_type.__spec_class_key__) == value_or_index:
                             return i, item
-                    return None, MISSING
+                    return None, item_spec_type(**{item_spec_type.__spec_class_key__: value_or_index})
                 return value_or_index, collection[value_or_index] if value_or_index is not None and value_or_index < len(collection) else MISSING
 
             if item_spec_type_is_keyed:
@@ -841,17 +853,17 @@ class spec_class:
 
             if item_spec_type_is_keyed:
                 if _index is MISSING:
-                    _index = (isinstance(_item, item_spec_type) and getattr(_item, item_spec_type.__spec_class_key__)) or attrs.get(item_spec_type.__spec_class_key__)  # pylint: disable=consider-using-ternary
+                    _index = cls._get_spec_key(item_spec_type, _item, attrs)
                     if isinstance(_index, int):
                         abort_due_to_integer_keys()
-                    _index = MISSING if isinstance(_item, int) else (_index or _item)
                 if _item is not MISSING and not isinstance(_item, item_spec_type):
-                    if not any([isinstance(item, item_spec_type) and getattr(item, item_spec_type.__spec_class_key__) == _item for item in (old_value or [])]):
-                        if isinstance(_item, int):
-                            abort_due_to_integer_keys()
-                        _item = item_spec_type(**{item_spec_type.__spec_class_key__: _item})
-                    elif not cls._check_type(_item, item_type):
-                        _item = MISSING
+                    _key = cls._get_spec_key(item_spec_type, _item, attrs)
+                    if _key is not MISSING:
+                        _item = (
+                            item_spec_type(**{item_spec_type.__spec_class_key__: _item})
+                            if extractor(old_value or [], _key, by_index=True)[0] is None else
+                            MISSING
+                        )
 
             new_value = cls._get_updated_collection(
                 old_value, collection_constructor=list, value_or_index=_index, extractor=functools.partial(extractor, by_index=True), inserter=functools.partial(inserter, insert=_insert),
@@ -957,8 +969,8 @@ class spec_class:
         def with_attr_item(self, _key=None, _value=None, _replace=False, _inplace=False, **attrs):
             old_value = getattr(self, attr_name, MISSING)
             if item_spec_type_is_keyed:
-                _key = (isinstance(_value, item_spec_type) and getattr(_value, item_spec_type.__spec_class_key__)) or attrs.get(item_spec_type.__spec_class_key__) or _value
-                _value = _value if cls._check_type(_value, item_type) else (MISSING if old_value and _value in old_value else item_type(**{item_spec_type.__spec_class_key__: _value}))
+                _key = cls._get_spec_key(item_spec_type, _value, attrs)
+                _value = _value if cls._check_type(_value, item_spec_type) else MISSING
             new_value = cls._get_updated_collection(
                 old_value, collection_constructor=dict, value_or_index=_key, extractor=extractor, inserter=inserter,
                 new_item=_value, constructor=item_type, attrs=attrs, replace=_replace
