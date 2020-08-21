@@ -109,7 +109,7 @@ class TestFramework:
         assert Item.__annotations__ == {'x': 'str'}
         assert Item.__spec_class_annotations__ == {'x': int}
 
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             Item().x = 'invalid type'
 
     def test_spec_methods(self):
@@ -190,7 +190,7 @@ class TestFramework:
         s.scalar = 10
         assert s.scalar == 10
 
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError, match=r"Attempt to set `Spec\.scalar` with an invalid type \[got `'string'`; expecting `<class 'int'>`\]."):
             s.scalar = 'string'
 
         # Check that attribute deletion works
@@ -236,7 +236,7 @@ class TestFramework:
         assert set(inspect.Signature.from_callable(Item.__init__).parameters) == {'self', 'x', 'f', 'g'}
         assert inspect.Signature.from_callable(Item.__init__).parameters['x'].default == 1
 
-        assert repr(Item()) == "Item(x=1, f=<bound method f of self>, g=None)"
+        assert repr(Item()) == "Item(x=1, f=<bound method f of self>, g=MISSING)"
 
         def f(x):
             return x
@@ -396,8 +396,10 @@ class TestMutationHelpers:
 
         item = Item()
 
-        assert item.attr is None
-        assert spec_class._with_attr(item, 'attr', MISSING).attr is None
+        with pytest.raises(AttributeError, match=r"`Item\.attr` has not yet been assigned a value\."):
+            item.attr
+        with pytest.raises(AttributeError, match=r"`Item\.attr` has not yet been assigned a value\."):
+            spec_class._with_attr(item, 'attr', MISSING).attr
         assert spec_class._with_attr(item, 'attr', 'string') is not item
         assert spec_class._with_attr(item, 'attr', 'string').attr == 'string'
 

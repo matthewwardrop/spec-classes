@@ -202,6 +202,7 @@ class spec_class:
             '__repr__': _repr,
             '__spec_class_repr__': _repr,
             '__eq__': _eq,
+            '__getattr__': True,
             '__setattr__': True,
             '__delattr__': True,
         }
@@ -300,10 +301,10 @@ class spec_class:
                 if attr in kwargs:
                     cls._with_attr(self, attr, copier(kwargs[attr]), inplace=True)
                 else:
-                    attr_value = getattr(self.__class__, attr, None)
+                    attr_value = getattr(self.__class__, attr, MISSING)
                     if inspect.isfunction(attr_value) or inspect.isdatadescriptor(attr_value):
                         continue  # Methods will already be bound to instance from class
-                    else:
+                    elif attr_value is not MISSING:
                         cls._with_attr(self, attr, copier(attr_value), inplace=True)
 
         def __repr__(self, include_attrs=None, indent=None, indent_threshold=100):
@@ -366,11 +367,18 @@ class spec_class:
             if not isinstance(other, self.__class__):
                 return False
             for attr in self.__spec_class_annotations__:
-                if inspect.ismethod(getattr(self, attr)) and inspect.ismethod(getattr(other, attr)):
-                    return getattr(self, attr).__func__ is getattr(other, attr).__func__
-                if getattr(self, attr) != getattr(other, attr):
+                value_self = getattr(self, attr, MISSING)
+                value_other = getattr(other, attr, MISSING)
+                if inspect.ismethod(value_self) and inspect.ismethod(value_other):
+                    return value_self.__func__ is value_other.__func__
+                if value_self != value_other:
                     return False
             return True
+
+        def __getattr__(self, attr):
+            if attr in self.__spec_class_annotations__ and attr not in self.__dict__:
+                raise AttributeError(f"`{self.__class__.__name__}.{attr}` has not yet been assigned a value.")
+            return super(self.__class__, self).__getattr__(attr)
 
         def __setattr__(self, attr, value, force=False):
             # Abort if frozen
@@ -378,12 +386,10 @@ class spec_class:
                 raise FrozenInstanceError(f"Cannot mutate attribute `{attr}` of frozen Spec Class `{self}`.")
 
             # Check attr type if managed attribute
-            if not force and attr in self.__spec_class_annotations__:
-                attr_type = self.__spec_class_annotations__.get(attr, Any)
-                if not cls._check_type(value, attr_type):
-                    raise ValueError(f"Invalid type passed for attribute `{attr}` [Expected: `{attr_type}`, got `{type(value)}`].")
-
-            return super(self.__class__, self).__setattr__(attr, value)  # pylint: disable=bad-super-call
+            if force or attr not in self.__spec_class_annotations__ or not hasattr(self, f'with_{attr}'):
+                object.__setattr__(self, attr, value)  # pylint: disable=bad-super-call
+            else:
+                getattr(self, f'with_{attr}')(value, _inplace=True)
 
         def __delattr__(self, attr, force=False):
             # Abort if frozen
@@ -413,17 +419,9 @@ class spec_class:
             '__repr__': __repr__,
             '__spec_class_repr__': __repr__,
             '__eq__': __eq__,
-            '__setattr__': (
-                _MethodBuilder('__setattr__', __setattr__)
-                .with_arg('attr', desc='Attribute to be mutated.', annotation=str)
-                .with_arg('value', desc='New value for attribute.', annotation=Any)
-                .with_arg('force', desc='Force mutation of frozen instance.', default=False, annotation=bool, only_if=spec_cls.__spec_class_frozen__)
-            ),
-            '__delattr__': (
-                _MethodBuilder('__delattr__', __delattr__)
-                .with_arg('attr', desc='Attribute to be deleted.', annotation=str)
-                .with_arg('force', desc='Force mutation of frozen instance.', default=False, annotation=bool, only_if=spec_cls.__spec_class_frozen__)
-            ),
+            '__getattr__': __getattr__,
+            '__setattr__': __setattr__,
+            '__delattr__': __delattr__,
         }
         return {
             name: method
