@@ -266,6 +266,28 @@ class TestFramework:
         assert set(inspect.Signature.from_callable(Item.__init__).parameters) == {'self', 'key'}
         assert inspect.Signature.from_callable(Item.__init__).parameters['key'].default is inspect.Parameter.empty
 
+    def test_shallowcopy(self):
+
+        @spec_class(_shallowcopy=['shallow_list'])
+        class Item:
+            value: str
+            deep_list: list
+            shallow_list: object
+
+        assert Item.__spec_class_shallowcopy__ == {'shallow_list'}
+
+        list_obj = []
+        assert Item().with_deep_list(list_obj).with_shallow_list(list_obj).with_value('x').deep_list is not list_obj
+        assert Item().with_deep_list(list_obj).with_shallow_list(list_obj).with_value('x').shallow_list is list_obj
+
+        @spec_class(_shallowcopy=True)
+        class ShallowItem:
+            value: str
+            deep_list: list
+            shallow_list: object
+
+        assert ShallowItem.__spec_class_shallowcopy__ == {'value', 'deep_list', 'shallow_list'}
+
     def test_overriding_methods(self):
 
         class Item:
