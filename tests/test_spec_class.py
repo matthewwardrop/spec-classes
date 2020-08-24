@@ -364,6 +364,8 @@ class TestFramework:
         with pytest.raises(FrozenInstanceError):
             Item(x=10).x = 20
         with pytest.raises(FrozenInstanceError):
+            Item(x=10).with_x(20, _inplace=True)
+        with pytest.raises(FrozenInstanceError):
             del Item(x=10).x
 
 

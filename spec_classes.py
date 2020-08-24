@@ -319,7 +319,7 @@ class spec_class:
             for attr in self.__spec_class_annotations__:
                 if attr in kwargs:
                     copier = (lambda x: x) if attr in self.__spec_class_shallowcopy__ else copy.deepcopy
-                    cls._with_attr(self, attr, copier(kwargs[attr]), inplace=True)
+                    cls._with_attr(self, attr, copier(kwargs[attr]), inplace=True, force=True)
                 else:
                     attr_value = getattr(self.__class__, attr, MISSING)
                     if inspect.isfunction(attr_value) or inspect.isdatadescriptor(attr_value):
@@ -327,7 +327,7 @@ class spec_class:
                     elif attr_value is not MISSING:
                         # We *always* deepcopy values from class defaults so we do not share
                         # values across instances.
-                        cls._with_attr(self, attr, copy.deepcopy(attr_value), inplace=True)
+                        cls._with_attr(self, attr, copy.deepcopy(attr_value), inplace=True, force=True)
 
         def __repr__(self, include_attrs=None, indent=None, indent_threshold=100):
             """
@@ -626,7 +626,7 @@ class spec_class:
     # High-level mutation helpers
 
     @classmethod
-    def _with_attr(cls, self: Any, name: str, value: Any, inplace: bool = False) -> Any:
+    def _with_attr(cls, self: Any, name: str, value: Any, inplace: bool = False, force: bool = False) -> Any:
         """
         Set attribute `name` of `self` to `value`, and return the mutated
         instance. If `inplace` is `False`, copy the instance before assigning
@@ -634,6 +634,8 @@ class spec_class:
         """
         if value is MISSING:
             return self
+        if not force and inplace and self.__spec_class_frozen__:
+            raise FrozenInstanceError(f"Cannot mutate attribute `{name}` of frozen Spec Class `{self}`.")
         if not inplace:
             self = copy.deepcopy(self)
         attr_type = self.__spec_class_annotations__[name]
