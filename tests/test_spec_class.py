@@ -373,8 +373,8 @@ class TestTypeChecking:
         assert spec_class._check_type([1, 'a'], List[Union[str, int]])
 
     def test_get_collection_item_type(self):
-        assert spec_class._get_collection_item_type(list) is None
-        assert spec_class._get_collection_item_type(List) is None
+        assert spec_class._get_collection_item_type(list) is Any
+        assert spec_class._get_collection_item_type(List) is Any
         assert spec_class._get_collection_item_type(List[str]) is str
         assert spec_class._get_collection_item_type(Dict[str, int]) is int
         assert spec_class._get_collection_item_type(Set[str]) is str
@@ -845,6 +845,7 @@ class TestKeyedSpecDictAttribute:
         # Constructors
         assert 'keyed_spec_dict_items' not in spec.__dict__
         keyed = KeyedSpec('key')
+        assert spec.with_keyed_spec_dict_items([keyed]).keyed_spec_dict_items['key'] is keyed
         assert spec.with_keyed_spec_dict_item(keyed).keyed_spec_dict_items['key'] is keyed
         assert spec.with_keyed_spec_dict_item('a').keyed_spec_dict_items['a'] == KeyedSpec('a')
 

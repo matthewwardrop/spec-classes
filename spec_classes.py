@@ -464,7 +464,10 @@ class spec_class:
         Returns:
             A dictionary of methods (keyed by method name).
         """
-        methods = self._get_methods_for_scalar(spec_cls, attr_name, attr_type)
+        methods = self._get_methods_for_scalar(
+            spec_cls, attr_name, attr_type,
+            is_collection=self._type_match(attr_type, (list, dict, set))
+        )
         if self._type_match(attr_type, list):
             methods.update(self._get_methods_for_list(spec_cls, attr_name, attr_type))
         elif self._type_match(attr_type, dict):
@@ -555,15 +558,15 @@ class spec_class:
         or `None` if this isn't annotated.
         """
         if not hasattr(container_type, '__args__'):  # i.e. this is not a `typing` container
-            return None
+            return Any
 
-        item_type = None
+        item_type = Any
         if cls._type_match(container_type, dict) and len(container_type.__args__) == 2:
             item_type = container_type.__args__[1]
         elif len(container_type.__args__) == 1:
             item_type = container_type.__args__[0]
         if isinstance(item_type, typing.TypeVar):
-            item_type = None
+            item_type = Any
         return item_type
 
     @classmethod
@@ -735,13 +738,21 @@ class spec_class:
 
     # Scalar methods
     @classmethod
-    def _get_methods_for_scalar(cls, spec_cls: type, attr_name: str, attr_type: Type):
+    def _get_methods_for_scalar(cls, spec_cls: type, attr_name: str, attr_type: Type, is_collection: bool = False):
         attr_spec_type = cls._get_spec_class_for_type(attr_type)
 
         def with_attr(self, _new_value=MISSING, *, _replace=False, _inplace=False, **attrs):
+            _new_value = getattr(self, f'_prepare_{attr_name}', lambda x, attrs: x)(_new_value, attrs)
             old_value = getattr(self, attr_name, MISSING)
-            new_value = cls._get_updated_value(old_value, new_value=_new_value, constructor=attr_type, attrs=attrs, replace=_replace)
-            return cls._with_attr(self, attr_name, new_value, inplace=_inplace)
+            new_value = cls._get_updated_value(old_value, new_value=MISSING if is_collection else _new_value, constructor=attr_type, attrs=attrs, replace=_replace)
+            self = cls._with_attr(self, attr_name, new_value, inplace=_inplace)
+            if is_collection:
+                try:
+                    self = cls._populate_collection(self, attr_name, attr_type, _new_value, inplace=_inplace)
+                finally:
+                    if _inplace:
+                        cls._with_attr(self, attr_name, old_value, inplace=_inplace)
+            return self
 
         def transform_attr(self, _transform=None, *, _inplace=False, **attr_transforms):
             old_value = getattr(self, attr_name, MISSING)
@@ -795,6 +806,31 @@ class spec_class:
         if cls._check_type(item, spec_cls.__spec_class_annotations__[spec_cls.__spec_class_key__]):
             return item
         return (attrs or {}).get(spec_cls.__spec_class_key__, MISSING)
+
+    @classmethod
+    def _populate_collection(cls, self, attr_name, attr_type, collection, *, inplace=False):
+        singular_name = cls._get_singular_form(attr_name)
+        item_type = cls._get_collection_item_type(attr_type)
+        item_spec_type = cls._get_spec_class_for_type(item_type)
+        item_spec_type_is_keyed = item_spec_type and item_spec_type.__spec_class_key__ is not None
+        with_item = getattr(self.__class__, f'with_{singular_name}')
+
+        if cls._type_match(attr_type, list) and isinstance(collection, list):
+            for item in collection:
+                self = with_item(self, item, _insert=True, _inplace=inplace)
+        elif item_spec_type_is_keyed and cls._type_match(attr_type, dict) and isinstance(collection, (list, dict)):
+            for value in collection.values() if isinstance(collection, dict) else collection:
+                self = with_item(self, value, _inplace=inplace)
+        elif cls._type_match(attr_type, dict) and isinstance(collection, (list, dict)):
+            for key, value in collection.items():
+                self = with_item(self, key, value, _inplace=inplace)
+        elif cls._type_match(attr_type, set) and isinstance(collection, set):
+            for item in collection:
+                self = with_item(self, item, _inplace=inplace)
+        else:
+            cls._with_attr(self, attr_name, collection, inplace=inplace)
+
+        return self
 
     @classmethod
     def _get_methods_for_list(cls, spec_cls: type, attr_name: str, attr_type: Type) -> Dict[str, Callable]:
@@ -867,6 +903,7 @@ class spec_class:
                     raise ValueError(f"Adding {new_item} to list would result in more than instance with the same key: {repr(key)}.")
 
         def with_attr_item(self, _item=MISSING, *, _index=MISSING, _insert=False, _replace=False, _inplace=False, **attrs):
+            _item = getattr(self, f'_prepare_{singular_name}', lambda x, attrs: x)(_item, attrs)
             old_value = getattr(self, attr_name, MISSING)
 
             if item_spec_type_is_keyed:
@@ -985,6 +1022,7 @@ class spec_class:
             collection[index] = new_item
 
         def with_attr_item(self, _key=None, _value=None, _replace=False, _inplace=False, **attrs):
+            _key, _value = getattr(self, f'_prepare_{singular_name}', lambda k, v, attrs: (k, v))(_key, _value, attrs)
             old_value = getattr(self, attr_name, MISSING)
             if item_spec_type_is_keyed:
                 _key = cls._get_spec_key(item_spec_type, _value, attrs)
@@ -1085,6 +1123,7 @@ class spec_class:
             collection.add(new_item)
 
         def with_attr_item(self, _item, *, _replace=False, _inplace=False, **attrs):
+            _item = getattr(self, f'_prepare_{singular_name}', lambda x, attrs: x)(_item, attrs)
             old_value = getattr(self, attr_name, MISSING)
             new_value = cls._get_updated_collection(
                 old_value, collection_constructor=set, value_or_index=_item, extractor=extractor, inserter=inserter,
