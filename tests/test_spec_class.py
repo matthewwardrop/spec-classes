@@ -264,7 +264,7 @@ class TestFramework:
                 return 'key'
 
         assert set(inspect.Signature.from_callable(Item.__init__).parameters) == {'self', 'key'}
-        assert inspect.Signature.from_callable(Item.__init__).parameters['key'].default is inspect.Parameter.empty
+        assert inspect.Signature.from_callable(Item.__init__).parameters['key'].default is MISSING
 
     def test_shallowcopy(self):
 

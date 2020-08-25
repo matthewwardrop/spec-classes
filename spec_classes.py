@@ -443,7 +443,7 @@ class spec_class:
         if spec_class_key:
             key_default = getattr(spec_cls, spec_class_key, Parameter.empty)
             if inspect.isfunction(key_default) or inspect.isdatadescriptor(key_default):
-                key_default = Parameter.empty
+                spec_class_key = None
 
         methods = {
             '__init__': (
