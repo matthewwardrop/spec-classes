@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, List, Set, Union
 
 import pytest
 
-from spec_classes import MISSING, spec_class, FrozenInstanceError
+from spec_classes import MISSING, spec_class, AttrProxy, FrozenInstanceError
 
 
 @spec_class
@@ -377,6 +377,19 @@ class TestFramework:
             Item(x=10).with_x(20, _inplace=True)
         with pytest.raises(FrozenInstanceError):
             del Item(x=10).x
+
+    def test_special_types(self):
+        @spec_class
+        class Item:
+            x: int
+            y: int = AttrProxy('x')
+            z: str
+
+        assert Item(x=1).y == 1
+        assert Item(y=10).y == 10
+
+        with pytest.raises(AttributeError, match=r"`Item\.y` has not yet been assigned a value\."):
+            Item().y
 
 
 class TestTypeChecking:
