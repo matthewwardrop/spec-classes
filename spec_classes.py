@@ -154,7 +154,7 @@ class spec_class:
         return super().__new__(cls)
 
     def __init__(
-            self, *attrs: str, _key: str = None, _skip: Iterable[str] = None, _shallowcopy: Union[bool, Iterable[str]] = False, _frozen: bool = False,
+            self, *attrs: str, _key: str = MISSING, _skip: Iterable[str] = None, _shallowcopy: Union[bool, Iterable[str]] = False, _frozen: bool = False,
             _init: bool = True, _repr: bool = True, _eq: bool = True, **attrs_typed: Any
     ):
         """
@@ -162,7 +162,9 @@ class spec_class:
             *attrs: The attrs for which this `spec_cls` should add helper
                 methods.
             _key: The name of the attribute which can be used to uniquely
-                identify a particular specification.
+                identify a particular specification. If not specified, it will
+                be inherited from the parent class. To explicitly disable the
+                key functionality, pass `None`.
             _skip: Attributes which should not be considered by this `spec_cls`.
                 If `None`, and `attrs` and/or `attrs_typed` are specified, then
                 it is assumed that all attributes not listed should be skipped.
@@ -244,7 +246,7 @@ class spec_class:
             })
 
         spec_cls.__is_spec_class__ = True
-        spec_cls.__spec_class_key__ = self.key
+        spec_cls.__spec_class_key__ = getattr(spec_cls, '__spec_class_key__', None) if self.key is MISSING else self.key
         spec_cls.__spec_class_frozen__ = getattr(spec_cls, '__spec_class_frozen__', False) if self.frozen is None else self.frozen
 
         # Update annotations

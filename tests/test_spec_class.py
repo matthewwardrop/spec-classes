@@ -70,7 +70,7 @@ class TestFramework:
 
     def test_spec_inheritance(self):
 
-        @spec_class
+        @spec_class(_key='value')
         class Item:
             value: int
 
@@ -81,6 +81,16 @@ class TestFramework:
         assert set(ItemSub.__spec_class_annotations__) == {
             'value', 'value2'
         }
+        assert ItemSub.__spec_class_key__ == 'value'
+
+        @spec_class(_key=None)
+        class ItemSubSub(ItemSub):
+            value3: int = 1
+
+        assert set(ItemSubSub.__spec_class_annotations__) == {
+            'value', 'value2', 'value3'
+        }
+        assert ItemSubSub.__spec_class_key__ is None
 
     def test_spec_arguments(self):
 
