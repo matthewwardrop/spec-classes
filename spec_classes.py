@@ -401,9 +401,9 @@ class spec_class:
             if attr in self.__spec_class_annotations__ and attr not in self.__dict__:
                 raise AttributeError(f"`{self.__class__.__name__}.{attr}` has not yet been assigned a value.")
             scls = self.__class__
-            while getattr(scls.__getattr__, '__module__', None) == cls.__module__:
+            while getattr(getattr(scls, '__getattr__', scls.__getattribute__), '__module__', None) == cls.__module__:
                 scls = scls.mro()[1]
-            return scls.__getattr__(self, attr)  # pragma: no cover; pylint: disable=bad-super-call
+            return getattr(scls, '__getattr__', scls.__getattribute__)(self, attr)  # pragma: no cover; pylint: disable=bad-super-call
 
         def __setattr__(self, attr, value, force=False):
             # Abort if frozen
