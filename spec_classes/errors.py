@@ -1,0 +1,2 @@
+class FrozenInstanceError(RuntimeError):
+    pass
