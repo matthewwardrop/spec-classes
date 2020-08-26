@@ -276,6 +276,16 @@ class TestFramework:
         assert set(inspect.Signature.from_callable(Item.__init__).parameters) == {'self', 'key'}
         assert inspect.Signature.from_callable(Item.__init__).parameters['key'].default is MISSING
 
+    def test_attr_deletion(self):
+        @spec_class
+        class MyClass:
+            mylist: list = []
+
+        m = MyClass()
+        del m.mylist
+        assert m.mylist is not MyClass.mylist
+        assert m.mylist == []
+
     def test_shallowcopy(self):
 
         @spec_class(_shallowcopy=['shallow_list'])
@@ -382,11 +392,21 @@ class TestFramework:
         @spec_class
         class Item:
             x: int
-            y: int = AttrProxy('x')
-            z: str
+            y: int = AttrProxy('x', host_attr='y')
+            z: int = AttrProxy('x', transform=lambda x: x ** 2)
 
-        assert Item(x=1).y == 1
-        assert Item(y=10).y == 10
+        assert Item(x=2).y == 2
+        assert Item(x=2).z == 4
+
+        with pytest.raises(AttributeError, match=r"Cannot set `Item\.z` to `10`\. Is this a property without a setter\?"):
+            Item(x=1, z=10)
+
+        assert Item(x=1, y=10).x == 1
+        assert Item(x=1, y=10).y == 10
+
+        i = Item(x=2, y=10)
+        del i.y
+        assert i.y == 2
 
         with pytest.raises(AttributeError, match=r"`Item\.y` has not yet been assigned a value\."):
             Item().y

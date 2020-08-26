@@ -414,9 +414,12 @@ class spec_class:
                 raise FrozenInstanceError(f"Cannot mutate attribute `{attr}` of frozen Spec Class `{self}`.")
 
             scls = self.__class__
-            while getattr(scls.__delattr__, '__module__', None) == cls.__module__:
-                scls = scls.mro()[1]
-            return scls.__delattr__(self, attr)  # pylint: disable=bad-super-call
+            cls_value = getattr(self.__class__, attr, MISSING)
+            if inspect.isfunction(cls_value) or inspect.isdatadescriptor(cls_value) or cls_value is MISSING:
+                while getattr(scls.__delattr__, '__module__', None) == cls.__module__:
+                    scls = scls.mro()[1]
+                return scls.__delattr__(self, attr)  # pylint: disable=bad-super-call
+            return cls._with_attr(self, attr, copy.deepcopy(cls_value), inplace=True, force=True)
 
         def __deepcopy__(self, memo):
             new = self.__class__.__new__(self.__class__)
