@@ -842,7 +842,7 @@ class spec_class:
         elif item_spec_type_is_keyed and cls._type_match(attr_type, dict) and isinstance(collection, (list, dict)):
             for value in collection.values() if isinstance(collection, dict) else collection:
                 self = with_item(self, value, _inplace=inplace)
-        elif cls._type_match(attr_type, dict) and isinstance(collection, (list, dict)):
+        elif cls._type_match(attr_type, dict) and isinstance(collection, dict):
             for key, value in collection.items():
                 self = with_item(self, key, value, _inplace=inplace)
         elif cls._type_match(attr_type, set) and isinstance(collection, set):
