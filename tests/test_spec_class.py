@@ -229,6 +229,7 @@ class TestFramework:
             )
         """).strip()
 
+        assert Spec(key="key") != "key"
         assert Spec(key="key") == Spec(key="key")
         assert Spec(key="key") != Spec(key="notkey")
 

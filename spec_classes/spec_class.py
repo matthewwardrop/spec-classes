@@ -681,7 +681,7 @@ class spec_class:
 
         # If there are any attributes to apply to our value, we do so here,
         # special casing any spec classes.
-        if value not in (None, MISSING) and attrs:
+        if value is not None and value is not MISSING and attrs:
             if not mutate_safe:
                 value = copy.deepcopy(value)
                 mutate_safe = True
