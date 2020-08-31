@@ -282,15 +282,6 @@ class spec_class:
     def _validate_spec_cls(cls, spec_cls):
         spec_annotations = spec_cls.__spec_class_annotations__
 
-        # Check that attribute types are satisfied by class defaults
-        for attr_name, attr_type in spec_annotations.items():
-            if (
-                attr_name in spec_cls.__dict__
-                and not inspect.isdatadescriptor(spec_cls.__dict__[attr_name])
-                and not cls._check_type(spec_cls.__dict__[attr_name], attr_type)
-            ):
-                raise TypeError(f"Class default `{repr(spec_cls.__dict__[attr_name])}` for `{spec_cls.__name__}.{attr_name}` does not match annotation type `{attr_type}`.")
-
         # Check that constructor is present for all managed keys.
         init_sig = Signature.from_callable(spec_cls.__init__)
         missing_args = set(spec_annotations).difference(init_sig.parameters)
@@ -305,18 +296,27 @@ class spec_class:
         only be added if these methods do not already exist on the class.
         """
         def init_impl(self, **kwargs):
+            is_frozen = self.__spec_class_frozen__
+            self.__spec_class_frozen__ = False
+
             for attr in self.__spec_class_annotations__:
                 if attr in kwargs:
                     copier = (lambda x: x) if attr in self.__spec_class_shallowcopy__ else copy.deepcopy
-                    cls._with_attr(self, attr, copier(kwargs[attr]), inplace=True, force=True)
-                else:
-                    attr_value = getattr(self.__class__, attr, MISSING)
-                    if inspect.isfunction(attr_value) or inspect.isdatadescriptor(attr_value):
+                    value = copier(kwargs[attr])
+                    if value is MISSING:
+                        continue
+                else:  # Look up from class attributes (if set)
+                    value = getattr(self.__class__, attr, MISSING)
+                    if inspect.isfunction(value) or inspect.isdatadescriptor(value) or value is MISSING:
                         continue  # Methods will already be bound to instance from class
-                    elif attr_value is not MISSING:
-                        # We *always* deepcopy values from class defaults so we do not share
-                        # values across instances.
-                        cls._with_attr(self, attr, copy.deepcopy(attr_value), inplace=True, force=True)
+                    # We *always* deepcopy values from class defaults so we do not share
+                    # values across instances.
+                    value = copy.deepcopy(value)
+
+                getattr(self, f'with_{attr}')(value, _inplace=True)
+
+            if is_frozen:
+                self.__spec_class_frozen__ = True
 
         def __repr__(self, include_attrs=None, indent=None, indent_threshold=100):
             """
@@ -396,7 +396,7 @@ class spec_class:
 
         def __setattr__(self, attr, value, force=False):
             # Abort if frozen
-            if not force and self.__spec_class_frozen__:
+            if not force and self.__spec_class_frozen__ and attr != '__spec_class_frozen__':
                 raise FrozenInstanceError(f"Cannot mutate attribute `{attr}` of frozen Spec Class `{self}`.")
 
             # Check attr type if managed attribute

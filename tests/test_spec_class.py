@@ -62,12 +62,6 @@ class TestFramework:
             'recursive',
         }
 
-    def test_invalid_default(self, spec_cls):
-        with pytest.raises(TypeError, match=r"Class default `1` for `InvalidTypes\.string` does not match annotation type `<class 'str'>`"):
-            @spec_class
-            class InvalidTypes:
-                string: str = 1
-
     def test_spec_inheritance(self):
 
         @spec_class(_key='value')
@@ -379,6 +373,7 @@ class TestFramework:
         class Item:
             x: int = 1
 
+        assert Item().x == 1
         assert Item(x=10).with_x(20).x == 20
 
         with pytest.raises(FrozenInstanceError):
@@ -397,6 +392,9 @@ class TestFramework:
 
         assert Item(x=2).y == 2
         assert Item(x=2).z == 4
+
+        with pytest.raises(AttributeError, match=r"`Item\.x` has not yet been assigned a value\."):
+            Item(x=MISSING).x
 
         with pytest.raises(AttributeError, match=r"Cannot set `Item\.z` to `10`\. Is this a property without a setter\?"):
             Item(x=1, z=10)
