@@ -410,6 +410,24 @@ class TestFramework:
         with pytest.raises(AttributeError, match=r"`Item\.y` has not yet been assigned a value\."):
             Item().y
 
+    def test_class_attribute_masking(self):
+        @spec_class
+        class Item:
+            a: List[int] = [1, 2, 3]
+
+        assert Item().a == [1, 2, 3]
+
+        item = Item()
+        del item.__dict__['a']
+        item.a is Item.a
+
+        assert item.with_a().a == []
+        assert item.with_a().a is not Item.a
+
+        del item.a
+        assert item.a is not Item.a
+
+
 
 class TestTypeChecking:
 

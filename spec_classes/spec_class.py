@@ -618,6 +618,12 @@ class spec_class:
     # High-level mutation helpers
 
     @classmethod
+    def _get_attr(cls, self: Any, name: str, default: Any = MISSING):
+        if name in self.__dict__ or inspect.isdatadescriptor(self.__class__.__dict__.get(name)):
+            return getattr(self, name)
+        return default
+
+    @classmethod
     def _with_attr(cls, self: Any, name: str, value: Any, inplace: bool = False, force: bool = False) -> Any:
         """
         Set attribute `name` of `self` to `value`, and return the mutated
@@ -758,7 +764,7 @@ class spec_class:
 
         def with_attr(self, _new_value=MISSING, *, _replace=False, _inplace=False, **attrs):
             _new_value = getattr(self, f'_prepare_{attr_name}', lambda x, attrs: x)(_new_value, attrs)
-            old_value = getattr(self, attr_name, MISSING)
+            old_value = cls._get_attr(self, attr_name)
             new_value = cls._get_updated_value(old_value, new_value=MISSING if is_collection else _new_value, constructor=attr_type, attrs=attrs, replace=_replace)
             self = cls._with_attr(self, attr_name, new_value, inplace=_inplace)
             if is_collection:
@@ -770,7 +776,7 @@ class spec_class:
             return self
 
         def transform_attr(self, _transform=None, *, _inplace=False, **attr_transforms):
-            old_value = getattr(self, attr_name, MISSING)
+            old_value = cls._get_attr(self, attr_name)
             new_value = cls._get_updated_value(old_value, transform=_transform, constructor=attr_type, attr_transforms=attr_transforms)
             return cls._with_attr(self, attr_name, new_value, inplace=_inplace)
 
@@ -919,7 +925,7 @@ class spec_class:
 
         def with_attr_item(self, _item=MISSING, *, _index=MISSING, _insert=False, _replace=False, _inplace=False, **attrs):
             _item = getattr(self, f'_prepare_{singular_name}', lambda x, attrs: x)(_item, attrs)
-            old_value = getattr(self, attr_name, MISSING)
+            old_value = cls._get_attr(self, attr_name)
 
             if item_spec_type_is_keyed:
                 if _index is MISSING:
@@ -942,7 +948,7 @@ class spec_class:
             return cls._with_attr(self, attr_name, new_value, inplace=_inplace)
 
         def transform_attr_item(self, _value_or_index, _transform, *, _by_index=False, _inplace=False, **attr_transforms):
-            old_value = getattr(self, attr_name, MISSING)
+            old_value = cls._get_attr(self, attr_name)
             new_value = cls._get_updated_collection(
                 old_value, collection_constructor=list, value_or_index=_value_or_index, extractor=functools.partial(extractor, by_index=_by_index), inserter=inserter,
                 constructor=item_type, transform=_transform, attr_transforms=attr_transforms
@@ -950,7 +956,7 @@ class spec_class:
             return cls._with_attr(self, attr_name, new_value, inplace=_inplace)
 
         def without_attr_item(self, _value_or_index, *, _by_index=False, _inplace=False):
-            old_value = getattr(self, attr_name, MISSING)
+            old_value = cls._get_attr(self, attr_name)
             new_value = copy.deepcopy(old_value)
             index, _ = extractor(new_value, _value_or_index, by_index=_by_index)
             del new_value[index]
@@ -1038,7 +1044,7 @@ class spec_class:
 
         def with_attr_item(self, _key=None, _value=None, _replace=False, _inplace=False, **attrs):
             _key, _value = getattr(self, f'_prepare_{singular_name}', lambda k, v, attrs: (k, v))(_key, _value, attrs)
-            old_value = getattr(self, attr_name, MISSING)
+            old_value = cls._get_attr(self, attr_name)
             if item_spec_type_is_keyed:
                 _key = cls._get_spec_key(item_spec_type, _value, attrs)
                 _value = _value if cls._check_type(_value, item_spec_type) else MISSING
@@ -1049,7 +1055,7 @@ class spec_class:
             return cls._with_attr(self, attr_name, new_value, inplace=_inplace)
 
         def transform_attr_item(self, _key, _transform, *, _inplace=False, **attr_transforms):
-            old_value = getattr(self, attr_name, MISSING)
+            old_value = cls._get_attr(self, attr_name)
             new_value = cls._get_updated_collection(
                 old_value, collection_constructor=list, value_or_index=_key, extractor=extractor, inserter=inserter,
                 constructor=item_type, transform=_transform, attr_transforms=attr_transforms
@@ -1059,7 +1065,7 @@ class spec_class:
         def without_attr_item(self, _key, *, _inplace=False):
             if item_spec_type_is_keyed and isinstance(_key, item_spec_type):
                 _key = getattr(_key, item_spec_type.__spec_class_key__)
-            old_value = getattr(self, attr_name, MISSING)
+            old_value = cls._get_attr(self, attr_name)
             new_value = copy.deepcopy(old_value)
             del new_value[_key]
             return cls._with_attr(self, attr_name, new_value, inplace=_inplace)
@@ -1139,7 +1145,7 @@ class spec_class:
 
         def with_attr_item(self, _item, *, _replace=False, _inplace=False, **attrs):
             _item = getattr(self, f'_prepare_{singular_name}', lambda x, attrs: x)(_item, attrs)
-            old_value = getattr(self, attr_name, MISSING)
+            old_value = cls._get_attr(self, attr_name)
             new_value = cls._get_updated_collection(
                 old_value, collection_constructor=set, value_or_index=_item, extractor=extractor, inserter=inserter,
                 new_item=_item, constructor=item_type, attrs=attrs, replace=_replace
@@ -1147,7 +1153,7 @@ class spec_class:
             return cls._with_attr(self, attr_name, new_value, inplace=_inplace)
 
         def transform_attr_item(self, _item, _transform, *, _inplace=False, **attr_transforms):
-            old_value = getattr(self, attr_name, MISSING)
+            old_value = cls._get_attr(self, attr_name)
             new_value = cls._get_updated_collection(
                 old_value, collection_constructor=set, value_or_index=_item, extractor=extractor, inserter=functools.partial(inserter, replace=True),
                 constructor=item_type, transform=_transform, attr_transforms=attr_transforms
@@ -1155,7 +1161,7 @@ class spec_class:
             return cls._with_attr(self, attr_name, new_value, inplace=_inplace)
 
         def without_attr_item(self, _item, *, _inplace=False):
-            old_value = getattr(self, attr_name, MISSING)
+            old_value = cls._get_attr(self, attr_name)
             new_value = copy.deepcopy(old_value)
             new_value.discard(_item)
             return cls._with_attr(self, attr_name, new_value, inplace=_inplace)
