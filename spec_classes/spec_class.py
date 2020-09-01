@@ -780,6 +780,12 @@ class spec_class:
             new_value = cls._get_updated_value(old_value, transform=_transform, constructor=attr_type, attr_transforms=attr_transforms)
             return cls._with_attr(self, attr_name, new_value, inplace=_inplace)
 
+        def reset_attr(self, _inplace=False):
+            if not _inplace:
+                self = copy.deepcopy(self)
+            self.__delattr__(attr_name)
+            return self
+
         or_its_attributes = " or its attributes" if attr_spec_type else ""
         return {
             f'with_{attr_name}': (
@@ -799,6 +805,12 @@ class spec_class:
                           default=MISSING if attr_spec_type else Parameter.empty, annotation=Callable)
                 .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True, annotation=bool)
                 .with_spec_attrs_for(attr_type, template=f"An optional transformer for {attr_name}.{{}}.")
+                .with_returns(f"A reference to the mutated `{spec_cls.__name__}` instance.", annotation=spec_cls)
+            ),
+            f'reset_{attr_name}': (
+                MethodBuilder(f'reset_{attr_name}', reset_attr)
+                .with_preamble(f"Return a `{spec_cls.__name__}` instance identical to this one except with `{attr_name}` reset to its default value.")
+                .with_arg("_inplace", "Whether to perform change without first copying.", default=False, keyword_only=True, annotation=bool)
                 .with_returns(f"A reference to the mutated `{spec_cls.__name__}` instance.", annotation=spec_cls)
             ),
         }

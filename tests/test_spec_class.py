@@ -578,6 +578,12 @@ class TestScalarAttribute:
         assert spec.transform_scalar(lambda x: x * 2, _inplace=True) is spec
         assert spec.scalar == 6
 
+    def test_reset(self, spec_cls):
+        spec = spec_cls(scalar=3)
+
+        with pytest.raises(AttributeError, match=r"`Spec\.scalar` has not yet been assigned a value\."):
+            spec.reset_scalar().scalar
+
 
 class TestSpecAttribute:
 
