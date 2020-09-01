@@ -854,6 +854,45 @@ class spec_class:
         return self
 
     @classmethod
+    def _get_items_from_collection(
+            cls, attr_name, collection, extractor, *,
+            value_or_index=MISSING, attr_filters=MISSING, all_matches=False, raise_if_missing=True
+    ):
+        assert not (value_or_index and attr_filters), "You may only specific a key *or* attribute filters, not both."
+        assert not (value_or_index and all_matches), "You may only use `_all=True` with attribute filters, not with keys/indices."
+
+        # Attempt to look up by key/index
+        if value_or_index:
+            if collection:
+                index, value = extractor(collection, value_or_index)
+                item = MISSING if (collection is MISSING or index is None or value is MISSING) else value
+            else:
+                item = MISSING
+            if raise_if_missing and item is MISSING:
+                raise AttributeError(f"No item by key/index `{repr(value_or_index)}` found in `{attr_name}`.")
+            return item
+
+        # Find all items satisfying nominated filters
+        if collection is MISSING:
+            collection = []
+        filtered = [
+            item
+            for item in (collection.values() if isinstance(collection, dict) else collection)
+            if all(
+                getattr(item, field) == value
+                for field, value in attr_filters.items()
+            )
+        ]
+
+        if all_matches:
+            return filtered
+        if not filtered and raise_if_missing:
+            raise AttributeError(f"No items with nominated attribute filters found in `{attr_name}`.")
+        if not filtered:
+            return MISSING
+        return filtered[0]
+
+    @classmethod
     def _get_methods_for_list(cls, spec_cls: type, attr_name: str, attr_type: Type) -> Dict[str, Callable]:
         """
         Generate and return the methods for a list container. There are three
@@ -907,7 +946,7 @@ class spec_class:
                     if getattr(item, item_spec_type.__spec_class_key__) == value_or_index:
                         return i, item
                 return None, item_spec_type(**{item_spec_type.__spec_class_key__: value_or_index})
-            return collection.index(value_or_index), value_or_index
+            return collection.index(value_or_index) if value_or_index in collection else None, value_or_index
 
         def inserter(collection, index, new_item, insert=False):
             if not cls._check_type(new_item, item_type):
@@ -922,6 +961,17 @@ class spec_class:
                 key = getattr(new_item, item_spec_type.__spec_class_key__)
                 if sum([1 for item in collection if isinstance(item, item_spec_type) and getattr(item, item_spec_type.__spec_class_key__) == key]) > 1:
                     raise ValueError(f"Adding {new_item} to list would result in more than instance with the same key: {repr(key)}.")
+
+        def get_attr_item(self, _value_or_index=MISSING, *, _by_index=False, _all_matches=False, _raise_if_missing=True, **attr_filters):
+            return cls._get_items_from_collection(
+                attr_name=f"{self.__class__.__name__}.{attr_name}",
+                collection=cls._get_attr(self, attr_name, MISSING),
+                extractor=functools.partial(extractor, by_index=_by_index),
+                value_or_index=_value_or_index,
+                attr_filters=attr_filters,
+                all_matches=_all_matches,
+                raise_if_missing=_raise_if_missing,
+            )
 
         def with_attr_item(self, _item=MISSING, *, _index=MISSING, _insert=False, _replace=False, _inplace=False, **attrs):
             _item = getattr(self, f'_prepare_{singular_name}', lambda x, attrs: x)(_item, attrs)
@@ -970,6 +1020,16 @@ class spec_class:
             fn_index_type = Union[item_spec_type.__spec_class_annotations__[item_spec_type.__spec_class_key__], fn_index_type]
 
         return {
+            f'get_{singular_name}': (
+                MethodBuilder(f'get_{singular_name}', get_attr_item)
+                .with_preamble(f"Return `{attr_type}` instance(s) corresponding to a given value or index." + (" You can also filter by the nested spec class attributes." if item_spec_type else ""))
+                .with_arg("_value_or_index", "The value for which to extract an item, or (if `by_index=True`) its index.", default=MISSING if item_spec_type else Parameter.empty, annotation=Union[fn_item_type, fn_index_type])
+                .with_arg("_by_index", "If True, value_or_index is the index of the item to extract.", keyword_only=True, default=False, annotation=bool)
+                .with_arg("_all_matches", "Whether to return all matching items in container, or just the first.", default=False, keyword_only=True, annotation=bool, only_if=item_spec_type)
+                .with_arg('_raise_if_missing', "Whether to raise an AttributeError when an item is not found.", default=True, keyword_only=True, annotation=bool)
+                .with_spec_attrs_for(item_spec_type, template=f"An optional filter for `{singular_name}.{{}}`.")
+                .with_returns("The extracted item.", annotation=item_type)
+            ),
             f'with_{singular_name}': (
                 MethodBuilder(f'with_{singular_name}', with_attr_item)
                 .with_preamble(f"Return a `{spec_cls.__name__}` instance identical to this one except with an item added to or updated in `{attr_name}`.")
@@ -1042,6 +1102,17 @@ class spec_class:
                 index = getattr(new_item, item_spec_type.__spec_class_key__)
             collection[index] = new_item
 
+        def get_attr_item(self, _key=MISSING, *, _all_matches=False, _raise_if_missing=True, **attr_filters):
+            return cls._get_items_from_collection(
+                attr_name=f"{self.__class__.__name__}.{attr_name}",
+                collection=cls._get_attr(self, attr_name, MISSING),
+                extractor=lambda collection, value_or_index: (value_or_index, collection.get(value_or_index, MISSING)),
+                value_or_index=_key,
+                attr_filters=attr_filters,
+                all_matches=_all_matches,
+                raise_if_missing=_raise_if_missing,
+            )
+
         def with_attr_item(self, _key=None, _value=None, _replace=False, _inplace=False, **attrs):
             _key, _value = getattr(self, f'_prepare_{singular_name}', lambda k, v, attrs: (k, v))(_key, _value, attrs)
             old_value = cls._get_attr(self, attr_name)
@@ -1080,6 +1151,15 @@ class spec_class:
             fn_value_type = item_type
 
         return {
+            f'get_{singular_name}': (
+                MethodBuilder(f'get_{singular_name}', get_attr_item)
+                .with_preamble(f"Return `{attr_type}` instance(s) corresponding to a given value or index." + (" You can also filter by the nested spec class attributes." if item_spec_type else ""))
+                .with_arg("_key", "The key for which to extract an item.", default=MISSING if item_spec_type else Parameter.empty, annotation=fn_key_type)
+                .with_arg("_all_matches", "Whether to return all matching items in container, or just the first.", default=False, keyword_only=True, annotation=bool, only_if=item_spec_type)
+                .with_arg('_raise_if_missing', "Whether to raise an AttributeError when an item is not found.", default=True, keyword_only=True, annotation=bool)
+                .with_spec_attrs_for(item_spec_type, template=f"An optional filter for `{singular_name}.{{}}`.")
+                .with_returns("The extracted item.", annotation=item_type)
+            ),
             f'with_{singular_name}': (
                 MethodBuilder(f'with_{singular_name}', with_attr_item)
                 .with_preamble(f"Return a `{spec_cls.__name__}` instance identical to this one except with an item added to or updated in `{attr_name}`.")
@@ -1143,6 +1223,17 @@ class spec_class:
                 collection.discard(index)
             collection.add(new_item)
 
+        def get_attr_item(self, _item=MISSING, *, _all_matches=False, _raise_if_missing=True, **attr_filters):
+            return cls._get_items_from_collection(
+                attr_name=f"{self.__class__.__name__}.{attr_name}",
+                collection=cls._get_attr(self, attr_name, MISSING),
+                extractor=extractor,
+                value_or_index=_item,
+                attr_filters=attr_filters,
+                all_matches=_all_matches,
+                raise_if_missing=_raise_if_missing,
+            )
+
         def with_attr_item(self, _item, *, _replace=False, _inplace=False, **attrs):
             _item = getattr(self, f'_prepare_{singular_name}', lambda x, attrs: x)(_item, attrs)
             old_value = cls._get_attr(self, attr_name)
@@ -1167,6 +1258,15 @@ class spec_class:
             return cls._with_attr(self, attr_name, new_value, inplace=_inplace)
 
         return {
+            f'get_{singular_name}': (
+                MethodBuilder(f'get_{singular_name}', get_attr_item)
+                .with_preamble(f"Return `{attr_type}` instance(s) corresponding to a given value or index." + (" You can also filter by the nested spec class attributes." if item_spec_type else ""))
+                .with_arg("_item", "The item to extract.", default=MISSING if item_spec_type else Parameter.empty, annotation=item_type)
+                .with_arg("_all_matches", "Whether to return all matching items in container, or just the first.", default=False, keyword_only=True, annotation=bool, only_if=item_spec_type)
+                .with_arg('_raise_if_missing', "Whether to raise an AttributeError when an item is not found.", default=True, keyword_only=True, annotation=bool)
+                .with_spec_attrs_for(item_spec_type, template=f"An optional filter for `{singular_name}.{{}}`.")
+                .with_returns("The extracted item.", annotation=item_type)
+            ),
             f'with_{singular_name}': (
                 MethodBuilder(f'with_{singular_name}', with_attr_item)
                 .with_preamble(f"Return a `{spec_cls.__name__}` instance identical to this one except with an item added to `{attr_name}`.")
