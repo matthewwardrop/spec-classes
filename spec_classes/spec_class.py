@@ -770,14 +770,15 @@ class spec_class:
         def with_attr(self, _new_value=MISSING, *, _replace=False, _inplace=False, **attrs):
             _new_value = getattr(self, f'_prepare_{attr_name}', lambda x, attrs: x)(_new_value, attrs)
             old_value = cls._get_attr(self, attr_name)
-            new_value = cls._get_updated_value(old_value, new_value=MISSING if is_collection else _new_value, constructor=attr_type, attrs=attrs, replace=_replace)
+            new_value = cls._get_updated_value(MISSING if is_collection else old_value, new_value=MISSING if is_collection else _new_value, constructor=attr_type, attrs=attrs, replace=_replace)
             self = cls._with_attr(self, attr_name, new_value, inplace=_inplace)
             if is_collection:
                 try:
                     self = cls._populate_collection(self, attr_name, attr_type, _new_value, inplace=_inplace)
-                finally:
+                except Exception as e:
                     if _inplace:
                         cls._with_attr(self, attr_name, old_value, inplace=_inplace)
+                    raise e
             return self
 
         def transform_attr(self, _transform=None, *, _inplace=False, **attr_transforms):

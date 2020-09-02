@@ -696,6 +696,9 @@ class TestListAttribute:
         with pytest.raises(ValueError, match="Attempted to add an invalid item "):
             spec.with_list_value('string')
 
+        spec.list_values = [1, 2, 3, 4]
+        assert spec.list_values == [1, 2, 3, 4]
+
     def test_transform(self, spec_cls):
 
         spec = spec_cls(list_values=[1])
@@ -965,6 +968,9 @@ class TestDictAttribute:
         with pytest.raises(ValueError, match="Attempted to add an invalid item `'Hello World'` to `Spec.dict_values`"):
             spec.with_dict_value('a', "Hello World")
 
+        spec.dict_values = {'a': 1, 'b': 2}
+        assert spec.dict_values == {'a': 1, 'b': 2}
+
     def test_transform(self, spec_cls):
         spec = spec_cls(dict_values={'a': 1})
         assert set(inspect.Signature.from_callable(spec.transform_dict_value).parameters) == {
@@ -1046,7 +1052,6 @@ class TestKeyedSpecDictAttribute:
         }
 
         assert spec.get_keyed_spec_dict_item('a') == KeyedSpec('a', nested_scalar=1)  # By key
-        print(spec.get_keyed_spec_dict_item('c', _raise_if_missing=False))
         assert spec.get_keyed_spec_dict_item('c', _raise_if_missing=False) is MISSING  # By key
 
         with pytest.raises(AttributeError, match=r"No item by key/index `'d'` found in `Spec\.keyed_spec_dict_items`\."):
