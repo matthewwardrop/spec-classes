@@ -798,7 +798,7 @@ class spec_class:
                 MethodBuilder(f'get_{attr_name}', get_attr)
                 .with_preamble(f"Retrieve the value of attribute `{attr_name}`.")
                 .with_arg('_raise_if_missing', "Whether to raise an AttributeError when `{attr_name}` has not been set.", default=True, keyword_only=True, annotation=bool)
-                .with_returns(f"The current value of the attribute (or `MISSING` if `_raise_if_missing` is `False`).", annotation=attr_type)
+                .with_returns("The current value of the attribute (or `MISSING` if `_raise_if_missing` is `False`).", annotation=attr_type)
             ),
             f'with_{attr_name}': (
                 MethodBuilder(f'with_{attr_name}', with_attr)
