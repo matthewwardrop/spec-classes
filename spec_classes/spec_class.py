@@ -762,6 +762,11 @@ class spec_class:
     def _get_methods_for_scalar(cls, spec_cls: type, attr_name: str, attr_type: Type, is_collection: bool = False):
         attr_spec_type = cls._get_spec_class_for_type(attr_type)
 
+        def get_attr(self, _raise_if_missing=True):
+            if _raise_if_missing:
+                return getattr(self, attr_name)
+            return cls._get_attr(self, attr_name)
+
         def with_attr(self, _new_value=MISSING, *, _replace=False, _inplace=False, **attrs):
             _new_value = getattr(self, f'_prepare_{attr_name}', lambda x, attrs: x)(_new_value, attrs)
             old_value = cls._get_attr(self, attr_name)
@@ -788,6 +793,12 @@ class spec_class:
 
         or_its_attributes = " or its attributes" if attr_spec_type else ""
         return {
+            f'get_{attr_name}': (
+                MethodBuilder(f'get_{attr_name}', get_attr)
+                .with_preamble(f"Retrieve the value of attribute `{attr_name}`.")
+                .with_arg('_raise_if_missing', "Whether to raise an AttributeError when `{attr_name}` has not been set.", default=True, keyword_only=True, annotation=bool)
+                .with_returns(f"The current value of the attribute (or `MISSING` if `_raise_if_missing` is `False`).", annotation=attr_type)
+            ),
             f'with_{attr_name}': (
                 MethodBuilder(f'with_{attr_name}', with_attr)
                 .with_preamble(f"Return a `{spec_cls.__name__}` instance identical to this one except with `{attr_name}`{or_its_attributes} mutated.")

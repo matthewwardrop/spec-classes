@@ -587,6 +587,15 @@ class TestScalarAttribute:
 
 class TestSpecAttribute:
 
+    def test_get(self, spec_cls):
+        spec = spec_cls()
+
+        assert 'scalar' not in spec.__dict__
+        assert spec.get_scalar(_raise_if_missing=False) is MISSING
+
+        with pytest.raises(AttributeError, match=r"`Spec\.scalar` has not yet been assigned a value\."):
+            spec.get_scalar()
+
     def test_with(self, spec_cls):
 
         spec = spec_cls()
