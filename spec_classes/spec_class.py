@@ -424,6 +424,8 @@ class spec_class:
         def __deepcopy__(self, memo):
             new = self.__class__.__new__(self.__class__)
             for attr, value in self.__dict__.items():
+                if inspect.ismethod(value) and value.__self__ is self:
+                    continue
                 if attr in self.__spec_class_shallowcopy__:
                     new.__dict__[attr] = value
                 else:
