@@ -318,10 +318,12 @@ class spec_class:
             if is_frozen:
                 self.__spec_class_frozen__ = True
 
-        def __repr__(self, include_attrs=None, indent=None, indent_threshold=100):
+        def __repr__(self, include_attrs=None, exclude_attrs=None, indent=None, indent_threshold=100):
             """
             Args:
                 include_attrs: An ordered iterable of attrs to include in the
+                    representation.
+                exclude_attrs: An iterable of attrs to exclude from the
                     representation.
                 indent: Whether to indent. If `True`, indenting is always
                     performed. If `False`, indenting is never performed. If
@@ -330,7 +332,12 @@ class spec_class:
                 indent_threshold: The threshold at which to switch to indented
                     representations (see above).
             """
+            ambiguous_attrs = set(include_attrs or []).intersection(exclude_attrs or [])
+            if ambiguous_attrs:
+                raise ValueError(f"Some attributes were both included and excluded: {ambiguous_attrs}.")
+
             include_attrs = include_attrs or list(self.__spec_class_annotations__)
+            exclude_attrs = set(exclude_attrs or [])
 
             def object_repr(obj, indent=False):
                 if inspect.ismethod(obj) and obj.__self__ is self:
@@ -362,6 +369,7 @@ class spec_class:
                 unindented_attrs = ', '.join([
                     f"{attr}={object_repr(getattr(self, attr, MISSING))}"
                     for attr in include_attrs
+                    if attr not in exclude_attrs
                 ])
                 unindented_repr = f"{self.__class__.__name__}({unindented_attrs})"
                 if indent is False or (len(unindented_repr) <= indent_threshold and not any('\n' in attr_repr for attr_repr in unindented_attrs)):
@@ -371,6 +379,7 @@ class spec_class:
             indented_attrs = textwrap.indent(',\n'.join([
                 f"{attr}={object_repr(getattr(self, attr, MISSING), indent=True)}"
                 for attr in include_attrs
+                if attr not in exclude_attrs
             ]), '    ')
             return f"{self.__class__.__name__}(\n{indented_attrs}\n)"
 
