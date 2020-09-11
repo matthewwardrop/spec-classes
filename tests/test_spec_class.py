@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import copy
 import inspect
 import textwrap
-from typing import Any, Callable, Dict, List, Set, Union
+from typing import Any, Callable, Dict, List, Set
 
 import pytest
 
@@ -198,6 +199,9 @@ class TestFramework:
             "spec_list_items=MISSING, spec_dict_items=MISSING, keyed_spec_list_items=MISSING, keyed_spec_dict_items=MISSING, recursive=MISSING))"
         )
 
+        with pytest.raises(ValueError, match=r"Some attributes were both included and excluded: {'key'}\."):
+            Spec('key').__repr__(include_attrs=['key', 'asd'], exclude_attrs=['key'])
+
         # Check that type checking works during direct mutation of elements
         s = Spec(key="key")
         s.scalar = 10
@@ -280,6 +284,20 @@ class TestFramework:
         del m.mylist
         assert m.mylist is not MyClass.mylist
         assert m.mylist == []
+
+    def test_deepcopy_with_instance_method_values(self):
+
+        @spec_class
+        class MyClass:
+            value: Callable
+
+            def __init__(self, value=None):
+                self.value = value or self.method
+
+            def method(self):
+                pass
+
+        copy.deepcopy(MyClass())  # If the instance method value causes recursion, we'd catch it here.
 
     def test_shallowcopy(self):
 
@@ -427,7 +445,7 @@ class TestFramework:
         del i.y
         assert i.y == 2
 
-        with pytest.raises(AttributeError, match=r"`Item\.y` has not yet been assigned a value\."):
+        with pytest.raises(AttributeError, match=r"`Item\.x` has not yet been assigned a value\."):
             Item().y
 
     def test_class_attribute_masking(self):
@@ -447,111 +465,34 @@ class TestFramework:
         del item.a
         assert item.a is not Item.a
 
-
-class TestTypeChecking:
-
-    def test_type_checking(self):
-
-        assert spec_class._check_type("string", str)
-        assert spec_class._check_type([], list)
-
-        assert spec_class._check_type([], List)
-        assert not spec_class._check_type('a', List)
-        assert spec_class._check_type(['a', 'b'], List[str])
-        assert not spec_class._check_type([1, 2], List[str])
-
-        assert spec_class._check_type({}, Dict)
-        assert not spec_class._check_type('a', Dict)
-        assert spec_class._check_type({'a': 1, 'b': 2}, Dict[str, int])
-        assert not spec_class._check_type({'a': '1', 'b': '2'}, Dict[str, int])
-        assert not spec_class._check_type({1: 'a', 2: 'b'}, Dict[str, int])
-
-        assert spec_class._check_type(set(), Set)
-        assert not spec_class._check_type('a', Set)
-        assert spec_class._check_type({'a', 'b'}, Set[str])
-        assert not spec_class._check_type({1, 2}, Set[str])
-
-        assert spec_class._check_type(lambda x: x, Callable)
-
-        assert spec_class._check_type([1, 'a'], List[Union[str, int]])
-
-    def test_get_collection_item_type(self):
-        assert spec_class._get_collection_item_type(list) is Any
-        assert spec_class._get_collection_item_type(List) is Any
-        assert spec_class._get_collection_item_type(List[str]) is str
-        assert spec_class._get_collection_item_type(Dict[str, int]) is int
-        assert spec_class._get_collection_item_type(Set[str]) is str
-
-    def test_get_spec_class_for_type(self):
-        assert spec_class._get_spec_class_for_type(Spec) is Spec
-        assert spec_class._get_spec_class_for_type(Union[str, Spec]) is None
-        assert spec_class._get_spec_class_for_type(Union[str, Spec], allow_polymorphic=True) is Spec
-        assert spec_class._get_spec_class_for_type(Union[str, Spec, UnkeyedSpec]) is None
-
-        assert spec_class._get_spec_class_for_type(list) is None
-        assert spec_class._get_spec_class_for_type(List) is None
-        assert spec_class._get_spec_class_for_type(List[Spec]) is None
-
-    def test_attr_type_label(self):
-        assert spec_class._attr_type_label(str) == "str"
-        assert spec_class._attr_type_label(object) == "object"
-        assert spec_class._attr_type_label(Spec) == "Spec"
-        assert spec_class._attr_type_label(List[str]) == "object"
-
-
-class TestMutationHelpers:
-
-    def test__with_attr(self):
+    def test_copy_behavior(self):
         @spec_class
-        class Item:
-            attr: str
+        class MySpec:
+            values: List[str]
+            pending_write: bool = True
+            copied: bool = False
 
-        item = Item()
+            @property
+            def values(self):
+                if self.pending_write:
+                    raise RuntimeError("Should not access element until set.")
+                return getattr(self, '_values', [])
 
-        with pytest.raises(AttributeError, match=r"`Item\.attr` has not yet been assigned a value\."):
-            item.attr
-        with pytest.raises(AttributeError, match=r"`Item\.attr` has not yet been assigned a value\."):
-            spec_class._with_attr(item, 'attr', MISSING).attr
-        assert spec_class._with_attr(item, 'attr', 'string') is not item
-        assert spec_class._with_attr(item, 'attr', 'string').attr == 'string'
+            @values.setter
+            def values(self, values):
+                self.pending_write = False
+                self._values = values
 
-        with pytest.raises(TypeError, match="Attempt to set `Item.attr` with an invalid type"):
-            assert spec_class._with_attr(item, 'attr', 1)
+            def __deepcopy__(self, memo):
+                if self.copied:
+                    raise RuntimeError("Should not copy more than once during setting.")
+                return MySpec(values=self.values)
 
-    def test__get_updated_value(self):
-        # Simple update
-        assert spec_class._get_updated_value(MISSING, new_value="value") == "value"
-        assert spec_class._get_updated_value("old_value", new_value="value") == "value"
-
-        # Via constructor
-        assert spec_class._get_updated_value(MISSING, constructor=str) == ''
-        assert spec_class._get_updated_value(MISSING, constructor=list) == []
-
-        # Via transform
-        assert spec_class._get_updated_value("old_value", transform=lambda x: x + "_renewed") == "old_value_renewed"
-
-        # Nested types
-        class Object:
-            attr = 'default'
-        assert spec_class._get_updated_value(MISSING, constructor=Object, attrs={'attr': 'value'}).attr == 'value'
-        assert spec_class._get_updated_value(MISSING, constructor=Object, attr_transforms={'attr': lambda x: f'{x}-transformed!'}).attr == 'default-transformed!'
-        with pytest.raises(AttributeError, match="'Object' object has no attribute 'missing_attr'"):
-            assert spec_class._get_updated_value(MISSING, constructor=Object, attr_transforms={'missing_attr': lambda x: x})
-
-        assert spec_class._get_updated_value(MISSING, constructor=Spec, attrs={'key': 'key', 'scalar': 10}).key == 'key'
-        assert spec_class._get_updated_value(MISSING, constructor=Spec, attrs={'key': 'key', 'scalar': 10}).scalar == 10
-        assert spec_class._get_updated_value(Spec(key='key', scalar=10), constructor=Spec, attrs={'list_values': [20]}).key == 'key'
-        assert spec_class._get_updated_value(Spec(key='key', scalar=10), constructor=Spec, attrs={'list_values': [20]}).scalar == 10
-        assert spec_class._get_updated_value(Spec(key='key', scalar=10), constructor=Spec, attrs={'list_values': [20]}).list_values == [20]
-        with pytest.raises(TypeError, match="Invalid attribute `invalid_attr` for spec class"):
-            assert spec_class._get_updated_value(MISSING, constructor=Spec, attrs={'invalid_attr': 'value'})
-        assert spec_class._get_updated_value(MISSING, constructor=Spec, attr_transforms={'key': lambda x: 'override'}).key == 'override'
-        with pytest.raises(TypeError, match="Invalid attribute `invalid_attr` for spec class"):
-            assert spec_class._get_updated_value(MISSING, constructor=Spec, attr_transforms={'invalid_attr': 'value'})
-        assert spec_class._get_updated_value(Spec(key='my_key'), constructor=Spec, replace=True).key == 'key'
-
-        with pytest.raises(ValueError, match="Cannot use attrs on a missing value without a constructor."):
-            assert spec_class._get_updated_value(MISSING, attrs={'invalid_attr': 'value'})
+        m = MySpec(pending_write=False)
+        assert m.with_value('a').values == ['a']
+        assert m.with_values(['b']).values == ['b']
+        assert m.with_value('a', _inplace=True).with_values(['b'], _inplace=True) is m
+        assert m.with_value('a', _inplace=True).with_values(['b'], _inplace=True).values == ['b']
 
 
 class TestScalarAttribute:

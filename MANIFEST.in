@@ -1,0 +1,9 @@
+recursive-include conda-recipe *
+recursive-include tests *
+include README.md
+include tox.ini
+include requirements.txt
+include requirements_test.txt
+include .pylintrc
+global-exclude __pycache__
+global-exclude *.py[co]

@@ -14,7 +14,7 @@ setup(
     install_requires='@requirements.txt',
     tests_require='@requirements_test.txt',  # Only used by defunct `setup.py test`
     extras_require={'test': '@requirements_test.txt'},
-    py_modules=['spec_classes'],
+    packages=['spec_classes', 'spec_classes.utils'],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

@@ -3,7 +3,7 @@ import textwrap
 from inspect import cleandoc, Signature, Parameter
 from typing import Any, Callable, Dict, Type, Tuple
 
-from .special_types import MISSING
+from spec_classes.special_types import MISSING
 
 
 class MethodBuilder:  # pragma: no cover; This is an internal helper class only; so long as `spec_class` works, we are golden!
