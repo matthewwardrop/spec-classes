@@ -191,8 +191,8 @@ class spec_class:
         self.spec_cls_methods = {
             '__init__': _init,
             '__repr__': _repr,
-            '__spec_class_repr__': _repr,
             '__eq__': _eq,
+            '__spec_class_repr__': True,
             '__getattr__': True,
             '__setattr__': True,
             '__delattr__': True,
