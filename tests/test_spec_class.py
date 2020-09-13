@@ -406,9 +406,9 @@ class TestFramework:
         @spec_class
         class Item:
             x: int
-            y: int = AttrProxy('x', host_attr='y')
+            y: int = AttrProxy('x')
             z: int = AttrProxy('x', transform=lambda x: x ** 2)
-            w: int = AttrProxy('x', fallback=2, host_attr='w')
+            w: int = AttrProxy('x', fallback=2)
             v: int = AttrProxy('x', passthrough=True, fallback=2)
             u: int = AttrProxy('u')
 
@@ -429,11 +429,10 @@ class TestFramework:
         assert item.w == 10
         assert item.x == 1
 
+        assert Item(x=1, z=10).z == 10
+
         with pytest.raises(AttributeError, match=r"`Item\.x` has not yet been assigned a value\."):
             Item(x=MISSING).x
-
-        with pytest.raises(AttributeError, match=r"Cannot set `Item\.z` to `10`\. Is this a property without a setter\?"):
-            Item(x=1, z=10)
 
         with pytest.raises(ValueError, match=r"AttrProxy for `Item\.u` appears to be self-referential\. Please change the `attr` argument to point to a different attribute\."):
             Item().u

@@ -33,28 +33,22 @@ class AttrProxy:
     instead. If some transform is required to satisfy (e.g.) types, then you
     can also optionally specify a unary transform using
     `AttrProxy('<attribute name>', transform=<function>)`. By default, proxied
-    attributes are not mutable. If you want to be
-    able to modify this attribute, you have two options: you can:
-    (1) specify the host attribute using:
-    `AttrProxy('<attribute name>', host_attr='<host attribute name>')`
-    in which case mutations will be local only to this attribute. Once
-    overridden, the transform will no longer be applied to the stored value.
-    (2) enable the `passthrough` option, which will pass all mutation operations
-    through to the proxied attribute. Note that the transform is not applied to
-    these mutation operations, but will still be applied whenever the attribute
-    is read.
+    attributes are locally mutable; that is, they store local overrides when
+    assigned new values. If you want mutations to be passed through to the
+    proxied attribute, then you need to specify `passthrough=True`.
 
     A `fallback` can also be specified for whenever the host attribute has not
     been specified or results in an AttributeError when `AttrProxy` attempts to
     retrieve it.
     """
 
-    def __init__(self, attr: str, *, host_attr: str = None, passthrough=False, transform: Optional[Callable[[Any], Any]] = None, fallback=MISSING):
+    def __init__(self, attr: str, *, passthrough=False, transform: Optional[Callable[[Any], Any]] = None, fallback=MISSING):
         self.attr = attr
-        self.host_attr = host_attr
         self.transform = transform
         self.passthrough = passthrough
         self.fallback = fallback
+
+        self.host_attr = None
 
     @property
     def override_attr(self):
@@ -91,3 +85,6 @@ class AttrProxy:
 
     def __delete__(self, instance):
         delattr(instance, self.override_attr)
+
+    def __set_name__(self, owner, name):
+        self.host_attr = name
