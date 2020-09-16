@@ -165,7 +165,7 @@ class ListCollection(ManagedCollection):
                 for i, item in enumerate(self.collection):
                     if isinstance(item, self.item_spec_type) and getattr(item, self.item_spec_type.__spec_class_key__) == value_or_index:
                         return i, item
-                return None, self.item_spec_type(**{self.item_spec_type.__spec_class_key__: value_or_index})
+                return None, functools.partial(self.item_spec_type, **{self.item_spec_type.__spec_class_key__: value_or_index})
             return value_or_index, self.collection[value_or_index] if value_or_index is not None and value_or_index < len(self.collection) else MISSING
 
         if self.item_spec_type_is_keyed:
@@ -174,7 +174,7 @@ class ListCollection(ManagedCollection):
             for i, item in enumerate(self.collection):
                 if getattr(item, self.item_spec_type.__spec_class_key__) == value_or_index:
                     return i, item
-            return None, self.item_spec_type(**{self.item_spec_type.__spec_class_key__: value_or_index})
+            return None, functools.partial(self.item_spec_type, **{self.item_spec_type.__spec_class_key__: value_or_index})
         return self.collection.index(value_or_index) if value_or_index in self.collection else None, value_or_index
 
     def _inserter(self, index, item, insert=False):  # pylint: disable=arguments-differ
@@ -243,7 +243,7 @@ class DictCollection(ManagedCollection):
         if self.item_spec_type_is_keyed:
             if isinstance(value_or_index, self.item_spec_type):
                 value_or_index = getattr(value_or_index, self.item_spec_type.__spec_class_key__)
-            default = self.item_spec_type(**{self.item_spec_type.__spec_class_key__: value_or_index})
+            default = functools.partial(self.item_spec_type, **{self.item_spec_type.__spec_class_key__: value_or_index})
         return value_or_index, self.collection.get(value_or_index, default)
 
     def _inserter(self, index, item):

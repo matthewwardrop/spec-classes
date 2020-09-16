@@ -1,4 +1,5 @@
 import copy
+import functools
 import inspect
 
 from typing import Any, Callable, Dict, Type, Union
@@ -45,12 +46,15 @@ def mutate_value(
     """
     mutate_safe = False
 
-    # Start with `old_value`
-    value = old_value
-
-    # If `new_value` is not `MISSING`, use it.
+    # If `new_value` is not `MISSING`, use it, otherwise use `old_value`.
     if new_value is not MISSING:
         value = new_value
+    else:
+        value = old_value
+
+    # If value is a partially executed constructor, hydrate it.
+    if isinstance(value, functools.partial):
+        value = value()
 
     # If `value` is `MISSING`, or `replace` is True, and we have a
     # constructor, create a new instance with existing attrs. Any attrs not
