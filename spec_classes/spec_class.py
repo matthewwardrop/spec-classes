@@ -401,10 +401,7 @@ class spec_class:
         def __getattr__(self, attr):
             if attr in self.__spec_class_annotations__ and attr not in self.__dict__ and not inspect.isdatadescriptor(getattr(self.__class__, attr, None)):
                 raise AttributeError(f"`{self.__class__.__name__}.{attr}` has not yet been assigned a value.")
-            scls = self.__class__
-            while getattr(getattr(scls, '__getattr__', scls.__getattribute__), '__module__', None) == cls.__module__:
-                scls = scls.mro()[1]
-            return getattr(scls, '__getattr__', scls.__getattribute__)(self, attr)  # pragma: no cover; pylint: disable=bad-super-call
+            return self.__getattr__.__raw__(self, attr)
 
         def __setattr__(self, attr, value, force=False):
             # Abort if frozen
@@ -413,10 +410,7 @@ class spec_class:
 
             # Check attr type if managed attribute
             if force or attr not in self.__spec_class_annotations__ or not hasattr(self, f'with_{attr}'):
-                scls = self.__class__
-                while getattr(scls.__setattr__, '__module__', None) == cls.__module__:
-                    scls = scls.mro()[1]
-                scls.__setattr__(self, attr, value)  # pylint: disable=bad-super-call
+                self.__setattr__.__raw__(self, attr, value)
             else:
                 getattr(self, f'with_{attr}')(value, _inplace=True)
 
@@ -425,12 +419,10 @@ class spec_class:
             if not force and self.__spec_class_frozen__:
                 raise FrozenInstanceError(f"Cannot mutate attribute `{attr}` of frozen Spec Class `{self}`.")
 
-            scls = self.__class__
             cls_value = getattr(self.__class__, attr, MISSING)
-            if cls_value is MISSING or inspect.isfunction(cls_value) or inspect.isdatadescriptor(cls_value):
-                while getattr(scls.__delattr__, '__module__', None) == cls.__module__:
-                    scls = scls.mro()[1]
-                return scls.__delattr__(self, attr)  # pylint: disable=bad-super-call
+            if inspect.isfunction(cls_value) or inspect.isdatadescriptor(cls_value) or cls_value is MISSING:
+                return self.__delattr__.__raw__(self, attr)
+
             return mutate_attr(
                 obj=self,
                 attr=attr,
@@ -438,6 +430,15 @@ class spec_class:
                 inplace=True,
                 force=True
             )
+
+        # Set __raw__ attribute on attribute extractors/mutators to call back to
+        # underlying objects.
+        if hasattr(spec_cls, '__getattr__'):
+            __getattr__.__raw__ = getattr(spec_cls.__getattr__, '__raw__', spec_cls.__getattr__)
+        else:
+            __getattr__.__raw__ = spec_cls.__getattribute__
+        __setattr__.__raw__ = getattr(spec_cls.__setattr__, '__raw__', spec_cls.__setattr__)
+        __delattr__.__raw__ = getattr(spec_cls.__delattr__, '__raw__', spec_cls.__delattr__)
 
         def __deepcopy__(self, memo):
             new = self.__class__.__new__(self.__class__)
