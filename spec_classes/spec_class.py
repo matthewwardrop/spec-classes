@@ -310,7 +310,7 @@ class spec_class:
                         continue
                 else:  # Look up from class attributes (if set)
                     value = getattr(self.__class__, attr, MISSING)
-                    if inspect.isfunction(value) or inspect.isdatadescriptor(value) or value is MISSING:
+                    if value is MISSING or inspect.isfunction(value) or inspect.isdatadescriptor(value):
                         continue  # Methods will already be bound to instance from class
                     # We *always* deepcopy values from class defaults so we do not share
                     # values across instances.
@@ -427,7 +427,7 @@ class spec_class:
 
             scls = self.__class__
             cls_value = getattr(self.__class__, attr, MISSING)
-            if inspect.isfunction(cls_value) or inspect.isdatadescriptor(cls_value) or cls_value is MISSING:
+            if cls_value is MISSING or inspect.isfunction(cls_value) or inspect.isdatadescriptor(cls_value):
                 while getattr(scls.__delattr__, '__module__', None) == cls.__module__:
                     scls = scls.mro()[1]
                 return scls.__delattr__(self, attr)  # pylint: disable=bad-super-call
