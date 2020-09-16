@@ -520,6 +520,7 @@ class spec_class:
             methods: A dictionary of methods keyed by name.
         """
         for name, method in methods.items():
+            setattr(method, '__spec_class_owned__', True)
             cls.register_method(spec_cls, name, method)
 
     @staticmethod

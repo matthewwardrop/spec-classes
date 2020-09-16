@@ -25,7 +25,7 @@ def mutate_attr(obj: Any, attr: str, value: Any, inplace: bool = False, force: b
     if not check_type(value, attr_type):
         raise TypeError(f"Attempt to set `{obj.__class__.__name__}.{attr}` with an invalid type [got `{repr(value)}`; expecting `{attr_type}`].")
     try:
-        if 'force' in inspect.Signature.from_callable(obj.__setattr__).parameters:
+        if hasattr(obj.__setattr__, '__spec_class_owned__'):
             obj.__setattr__(attr, value, force=True)
         else:
             setattr(obj, attr, value)  # pragma: no cover
