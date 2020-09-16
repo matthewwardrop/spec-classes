@@ -59,10 +59,7 @@ def mutate_value(
         mutate_safe = True
         while hasattr(constructor, '__origin__'):
             constructor = constructor.__origin__
-        try:
-            constructor_args = set(inspect.Signature.from_callable(constructor).parameters)
-        except ValueError:
-            constructor_args = set()
+        constructor_args = _get_function_args(constructor)
         value = constructor(**{attr: value for attr, value in (attrs or {}).items() if attr in constructor_args})
         attrs = {
             attr: value
@@ -113,3 +110,11 @@ def mutate_value(
                 setattr(value, attr, attr_transform(getattr(value, attr)))
 
     return value
+
+
+def _get_function_args(function):
+    if function.__name__ in __builtins__ or not hasattr(function, '__code__'):
+        return set()
+    if not hasattr(function, '__spec_class_args__'):
+        function.__spec_class_args__ = set(inspect.Signature.from_callable(function).parameters)
+    return function.__spec_class_args__
