@@ -129,6 +129,7 @@ class spec_class:
     """
 
     INFLECT_ENGINE = inflect.engine()
+    INFLECT_CACHE = {}
 
     def __new__(cls, *args, **kwargs):
         """
@@ -635,10 +636,12 @@ class spec_class:
         Determine the singular form of an attribute name, for use in the naming
         of collection helper methods.
         """
-        singular = cls.INFLECT_ENGINE.singular_noun(attr_name)
-        if not singular or singular == attr_name:
-            return f"{attr_name}_item"
-        return singular
+        if attr_name not in cls.INFLECT_CACHE:
+            singular = cls.INFLECT_ENGINE.singular_noun(attr_name)
+            if not singular or singular == attr_name:
+                singular = f"{attr_name}_item"
+            cls.INFLECT_CACHE[attr_name] = singular
+        return cls.INFLECT_CACHE[attr_name]
 
     @classmethod
     def _populate_collection(cls, self, attr_name, attr_type, items):
