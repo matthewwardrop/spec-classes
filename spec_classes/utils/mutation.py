@@ -16,7 +16,6 @@ def mutate_attr(obj: Any, attr: str, value: Any, inplace: bool = False, type_che
     instance. If `inplace` is `False`, copy the instance before assigning
     the new attribute value.
     """
-
     if value is MISSING:
         return obj
     if not force and inplace and getattr(obj, '__spec_class_frozen__', False):
@@ -46,6 +45,7 @@ def mutate_value(
     either a new value or a combination of new attribute values and/or
     transforms.
     """
+    mutate_safe = False
 
     # If `new_value` is not `MISSING`, use it, otherwise use `old_value`.
     if new_value is not MISSING:
