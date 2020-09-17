@@ -10,24 +10,26 @@ from spec_classes.special_types import MISSING
 from .type_checking import check_type
 
 
-def mutate_attr(obj: Any, attr: str, value: Any, inplace: bool = False, force: bool = False) -> Any:
+def mutate_attr(obj: Any, attr: str, value: Any, inplace: bool = False, type_check: bool = True, force: bool = False) -> Any:
     """
     Set attribute `attr` of `obj` to `value`, and return the mutated
     instance. If `inplace` is `False`, copy the instance before assigning
     the new attribute value.
     """
+
     if value is MISSING:
         return obj
-    if not force and inplace and obj.__spec_class_frozen__:
+    if not force and inplace and getattr(obj, '__spec_class_frozen__', False):
         raise FrozenInstanceError(f"Cannot mutate attribute `{attr}` of frozen Spec Class `{obj}`.")
     if not inplace:
         obj = copy.deepcopy(obj)
-    attr_type = obj.__spec_class_annotations__[attr]
-    if not check_type(value, attr_type):
-        raise TypeError(f"Attempt to set `{obj.__class__.__name__}.{attr}` with an invalid type [got `{repr(value)}`; expecting `{attr_type}`].")
+    if type_check:
+        attr_type = obj.__spec_class_annotations__[attr]
+        if not check_type(value, attr_type):
+            raise TypeError(f"Attempt to set `{obj.__class__.__name__}.{attr}` with an invalid type [got `{repr(value)}`; expecting `{attr_type}`].")
     try:
-        if hasattr(obj.__setattr__, '__spec_class_owned__'):
-            obj.__setattr__(attr, value, force=True)
+        if hasattr(obj.__setattr__, '__raw__'):
+            obj.__setattr__.__raw__(obj, attr, value)
         else:
             setattr(obj, attr, value)  # pragma: no cover
     except AttributeError:
