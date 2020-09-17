@@ -1,3 +1,4 @@
+import builtins
 import copy
 import functools
 import inspect
@@ -118,7 +119,7 @@ def mutate_value(
 
 
 def _get_function_args(function):
-    if function.__name__ in __builtins__ or not hasattr(function, '__code__'):
+    if function is getattr(builtins, function.__name__, None):
         return set()
     if not hasattr(function, '__spec_class_args__'):
         function.__spec_class_args__ = set(inspect.Signature.from_callable(function).parameters)
