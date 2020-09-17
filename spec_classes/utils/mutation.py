@@ -21,12 +21,12 @@ def mutate_attr(obj: Any, attr: str, value: Any, inplace: bool = False, type_che
         return obj
     if not force and inplace and getattr(obj, '__spec_class_frozen__', False):
         raise FrozenInstanceError(f"Cannot mutate attribute `{attr}` of frozen Spec Class `{obj}`.")
-    if not inplace:
-        obj = copy.deepcopy(obj)
     if type_check:
         attr_type = obj.__spec_class_annotations__[attr]
         if not check_type(value, attr_type):
             raise TypeError(f"Attempt to set `{obj.__class__.__name__}.{attr}` with an invalid type [got `{repr(value)}`; expecting `{attr_type}`].")
+    if not inplace:
+        obj = copy.deepcopy(obj)
     try:
         if hasattr(obj.__setattr__, '__raw__'):
             obj.__setattr__.__raw__(obj, attr, value)
@@ -46,7 +46,6 @@ def mutate_value(
     either a new value or a combination of new attribute values and/or
     transforms.
     """
-    mutate_safe = False
 
     # If `new_value` is not `MISSING`, use it, otherwise use `old_value`.
     if new_value is not MISSING:
