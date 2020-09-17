@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import functools
 import inspect
 import textwrap
 import typing
@@ -650,37 +651,23 @@ class spec_class:
     @classmethod
     def _populate_collection(cls, self, attr_name, attr_type, items):
         singular_name = cls._get_singular_form(attr_name)
-        item_type = get_collection_item_type(attr_type)
-        item_spec_type = get_spec_class_for_type(item_type)
-        item_spec_type_is_keyed = item_spec_type and item_spec_type.__spec_class_key__ is not None
 
-        if not items:
-            return mutate_value(MISSING, constructor=attr_type)
-
-        if type_match(attr_type, list) and isinstance(items, list):
+        if type_match(attr_type, list):
             collection = ListCollection(attr_type)
-            for item in items:
-                item = getattr(self, f'_prepare_{singular_name}', lambda x, attrs: x)(item, {})
-                collection.add_item(item)
-        elif item_spec_type_is_keyed and type_match(attr_type, dict) and isinstance(items, (list, dict)):
+        elif type_match(attr_type, dict):
             collection = DictCollection(attr_type)
-            for value in items.values() if isinstance(items, dict) else items:
-                _, value = getattr(self, f'_prepare_{singular_name}', lambda k, v, attrs: (k, v))(None, value, {})
-                collection.add_item(value=value)
-        elif type_match(attr_type, dict) and isinstance(items, dict):
-            collection = DictCollection(attr_type)
-            for key, value in items.items():
-                key, value = getattr(self, f'_prepare_{singular_name}', lambda k, v, attrs: (k, v))(key, value, {})
-                collection.add_item(key, value)
-        elif type_match(attr_type, set) and isinstance(items, set):
+        elif type_match(attr_type, set):
             collection = SetCollection(attr_type)
-            for item in items:
-                item = getattr(self, f'_prepare_{singular_name}', lambda x, attrs: x)(item, {})
-                self = collection.add_item(item)
         else:
             raise TypeError("Unrecognised collection type.")  # pragma: no cover; this is just a sentinel.
 
-        return collection.collection
+        if items:
+            preparer = getattr(self, f'_prepare_{singular_name}', None)
+            if preparer:
+                preparer = functools.partial(preparer, attrs={})
+            collection.add_items(items, preparer=preparer)
+            return collection.collection
+        return collection._create_collection()  # pylint: disable=protected-access
 
     @classmethod
     def _get_methods_for_list(cls, spec_cls: type, attr_name: str, attr_type: Type) -> Dict[str, Callable]:

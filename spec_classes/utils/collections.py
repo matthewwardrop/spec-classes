@@ -214,11 +214,16 @@ class ListCollection(ManagedCollection):
                         if self._extractor(_key, by_index=True)[0] is None else
                         MISSING
                     )
-
         return self._mutate_collection(
             value_or_index=index, extractor=functools.partial(self._extractor, by_index=True), inserter=functools.partial(self._inserter, insert=insert),
             new_item=item, attrs=attrs, replace=replace
         )
+
+    def add_items(self, items, preparer=None):
+        preparer = preparer or (lambda x: x)
+        for item in items:
+            self.add_item(preparer(item))
+        return self
 
     def transform_item(self, value_or_index, transform, *, by_index=False, attr_transforms=None):  # pylint: disable=arguments-differ
         return self._mutate_collection(
@@ -271,6 +276,18 @@ class DictCollection(ManagedCollection):
             new_item=value, attrs=attrs, replace=replace
         )
 
+    def add_items(self, items, preparer=None):
+        preparer = preparer or (lambda k, v: (k, v))
+        if isinstance(items, dict):
+            for k, v in items.items():
+                self.add_item(*preparer(k, v))
+        elif self.item_spec_type_is_keyed:
+            for item in items:
+                self.add_item(value=preparer(None, item)[1])
+        else:
+            raise TypeError("Unrecognised items type.")
+        return self
+
     def transform_item(self, key, transform, attr_transforms):  # pylint: disable=arguments-differ
         return self._mutate_collection(
             value_or_index=key, extractor=self._extractor, inserter=self._inserter,
@@ -314,6 +331,12 @@ class SetCollection(ManagedCollection):
             value_or_index=item, extractor=self._extractor, inserter=self._inserter,
             new_item=item, attrs=attrs, replace=replace
         )
+
+    def add_items(self, items, preparer=None):
+        preparer = preparer or (lambda item: item)
+        for item in items:
+            self.add_item(preparer(item))
+        return self
 
     def transform_item(self, item, transform, *, attr_transforms=None):  # pylint: disable=arguments-differ
         return self._mutate_collection(
