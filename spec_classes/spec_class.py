@@ -441,6 +441,8 @@ class spec_class:
         __delattr__.__raw__ = getattr(spec_cls.__delattr__, '__raw__', spec_cls.__delattr__)
 
         def __deepcopy__(self, memo):
+            if self.__spec_class_frozen__:
+                return self
             new = self.__class__.__new__(self.__class__)
             for attr, value in self.__dict__.items():
                 if inspect.ismethod(value) and value.__self__ is self:
