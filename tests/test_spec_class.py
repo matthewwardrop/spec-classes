@@ -128,6 +128,9 @@ class TestFramework:
         assert hasattr(Spec, '__init__')
         assert hasattr(Spec, '__repr__')
         assert hasattr(Spec, '__eq__')
+        assert hasattr(Spec, '__spec_class_init__')
+        assert hasattr(Spec, '__spec_class_repr__')
+        assert hasattr(Spec, '__spec_class_eq__')
 
         assert set(inspect.Signature.from_callable(Spec.__init__).parameters) == {
             'dict_values',

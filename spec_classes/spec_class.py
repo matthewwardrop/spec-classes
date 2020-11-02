@@ -192,9 +192,8 @@ class spec_class:
         self.skip = set(_skip or set())
         self.spec_cls_methods = {
             '__init__': _init,
-            '__repr__': _repr,
             '__eq__': _eq,
-            '__spec_class_repr__': True,
+            '__repr__': _repr,
             '__getattr__': True,
             '__setattr__': True,
             '__delattr__': True,
@@ -299,6 +298,13 @@ class spec_class:
         Generate any required `__init__`, `__repr__` and `__eq__` methods. Will
         only be added if these methods do not already exist on the class.
         """
+        spec_class_key = spec_cls.__spec_class_key__
+        key_default = Parameter.empty
+        if spec_class_key:
+            key_default = getattr(spec_cls, spec_class_key, Parameter.empty)
+            if inspect.isfunction(key_default) or inspect.isdatadescriptor(key_default):
+                spec_class_key = None
+
         def init_impl(self, **kwargs):
             is_frozen = self.__spec_class_frozen__
             self.__spec_class_frozen__ = False
@@ -321,6 +327,17 @@ class spec_class:
 
             if is_frozen:
                 self.__spec_class_frozen__ = True
+
+        __init__ = (
+            MethodBuilder('__init__', init_impl)
+            .with_preamble(f"Initialise this `{spec_cls.__name__}` instance.")
+            .with_arg(
+                spec_class_key, f"The value to use for the `{spec_class_key}` key attribute.",
+                default=key_default, annotation=spec_cls.__spec_class_annotations__.get(spec_class_key),
+                only_if=spec_class_key
+            )
+            .with_spec_attrs_for(spec_cls, defaults=True)
+        )
 
         def __repr__(self, include_attrs=None, exclude_attrs=None, indent=None, indent_threshold=100):
             """
@@ -454,36 +471,22 @@ class spec_class:
                     new.__dict__[attr] = copy.deepcopy(value, memo)
             return new
 
-        spec_class_key = spec_cls.__spec_class_key__
-        key_default = Parameter.empty
-        if spec_class_key:
-            key_default = getattr(spec_cls, spec_class_key, Parameter.empty)
-            if inspect.isfunction(key_default) or inspect.isdatadescriptor(key_default):
-                spec_class_key = None
-
         methods = {
-            '__init__': (
-                MethodBuilder('__init__', init_impl)
-                .with_preamble(f"Initialise this `{spec_cls.__name__}` instance.")
-                .with_arg(
-                    spec_class_key, f"The value to use for the `{spec_class_key}` key attribute.",
-                    default=key_default, annotation=spec_cls.__spec_class_annotations__.get(spec_class_key),
-                    only_if=spec_class_key
-                )
-                .with_spec_attrs_for(spec_cls, defaults=True)
-            ),
+            '__init__': __init__,
             '__repr__': __repr__,
-            '__spec_class_repr__': __repr__,
             '__eq__': __eq__,
             '__getattr__': __getattr__,
             '__setattr__': __setattr__,
             '__delattr__': __delattr__,
             '__deepcopy__': __deepcopy__,
+            '__spec_class_init__': __init__,
+            '__spec_class_repr__': __repr__,
+            '__spec_class_eq__': __eq__,
         }
         return {
             name: method
             for name, method in methods.items()
-            if methods_filter.get(name, False)
+            if name.startswith('__spec_class') or methods_filter.get(name, False)
         }
 
     def get_methods_for_attribute(self, spec_cls: type, attr_name: str, attr_type: Type) -> Dict[str, Callable]:
@@ -538,7 +541,7 @@ class spec_class:
             name: The name of the method to add.
             method: The method to add.
         """
-        if name in spec_cls.__dict__:
+        if name in spec_cls.__dict__ and not name.startswith('__spec_class'):
             return
         if isinstance(method, MethodBuilder):
             method = method.build()
