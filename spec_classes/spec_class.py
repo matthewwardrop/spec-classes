@@ -363,8 +363,11 @@ class spec_class:
             def object_repr(obj, indent=False):
                 if inspect.ismethod(obj) and obj.__self__ is self:
                     return f"<bound method {obj.__name__} of self>"
-                if hasattr(obj, '__repr__') and 'indent' in Signature.from_callable(obj.__repr__).parameters:
-                    return obj.__repr__(indent=indent)
+                if hasattr(obj, '__repr__'):
+                    try:
+                        return obj.__repr__(indent=indent)
+                    except TypeError:
+                        pass
 
                 if indent:
                     if isinstance(obj, list):
