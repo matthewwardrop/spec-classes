@@ -586,16 +586,15 @@ class spec_class:
             )
 
         def transform_attr(self, _transform=None, *, _inplace=False, **attr_transforms):
-            return mutate_attr(
-                obj=self,
-                attr=attr_name,
-                value=mutate_value(
+            return with_attr(
+                self,
+                _new_value=mutate_value(
                     old_value=cls._get_attr(self, attr_name),
                     transform=_transform,
                     constructor=attr_type,
                     attr_transforms=attr_transforms
                 ),
-                inplace=_inplace,
+                _inplace=_inplace,
             )
 
         def reset_attr(self, _inplace=False):
