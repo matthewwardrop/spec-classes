@@ -581,7 +581,7 @@ class spec_class:
     def _get_attr(cls, self: Any, name: str, default: Any = MISSING):
         try:
             return object.__getattribute__(self, name)
-        except Exception:
+        except Exception:  # pylint: disable=broad-except
             return default
 
     # Scalar methods
