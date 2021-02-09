@@ -416,6 +416,23 @@ class TestFramework:
             pass
         assert MyClass(a=1, b=2).options == {'a': 1, 'b': 2}
 
+    def test_get_attr_default(self):
+        @spec_class
+        class MyClass:
+            def __spec_class_get_attr_default__(self, attr):
+                return 1
+            a: int
+            b: int
+        assert MyClass().a == 1
+        assert MyClass().b == 1
+
+        @spec_class
+        class MySubClass(MyClass):
+            c: str
+
+        with pytest.raises(TypeError, match=r"Attempt to set `MySubClass\.c` with an invalid type"):
+            MySubClass()
+
     def test_special_types(self):
         @spec_class
         class Item:

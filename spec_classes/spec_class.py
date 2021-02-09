@@ -315,6 +315,8 @@ class spec_class:
             is_frozen = self.__spec_class_frozen__
             self.__spec_class_frozen__ = False
 
+            get_attr_default = getattr(self, '__spec_class_get_attr_default__', None)
+
             for attr in self.__spec_class_annotations__:
                 if attr == self.__spec_class_kwarg_overflow__:
                     continue
@@ -324,13 +326,17 @@ class spec_class:
                         continue
                     if attr not in self.__spec_class_shallowcopy__:
                         value = copy.deepcopy(value)
-                else:  # Look up from class attributes (if set)
-                    value = getattr(self.__class__, attr, MISSING)
-                    if value is MISSING or inspect.isfunction(value) or inspect.isdatadescriptor(value):
-                        continue  # Methods will already be bound to instance from class
-                    # We *always* deepcopy values from class defaults so we do not share
-                    # values across instances.
-                    value = copy.deepcopy(value)
+                else:  # Look up from spec_class_get_attr_default handler, if handled, or class attributes (if set)
+                    value = MISSING
+                    if get_attr_default:
+                        value = get_attr_default(attr)
+                    if value is MISSING:
+                        value = getattr(self.__class__, attr, MISSING)
+                        if value is MISSING or inspect.isfunction(value) or inspect.isdatadescriptor(value):
+                            continue  # Methods will already be bound to instance from class
+                        # We *always* deepcopy values from class defaults so we do not share
+                        # values across instances.
+                        value = copy.deepcopy(value)
 
                 getattr(self, f'with_{attr}')(value, _inplace=True)
 
