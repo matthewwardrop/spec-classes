@@ -28,9 +28,9 @@ def mutate_attr(obj: Any, attr: str, value: Any, inplace: bool = False, type_che
     if not inplace:
         obj = copy.deepcopy(obj)
     try:
-        if hasattr(obj.__setattr__, '__raw__'):
+        try:
             obj.__setattr__.__raw__(obj, attr, value)
-        else:
+        except AttributeError:
             setattr(obj, attr, value)  # pragma: no cover
     except AttributeError:
         raise AttributeError(f"Cannot set `{obj.__class__.__name__}.{attr}` to `{value}`. Is this a property without a setter?")

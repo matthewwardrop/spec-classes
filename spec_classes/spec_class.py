@@ -311,10 +311,11 @@ class spec_class:
 
             for attr in self.__spec_class_annotations__:
                 if attr in kwargs:
-                    copier = (lambda x: x) if attr in self.__spec_class_shallowcopy__ else copy.deepcopy
-                    value = copier(kwargs[attr])
+                    value = kwargs[attr]
                     if value is MISSING:
                         continue
+                    if not attr in self.__spec_class_shallowcopy__:
+                        value = copy.deepcopy(value)
                 else:  # Look up from class attributes (if set)
                     value = getattr(self.__class__, attr, MISSING)
                     if value is MISSING or inspect.isfunction(value) or inspect.isdatadescriptor(value):
@@ -554,14 +555,16 @@ class spec_class:
 
     @classmethod
     def _get_attr(cls, self: Any, name: str, default: Any = MISSING):
-        if name in self.__dict__ or inspect.isdatadescriptor(self.__class__.__dict__.get(name)):
-            return getattr(self, name, default)
-        return default
+        try:
+            return object.__getattribute__(self, name)
+        except Exception:
+            return default
 
     # Scalar methods
     @classmethod
     def _get_methods_for_scalar(cls, spec_cls: type, attr_name: str, attr_type: Type, is_collection: bool = False):
         attr_spec_type = get_spec_class_for_type(attr_type)
+        attr_prepare_method = f'_prepare_{attr_name}'
 
         def get_attr(self, _raise_if_missing=True):
             if _raise_if_missing:
@@ -569,7 +572,10 @@ class spec_class:
             return cls._get_attr(self, attr_name)
 
         def with_attr(self, _new_value=MISSING, *, _replace=False, _inplace=False, **attrs):
-            _new_value = getattr(self, f'_prepare_{attr_name}', lambda x, attrs: x)(_new_value, attrs)
+            try:
+                _new_value = getattr(self, attr_prepare_method)(_new_value, attrs)
+            except AttributeError:
+                pass
 
             if is_collection:
                 _new_value = cls._populate_collection(self, attr_name, attr_type, _new_value)
@@ -658,11 +664,11 @@ class spec_class:
         singular_name = cls._get_singular_form(attr_name)
 
         if type_match(attr_type, list):
-            collection = ListCollection(attr_type)
+            collection = ListCollection(attr_type, name=attr_name)
         elif type_match(attr_type, dict):
-            collection = DictCollection(attr_type)
+            collection = DictCollection(attr_type, name=attr_name)
         elif type_match(attr_type, set):
-            collection = SetCollection(attr_type)
+            collection = SetCollection(attr_type, name=attr_name)
         else:
             raise TypeError("Unrecognised collection type.")  # pragma: no cover; this is just a sentinel.
 
@@ -698,7 +704,7 @@ class spec_class:
         item_spec_type_is_keyed = item_spec_type and item_spec_type.__spec_class_key__ is not None
 
         # Check list collection type is valid (i.e. nested spec-type doesn't have integer keys)
-        ListCollection(attr_type)
+        ListCollection(attr_type, name=attr_name)
 
         def get_collection(self, inplace=True):
             return ListCollection(
@@ -757,6 +763,7 @@ class spec_class:
                                 .collection
                             ),
                             inplace=_inplace,
+                            type_check=False,
                         )
                     )
                 )
@@ -790,6 +797,7 @@ class spec_class:
                                 .collection
                             ),
                             inplace=_inplace,
+                            type_check=False,
                         )
                     )
                 )
@@ -817,6 +825,7 @@ class spec_class:
                                 .collection
                             ),
                             inplace=_inplace,
+                            type_check=False,
                         )
                     )
                 )
@@ -906,6 +915,7 @@ class spec_class:
                                 .collection
                             ),
                             inplace=_inplace,
+                            type_check=False,
                         )
                     )
                 )
@@ -937,6 +947,7 @@ class spec_class:
                                 .collection
                             ),
                             inplace=_inplace,
+                            type_check=False,
                         )
                     )
                 )
@@ -960,6 +971,7 @@ class spec_class:
                                 .collection
                             ),
                             inplace=_inplace,
+                            type_check=False,
                         )
                     ),
                 )
@@ -1037,6 +1049,7 @@ class spec_class:
                                 .collection
                             ),
                             inplace=_inplace,
+                            type_check=False,
                         )
                     )
                 )
@@ -1067,6 +1080,7 @@ class spec_class:
                                 .collection
                             ),
                             inplace=_inplace,
+                            type_check=False,
                         )
                     )
                 )
@@ -1090,6 +1104,7 @@ class spec_class:
                                 .collection
                             ),
                             inplace=_inplace,
+                            type_check=False,
                         )
                     )
                 )
