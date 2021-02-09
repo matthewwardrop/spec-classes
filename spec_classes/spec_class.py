@@ -6,7 +6,7 @@ import inspect
 import textwrap
 import typing
 from inspect import Signature, Parameter
-from typing import Any, Callable, Dict, Iterable, Type, Union
+from typing import Any, Callable, Dict, Iterable, Optional, Type, Union
 
 import inflect
 
@@ -146,7 +146,7 @@ class spec_class:
 
     def __init__(
             self, *attrs: str, _key: str = MISSING, _skip: Iterable[str] = None, _shallowcopy: Union[bool, Iterable[str]] = False, _frozen: bool = False,
-            _init: bool = True, _repr: bool = True, _eq: bool = True, **attrs_typed: Any
+            _init: bool = True, _repr: bool = True, _eq: bool = True, _kwarg_overflow: Optional[str] = MISSING, **attrs_typed: Any
     ):
         """
         Args:
@@ -178,6 +178,9 @@ class spec_class:
                 exist.
             _eq: Whether to add an `__eq__` method if one does not already
                 exist.
+            _kwarg_overflow: If specified, any extra arguments passed to the
+                constructor will be collected as a dictionary and set as an
+                attribute of this name.
             **attrs_typed: Additional attributes for which this `spec_cls`
                 should add helper methods, with the type of the attr taken to be
                 as specified, overriding (if present) any other type annotations
@@ -186,8 +189,9 @@ class spec_class:
         self.inherit_annotations = not (attrs or attrs_typed) or _skip is not None
         self.key = _key
         self.attrs = {
+            **({_kwarg_overflow: Dict[str, Any]} if _kwarg_overflow else {}),
             **{attr: Any for attr in attrs},
-            **attrs_typed
+            **attrs_typed,
         }
         self.skip = set(_skip or set())
         self.spec_cls_methods = {
@@ -201,6 +205,7 @@ class spec_class:
         }
         self.shallowcopy = _shallowcopy
         self.frozen = _frozen
+        self.kwarg_overflow = _kwarg_overflow
 
         # Check for private attr specification, and if found, raise!
         private_attrs = [attr for attr in self.attrs if attr.startswith('_')]
@@ -238,6 +243,7 @@ class spec_class:
         spec_cls.__is_spec_class__ = True
         spec_cls.__spec_class_key__ = getattr(spec_cls, '__spec_class_key__', None) if self.key is MISSING else self.key
         spec_cls.__spec_class_frozen__ = getattr(spec_cls, '__spec_class_frozen__', False) if self.frozen is None else self.frozen
+        spec_cls.__spec_class_kwarg_overflow__ = getattr(spec_cls, '__spec_class_kwarg_overflow__', None) if self.kwarg_overflow is MISSING else self.kwarg_overflow
 
         # Update annotations
         if not hasattr(spec_cls, '__annotations__'):
@@ -310,11 +316,13 @@ class spec_class:
             self.__spec_class_frozen__ = False
 
             for attr in self.__spec_class_annotations__:
+                if attr == self.__spec_class_kwarg_overflow__:
+                    continue
                 if attr in kwargs:
                     value = kwargs[attr]
                     if value is MISSING:
                         continue
-                    if not attr in self.__spec_class_shallowcopy__:
+                    if attr not in self.__spec_class_shallowcopy__:
                         value = copy.deepcopy(value)
                 else:  # Look up from class attributes (if set)
                     value = getattr(self.__class__, attr, MISSING)
@@ -325,6 +333,16 @@ class spec_class:
                     value = copy.deepcopy(value)
 
                 getattr(self, f'with_{attr}')(value, _inplace=True)
+
+            if self.__spec_class_kwarg_overflow__:
+                getattr(self, f'with_{self.__spec_class_kwarg_overflow__}')(
+                    {
+                        key: value
+                        for key, value in kwargs.items()
+                        if key not in self.__spec_class_annotations__ or key == self.__spec_class_kwarg_overflow__
+                    },
+                    _inplace=True,
+                )
 
             if is_frozen:
                 self.__spec_class_frozen__ = True

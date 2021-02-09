@@ -405,6 +405,17 @@ class TestFramework:
         with pytest.raises(FrozenInstanceError):
             del Item(x=10).x
 
+    def test_kwarg_overflow(self):
+        @spec_class(_kwarg_overflow='options')
+        class MyClass:
+            options: Dict[str, Any]
+        assert MyClass(a=1, b=2).options == {'a': 1, 'b': 2}
+
+        @spec_class(_kwarg_overflow='options')
+        class MyClass:
+            pass
+        assert MyClass(a=1, b=2).options == {'a': 1, 'b': 2}
+
     def test_special_types(self):
         @spec_class
         class Item:

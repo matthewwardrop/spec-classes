@@ -1,7 +1,7 @@
 import inspect
 import textwrap
 from inspect import cleandoc, Signature, Parameter
-from typing import Any, Callable, Dict, Type, Tuple
+from typing import Any, Callable, Dict, Optional, Type, Tuple
 
 from spec_classes.special_types import MISSING
 
@@ -25,6 +25,7 @@ class MethodBuilder:  # pragma: no cover; This is an internal helper class only;
         self.notes = []
         self.parameters = [Parameter("self", Parameter.POSITIONAL_OR_KEYWORD)]
         self.parameters_sig_only = []
+        self.check_attrs_match_sig = True  # This is toggled if signature contains a var_kwarg parameter.
 
     # Signature related methods
 
@@ -48,7 +49,7 @@ class MethodBuilder:  # pragma: no cover; This is an internal helper class only;
 
         return self
 
-    def with_attrs(self, args: Dict[str, Type], template: str = "", defaults: Dict[str, Any] = None, only_if: bool = True):
+    def with_attrs(self, args: Dict[str, Type], var_kwarg: Optional[str] = None, template: str = "", defaults: Dict[str, Any] = None, only_if: bool = True):
         """
         Add **attrs to signature, and record valid keywords as specified in `args`.
         """
@@ -74,7 +75,13 @@ class MethodBuilder:  # pragma: no cover; This is an internal helper class only;
         self.parameters_sig_only.extend([
             Parameter(name, Parameter.KEYWORD_ONLY, annotation=arg_type, default=defaults.get(name))
             for name, arg_type in args.items()
+            if name != var_kwarg
         ])
+        if var_kwarg:
+            self.parameters_sig_only.append(
+                Parameter(var_kwarg, Parameter.VAR_KEYWORD)
+            )
+            self.check_attrs_match_sig = False
         return self
 
     def with_spec_attrs_for(self, spec_cls: type, template: str = "", defaults=None, only_if: bool = True):
@@ -92,7 +99,7 @@ class MethodBuilder:  # pragma: no cover; This is an internal helper class only;
                 )
                 for attr in spec_cls.__spec_class_annotations__
             }
-        return self.with_attrs(spec_cls.__spec_class_annotations__, template=template, defaults=defaults)
+        return self.with_attrs(spec_cls.__spec_class_annotations__, var_kwarg=spec_cls.__spec_class_kwarg_overflow__, template=template, defaults=defaults)
 
     def with_returns(self, desc: str, annotation: Type = Parameter.empty, only_if: bool = True):
         """
@@ -219,7 +226,7 @@ class MethodBuilder:  # pragma: no cover; This is an internal helper class only;
         exec(textwrap.dedent(f"""
             from __future__ import annotations
             def {self.name}{str_signature} { "-> " + str(self.return_type.__name__) if self.return_type is not None and hasattr(self.return_type, '__name__') else ""}:
-                {"validate_attrs(attrs)" if self.parameters_sig_only else ""}
+                {"validate_attrs(attrs)" if self.parameters_sig_only and self.check_attrs_match_sig else ""}
                 return implementation({self.__call_implementation_str(self.signature)})
         """), {'implementation': self.implementation, 'MISSING': MISSING, 'validate_attrs': validate_attrs, 'DEFAULTS': defaults}, namespace)
 
