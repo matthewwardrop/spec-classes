@@ -99,7 +99,7 @@ class MethodBuilder:  # pragma: no cover; This is an internal helper class only;
                 )
                 for attr in spec_cls.__spec_class_annotations__
             }
-        return self.with_attrs(spec_cls.__spec_class_annotations__, var_kwarg=spec_cls.__spec_class_kwarg_overflow__, template=template, defaults=defaults)
+        return self.with_attrs(spec_cls.__spec_class_annotations__, var_kwarg=spec_cls.__spec_class_init_overflow_attr__, template=template, defaults=defaults)
 
     def with_returns(self, desc: str, annotation: Type = Parameter.empty, only_if: bool = True):
         """

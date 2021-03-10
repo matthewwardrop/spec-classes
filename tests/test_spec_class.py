@@ -406,15 +406,20 @@ class TestFramework:
             del Item(x=10).x
 
     def test_kwarg_overflow(self):
-        @spec_class(_kwarg_overflow='options')
+        @spec_class(_init_overflow_attr='options')
         class MyClass:
             options: Dict[str, Any]
         assert MyClass(a=1, b=2).options == {'a': 1, 'b': 2}
 
-        @spec_class(_kwarg_overflow='options')
+        @spec_class(_init_overflow_attr='options')
         class MyClass:
             pass
         assert MyClass(a=1, b=2).options == {'a': 1, 'b': 2}
+
+        @spec_class(_init_overflow_attr='options')
+        class MyClass:
+            a: int
+        assert MyClass(a=1, b=2).options == {'b': 2}
 
     def test_get_attr_default(self):
         @spec_class
