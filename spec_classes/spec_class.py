@@ -307,7 +307,7 @@ class spec_class:
         spec_class_key = spec_cls.__spec_class_key__
         key_default = Parameter.empty
         if spec_class_key:
-            key_default = getattr(spec_cls, spec_class_key, Parameter.empty)
+            key_default = MISSING if hasattr(spec_cls, spec_class_key) else Parameter.empty
             if inspect.isfunction(key_default) or inspect.isdatadescriptor(key_default):
                 spec_class_key = None
 

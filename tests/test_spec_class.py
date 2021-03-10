@@ -146,7 +146,7 @@ class TestFramework:
             'spec_dict_items',
             'spec_list_items'
         }
-        assert inspect.Signature.from_callable(Spec.__init__).parameters['key'].default == 'key'
+        assert inspect.Signature.from_callable(Spec.__init__).parameters['key'].default is MISSING
         for attr, param in inspect.Signature.from_callable(Spec.__init__).parameters.items():
             if attr not in {'self', 'key'}:
                 assert param.default is MISSING
