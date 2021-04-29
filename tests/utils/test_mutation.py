@@ -69,4 +69,4 @@ def test_mutate_value():
 
     # Test proxied values
     obj = object()
-    assert mutate_value(Proxy(lambda : obj)) is obj
+    assert mutate_value(Proxy(lambda: obj)) is obj

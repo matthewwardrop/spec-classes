@@ -2,7 +2,7 @@ import builtins
 import copy
 import functools
 import inspect
-from typing import Any, Callable, Dict, Type, Union
+from typing import Any, Callable, Dict, Set, Type, Union
 
 from lazy_object_proxy import Proxy
 
@@ -33,9 +33,23 @@ def mutate_attr(obj: Any, attr: str, value: Any, inplace: bool = False, type_che
             obj.__setattr__.__raw__(obj, attr, value)
         else:
             setattr(obj, attr, value)  # pragma: no cover
-    except AttributeError:
-        raise AttributeError(f"Cannot set `{obj.__class__.__name__}.{attr}` to `{value}`. Is this a property without a setter?")
+    except AttributeError as e:
+        raise AttributeError(f"Cannot set `{obj.__class__.__name__}.{attr}` to `{value}`. Is this a property without a setter?") from e
+    invalidate_attrs(obj, attr)
     return obj
+
+
+def invalidate_attrs(obj: Any, attr: str, invalidation_map: Dict[str, Set[str]] = None):
+    if invalidation_map is None:
+        invalidation_map = getattr(obj, '__spec_class_invalidation_map__', {})
+
+    # Handle invalidation
+    if attr in invalidation_map:
+        for invalidatee in invalidation_map[attr]:
+            try:
+                delattr(obj, invalidatee)
+            except AttributeError:
+                pass
 
 
 def mutate_value(

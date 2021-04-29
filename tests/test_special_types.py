@@ -63,6 +63,10 @@ class TestSpecProperty:
             def method_overrides(self):
                 raise RuntimeError("In `method_overrides` deleter.")
 
+            @spec_property(cache=True, invalidated_by=['overridable_int'])
+            def invalidated_obj(self):
+                return object()
+
         return MySpecClass()
 
     def test_overridable(self, spec_cls):
@@ -107,3 +111,21 @@ class TestSpecProperty:
 
         with pytest.raises(RuntimeError, match=re.escape("In `method_overrides` deleter.")):
             del spec_cls.method_overrides
+
+    def test_invalidation(self, spec_cls):
+        obj = spec_cls.invalidated_obj
+        assert spec_cls.invalidated_obj is obj
+
+        spec_cls.cached_time = 10.2
+        assert spec_cls.invalidated_obj is obj
+
+        spec_cls.overridable_int = 1
+        assert spec_cls.invalidated_obj is not obj
+
+        obj = spec_cls.invalidated_obj
+        del spec_cls.overridable_int
+        assert spec_cls.invalidated_obj is not obj
+
+        obj = spec_cls.invalidated_obj
+        spec_cls.with_overridable_int(10, _inplace=10)
+        assert spec_cls.invalidated_obj is not obj

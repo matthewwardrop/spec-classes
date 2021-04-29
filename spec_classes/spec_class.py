@@ -5,6 +5,7 @@ import functools
 import inspect
 import textwrap
 import typing
+from collections import defaultdict
 from inspect import Signature, Parameter
 from typing import Any, Callable, Dict, Iterable, Optional, Type, Union
 
@@ -15,7 +16,7 @@ from .errors import FrozenInstanceError
 from .special_types import MISSING
 from .utils.collections import DictCollection, ListCollection, SetCollection
 from .utils.method_builder import MethodBuilder
-from .utils.mutation import mutate_attr, mutate_value
+from .utils.mutation import mutate_attr, mutate_value, invalidate_attrs
 from .utils.type_checking import get_collection_item_type, get_spec_class_for_type, type_label, type_match
 
 
@@ -266,6 +267,14 @@ class spec_class:
             if attr in ({self.key} | managed_attrs).difference([None])
         })
 
+        # Build invalidation cache
+        invalidation_map = copy.deepcopy(getattr(spec_cls, '__spec_class_invalidation_map__', defaultdict(set)))
+        for name, member in spec_cls.__dict__.items():
+            if hasattr(member, '__spec_class_invalidated_by__'):
+                for invalidator in member.__spec_class_invalidated_by__:
+                    invalidation_map[invalidator].add(name)
+        spec_cls.__spec_class_invalidation_map__ = invalidation_map
+
         # Register shallow copy attributes
         shallow_attrs = getattr(spec_cls, '__spec_class_shallowcopy__', set())
         if isinstance(self.shallowcopy, bool):
@@ -458,6 +467,7 @@ class spec_class:
             # Check attr type if managed attribute
             if force or attr not in self.__spec_class_annotations__ or not hasattr(self, f'with_{attr}'):
                 self.__setattr__.__raw__(self, attr, value)
+                invalidate_attrs(self, attr)
             else:
                 getattr(self, f'with_{attr}')(value, _inplace=True)
 
@@ -468,7 +478,9 @@ class spec_class:
 
             cls_value = getattr(self.__class__, attr, MISSING)
             if inspect.isfunction(cls_value) or inspect.isdatadescriptor(cls_value) or cls_value is MISSING:
-                return self.__delattr__.__raw__(self, attr)
+                self.__delattr__.__raw__(self, attr)
+                invalidate_attrs(self, attr)
+                return None
 
             return mutate_attr(
                 obj=self,

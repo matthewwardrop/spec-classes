@@ -132,7 +132,7 @@ class spec_property:
             return decorator
         return super().__new__(cls)
 
-    def __init__(self, fget=None, fset=None, fdel=None, doc=None, overridable=True, cache=False, owner=None, attr_name=None):
+    def __init__(self, fget=None, fset=None, fdel=None, doc=None, overridable=True, cache=False, invalidated_by=None, owner=None, attr_name=None):
         # Standard `property` attributes
         self.fget = fget
         self.fset = fset
@@ -144,6 +144,7 @@ class spec_property:
         # Novel attributes
         self.overridable = overridable
         self.cache = cache
+        self.invalidated_by = invalidated_by or []
         self.owner = owner
         self.attr_name = attr_name
 
@@ -213,8 +214,13 @@ class spec_property:
 
     def __delete__(self, instance):
         if self.fdel is None:
-            if self.overridable or self.cache:
+            if (self.overridable or self.cache) and self.attr_name in instance.__dict__:
                 del instance.__dict__[self.attr_name]
                 return
             raise AttributeError(f"Property override for `{self._qualified_name}` has no cache or override to delete.")
         self.fdel(instance)
+
+    # Let spec-class know to invalidate any cache based on `.invalidate_by`
+    @property
+    def __spec_class_invalidated_by__(self):
+        return self.invalidated_by
