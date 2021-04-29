@@ -48,7 +48,7 @@ class ManagedCollection(metaclass=ABCMeta):
             self.collection = self._create_collection()
         index, old_item = extractor(value_or_index)
         new_item = mutate_value(
-            old_item, new_value=new_item, constructor=self.item_type,
+            old_value=old_item, new_value=new_item, constructor=self.item_type,
             transform=transform, attrs=attrs, attr_transforms=attr_transforms,
             replace=replace
         )

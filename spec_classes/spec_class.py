@@ -9,6 +9,7 @@ from inspect import Signature, Parameter
 from typing import Any, Callable, Dict, Iterable, Optional, Type, Union
 
 import inflect
+from lazy_object_proxy import Proxy
 
 from .errors import FrozenInstanceError
 from .special_types import MISSING
@@ -605,7 +606,7 @@ class spec_class:
                 _new_value = cls._populate_collection(self, attr_name, attr_type, _new_value)
             else:
                 _new_value = mutate_value(
-                    old_value=cls._get_attr(self, attr_name), new_value=_new_value, constructor=attr_type, attrs=attrs, replace=_replace
+                    old_value=Proxy(lambda: cls._get_attr(self, attr_name)), new_value=_new_value, constructor=attr_type, attrs=attrs, replace=_replace
                 )
 
             return mutate_attr(
@@ -619,7 +620,7 @@ class spec_class:
             return with_attr(
                 self,
                 _new_value=mutate_value(
-                    old_value=cls._get_attr(self, attr_name),
+                    old_value=Proxy(lambda: cls._get_attr(self, attr_name)),
                     transform=_transform,
                     constructor=attr_type,
                     attr_transforms=attr_transforms

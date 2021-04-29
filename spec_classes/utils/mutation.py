@@ -2,8 +2,9 @@ import builtins
 import copy
 import functools
 import inspect
-
 from typing import Any, Callable, Dict, Type, Union
+
+from lazy_object_proxy import Proxy
 
 from spec_classes.errors import FrozenInstanceError
 from spec_classes.special_types import MISSING
@@ -53,6 +54,9 @@ def mutate_value(
         value = new_value
     else:
         value = old_value
+
+    if isinstance(value, Proxy):
+        value = value.__wrapped__
 
     # If value is a partially executed constructor, hydrate it.
     if isinstance(value, functools.partial):

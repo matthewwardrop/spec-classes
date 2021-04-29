@@ -1,1 +1,2 @@
 inflect
+lazy-object-proxy

@@ -1,6 +1,7 @@
 from typing import List
 
 import pytest
+from lazy_object_proxy import Proxy
 
 from spec_classes import spec_class, MISSING
 from spec_classes.utils.mutation import mutate_attr, mutate_value
@@ -65,3 +66,7 @@ def test_mutate_value():
 
     with pytest.raises(ValueError, match="Cannot use attrs on a missing value without a constructor."):
         assert mutate_value(MISSING, attrs={'invalid_attr': 'value'})
+
+    # Test proxied values
+    obj = object()
+    assert mutate_value(Proxy(lambda : obj)) is obj
