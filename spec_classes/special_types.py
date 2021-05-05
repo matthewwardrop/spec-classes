@@ -151,13 +151,13 @@ class spec_property:
     # Standard Python property methods to allow customization of getters, setters and deleters.
 
     def getter(self, fget):
-        return type(self)(fget, self.fset, self.fdel, self.__doc__, self.overridable, self.cache, self.owner, self.attr_name)
+        return type(self)(fget, self.fset, self.fdel, self.__doc__, self.overridable, self.cache, self.invalidated_by, self.owner, self.attr_name)
 
     def setter(self, fset):
-        return type(self)(self.fget, fset, self.fdel, self.__doc__, self.overridable, self.cache, self.owner, self.attr_name)
+        return type(self)(self.fget, fset, self.fdel, self.__doc__, self.overridable, self.cache, self.invalidated_by, self.owner, self.attr_name)
 
     def deleter(self, fdel):
-        return type(self)(self.fget, self.fset, fdel, self.__doc__, self.overridable, self.cache, self.owner, self.attr_name)
+        return type(self)(self.fget, self.fset, fdel, self.__doc__, self.overridable, self.cache, self.invalidated_by, self.owner, self.attr_name)
 
     # Descriptor protocol implementation
 
