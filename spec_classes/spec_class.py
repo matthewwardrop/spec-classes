@@ -330,14 +330,8 @@ class spec_class:
             for attr in self.__spec_class_annotations__:
                 if attr == self.__spec_class_init_overflow_attr__:
                     continue
-                if attr in kwargs:
-                    value = kwargs[attr]
-                    if value is MISSING:
-                        continue
-                    if attr not in self.__spec_class_shallowcopy__:
-                        value = copy.deepcopy(value)
-                else:  # Look up from spec_class_get_attr_default handler, if handled, or class attributes (if set)
-                    value = MISSING
+                value = kwargs.get(attr, MISSING)
+                if value is MISSING:  # Look up from spec_class_get_attr_default handler, if handled, or class attributes (if set)
                     if get_attr_default:
                         value = get_attr_default(attr)
                     if value is MISSING:
@@ -346,6 +340,9 @@ class spec_class:
                             continue  # Methods will already be bound to instance from class
                         # We *always* deepcopy values from class defaults so we do not share
                         # values across instances.
+                        value = copy.deepcopy(value)
+                else:
+                    if attr not in self.__spec_class_shallowcopy__:
                         value = copy.deepcopy(value)
 
                 getattr(self, f'with_{attr}')(value, _inplace=True)

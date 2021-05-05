@@ -288,6 +288,22 @@ class TestFramework:
         assert m.mylist is not MyClass.mylist
         assert m.mylist == []
 
+    def test_attr_preparation(self):
+        @spec_class
+        class MyClass:
+            prepared_str: str = 'a'
+            prepared_items: List[str] = []
+
+            def _prepare_prepared_str(self, prepared_str, attrs):
+                return 'c'
+
+            def _prepare_prepared_item(self, prepared_item, attrs):
+                return 'c'
+
+        assert MyClass().prepared_str == 'c'
+        assert MyClass(prepared_str='a').prepared_str == 'c'
+        assert MyClass(prepared_items=[1, 2, 3]).prepared_items == ['c', 'c', 'c']
+
     def test_deepcopy_with_instance_method_values(self):
 
         @spec_class
