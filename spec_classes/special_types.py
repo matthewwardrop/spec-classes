@@ -223,4 +223,6 @@ class spec_property:
     # Let spec-class know to invalidate any cache based on `.invalidate_by`
     @property
     def __spec_class_invalidated_by__(self):
+        if isinstance(self.invalidated_by, str):
+            return [self.invalidated_by]
         return self.invalidated_by

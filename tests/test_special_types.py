@@ -67,6 +67,10 @@ class TestSpecProperty:
             def invalidated_obj(self):
                 return object()
 
+            @spec_property(cache=True, invalidated_by='*')
+            def always_invalidated_obj(self):
+                return object()
+
         return MySpecClass()
 
     def test_overridable(self, spec_cls):
@@ -114,18 +118,26 @@ class TestSpecProperty:
 
     def test_invalidation(self, spec_cls):
         obj = spec_cls.invalidated_obj
+        aobj = spec_cls.always_invalidated_obj
         assert spec_cls.invalidated_obj is obj
+        assert spec_cls.always_invalidated_obj is aobj
 
         spec_cls.cached_time = 10.2
         assert spec_cls.invalidated_obj is obj
+        assert spec_cls.always_invalidated_obj is not aobj
 
         spec_cls.overridable_int = 1
         assert spec_cls.invalidated_obj is not obj
+        assert spec_cls.always_invalidated_obj is not aobj
 
         obj = spec_cls.invalidated_obj
+        aobj = spec_cls.always_invalidated_obj
         del spec_cls.overridable_int
         assert spec_cls.invalidated_obj is not obj
+        assert spec_cls.always_invalidated_obj is not aobj
 
         obj = spec_cls.invalidated_obj
-        spec_cls.with_overridable_int(10, _inplace=10)
+        aobj = spec_cls.always_invalidated_obj
+        spec_cls.with_overridable_int(10, _inplace=True)
         assert spec_cls.invalidated_obj is not obj
+        assert spec_cls.always_invalidated_obj is not aobj

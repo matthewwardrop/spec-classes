@@ -44,12 +44,11 @@ def invalidate_attrs(obj: Any, attr: str, invalidation_map: Dict[str, Set[str]] 
         invalidation_map = getattr(obj, '__spec_class_invalidation_map__', {})
 
     # Handle invalidation
-    if attr in invalidation_map:
-        for invalidatee in invalidation_map[attr]:
-            try:
-                delattr(obj, invalidatee)
-            except AttributeError:
-                pass
+    for invalidatee in invalidation_map.get(attr, set()) | invalidation_map.get('*', set()):
+        try:
+            delattr(obj, invalidatee)
+        except AttributeError:
+            pass
 
 
 def mutate_value(
