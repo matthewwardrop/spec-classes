@@ -40,6 +40,9 @@ def mutate_attr(obj: Any, attr: str, value: Any, inplace: bool = False, type_che
 
 
 def invalidate_attrs(obj: Any, attr: str, invalidation_map: Dict[str, Set[str]] = None):
+    if getattr(obj, '__spec_class_frozen__', False):
+        return
+
     if invalidation_map is None:
         invalidation_map = getattr(obj, '__spec_class_invalidation_map__', {})
 
