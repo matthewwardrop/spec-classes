@@ -21,7 +21,7 @@ def mutate_attr(obj: Any, attr: str, value: Any, inplace: bool = False, type_che
     if value is MISSING:
         return obj
     if not force and inplace and getattr(obj, '__spec_class_frozen__', False):
-        raise FrozenInstanceError(f"Cannot mutate attribute `{attr}` of frozen Spec Class `{obj}`.")
+        raise FrozenInstanceError(f"Cannot mutate attribute `{attr}` of frozen spec class `{obj.__class__.__name__}`.")
     if type_check:
         attr_type = obj.__spec_class_annotations__[attr]
         if not check_type(value, attr_type):

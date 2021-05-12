@@ -459,7 +459,7 @@ class spec_class:
         def __setattr__(self, attr, value, force=False):
             # Abort if frozen
             if not force and self.__spec_class_frozen__ and attr != '__spec_class_frozen__':
-                raise FrozenInstanceError(f"Cannot mutate attribute `{attr}` of frozen Spec Class `{self}`.")
+                raise FrozenInstanceError(f"Cannot mutate attribute `{attr}` of frozen spec class `{self.__class__.__name__}`.")
 
             # Check attr type if managed attribute
             if force or attr not in self.__spec_class_annotations__ or not hasattr(self, f'with_{attr}'):
@@ -471,7 +471,7 @@ class spec_class:
         def __delattr__(self, attr, force=False):
             # Abort if frozen
             if not force and self.__spec_class_frozen__:
-                raise FrozenInstanceError(f"Cannot mutate attribute `{attr}` of frozen Spec Class `{self}`.")
+                raise FrozenInstanceError(f"Cannot mutate attribute `{attr}` of frozen spec class `{self.__class__.__name__}`.")
 
             cls_value = getattr(self.__class__, attr, MISSING)
             if inspect.isfunction(cls_value) or inspect.isdatadescriptor(cls_value) or cls_value is MISSING:
