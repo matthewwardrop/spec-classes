@@ -7,7 +7,7 @@ from spec_classes import spec_class, MISSING
 from spec_classes.utils.mutation import mutate_attr, mutate_value
 
 
-@spec_class(_key='key')
+@spec_class(key='key')
 class Spec:
     key: str = 'key'
     scalar: int

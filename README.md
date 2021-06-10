@@ -33,14 +33,14 @@ class UnkeyedSpec:
     nested_scalar: int = 1
     nested_scalar2: str = 'original value'
 
-@spec_class(_key='key')
+@spec_class(key='key')
 class KeyedSpec:
     key: str = 'key'
     nested_scalar: int = 1
     nested_scalar2: str = 'original value'
 
 
-@spec_class(_key='key')
+@spec_class(key='key')
 class Spec:
     key: str = None
     scalar: int = None

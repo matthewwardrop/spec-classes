@@ -16,14 +16,14 @@ class UnkeyedSpec:
     nested_scalar2: str = 'original value'
 
 
-@spec_class(_key='key')
+@spec_class(key='key')
 class KeyedSpec:
     key: str = 'key'
     nested_scalar: int = 1
     nested_scalar2: str = 'original value'
 
 
-@spec_class(_key='key', _bootstrap=True)
+@spec_class(key='key', bootstrap=True)
 class Spec:
     key: str = 'key'
     scalar: int
@@ -51,7 +51,7 @@ class TestFramework:
         class MyClass:
             a: int
 
-        @spec_class(_bootstrap=True)
+        @spec_class(bootstrap=True)
         class MyClass2:
             a: int
 
@@ -82,7 +82,7 @@ class TestFramework:
 
     def test_spec_inheritance(self):
 
-        @spec_class(_key='value')
+        @spec_class(key='value')
         class Item:
             value: int
 
@@ -96,7 +96,7 @@ class TestFramework:
         }
         assert ItemSub.__spec_class_key__ == 'value'
 
-        @spec_class(_key=None)
+        @spec_class(key=None)
         class ItemSubSub(ItemSub):
             value3: int = 1
 
@@ -108,7 +108,7 @@ class TestFramework:
 
     def test_spec_arguments(self):
 
-        @spec_class('value', items=List[str])
+        @spec_class(attrs={'value'}, attrs_typed={'items': List[str]})
         class Item:
             pass
 
@@ -121,7 +121,7 @@ class TestFramework:
         assert hasattr(Item, 'without_item')
         assert hasattr(Item, 'transform_item')
 
-        @spec_class(_key='key', key=str)
+        @spec_class(key='key', attrs_typed={'key': str})
         class Item:
             pass
 
@@ -130,13 +130,13 @@ class TestFramework:
         assert Item.__annotations__ == {'key': str}
 
         with pytest.raises(ValueError, match='`spec_cls` cannot be used to generate helper methods for private attributes'):
-            @spec_class('_private')
+            @spec_class(attrs={'_private'})
             class Item:
                 pass
 
     def test_annotation_overrides(self):
 
-        @spec_class(x=int)
+        @spec_class(attrs_typed={'x': int})
         class Item:
             x: str
 
@@ -294,7 +294,7 @@ class TestFramework:
         assert Item().with_f(f) != Item()
 
         # Test that key default properly unset when it is a method or property
-        @spec_class(_key='key')
+        @spec_class(key='key')
         class Item:
 
             @property
@@ -348,7 +348,7 @@ class TestFramework:
 
     def test_shallowcopy(self):
 
-        @spec_class(_shallowcopy=['shallow_list'])
+        @spec_class(shallowcopy=['shallow_list'])
         class Item:
             value: str
             deep_list: list
@@ -362,7 +362,7 @@ class TestFramework:
         assert Item().with_deep_list(list_obj).with_shallow_list(list_obj).with_value('x').deep_list is not list_obj
         assert Item().with_deep_list(list_obj).with_shallow_list(list_obj).with_value('x').shallow_list is list_obj
 
-        @spec_class(_shallowcopy=True)
+        @spec_class(shallowcopy=True)
         class ShallowItem:
             value: str
             deep_list: list
@@ -416,7 +416,7 @@ class TestFramework:
         assert Item2().x == 1
         assert Item2(x=10).x == 10
 
-        @spec_class('x')
+        @spec_class(attrs={'x'})
         class Item3:
             x: int
 
@@ -435,7 +435,7 @@ class TestFramework:
     def test_spec_validation(self):
 
         with pytest.raises(ValueError, match="is missing required arguments to populate attributes"):
-            @spec_class(_init=False)
+            @spec_class(init=False)
             class Item:
                 x: int = 1
 
@@ -447,7 +447,7 @@ class TestFramework:
         assert spec_class._get_singular_form('collection') == 'collection_item'
 
     def test_frozen(self):
-        @spec_class(_frozen=True)
+        @spec_class(frozen=True)
         class Item:
             x: int = 1
 
@@ -462,17 +462,17 @@ class TestFramework:
             del Item(x=10).x
 
     def test_kwarg_overflow(self):
-        @spec_class(_init_overflow_attr='options')
+        @spec_class(init_overflow_attr='options')
         class MyClass:
             options: Dict[str, Any]
         assert MyClass(a=1, b=2).options == {'a': 1, 'b': 2}
 
-        @spec_class(_init_overflow_attr='options')
+        @spec_class(init_overflow_attr='options')
         class MyClass:
             pass
         assert MyClass(a=1, b=2).options == {'a': 1, 'b': 2}
 
-        @spec_class(_init_overflow_attr='options')
+        @spec_class(init_overflow_attr='options')
         class MyClass:
             a: int
         assert MyClass(a=1, b=2).options == {'b': 2}
@@ -946,7 +946,7 @@ class TestKeyedSpecListAttribute:
 
         # Test that spec classes with integer keys raise an error.
         with pytest.raises(ValueError, match="List containers do not support keyed spec classes with integral keys."):
-            @spec_class(_key='key')
+            @spec_class(key='key')
             class MySpec:
                 key: int
                 children: List[MySpec]
@@ -954,7 +954,7 @@ class TestKeyedSpecListAttribute:
             MySpec.__spec_class_bootstrap__()
 
         # Test that spec classes that happen to have integer key values also fail
-        @spec_class(_key='key')
+        @spec_class(key='key')
         class MySpec2:
             key: Any
             children: List[MySpec2]
@@ -966,7 +966,7 @@ class TestKeyedSpecListAttribute:
             MySpec2(None).with_child(MySpec2(1))
 
         # Test that float keys work fine.
-        @spec_class(_key='key')
+        @spec_class(key='key')
         class MySpec3:
             key: float
             children: List[MySpec3]
