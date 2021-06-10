@@ -142,5 +142,9 @@ def _get_function_args(function):
     if function is getattr(builtins, function.__name__, None):
         return set()
     if not hasattr(function, '__spec_class_args__'):
+        # If this "function" is a spec-class, look up its __init__ method for arguments.
+        if getattr(function, '__is_spec_class__', False):
+            function.__spec_class_bootstrap__()
+            function = function.__init__
         function.__spec_class_args__ = set(inspect.Signature.from_callable(function).parameters)
     return function.__spec_class_args__

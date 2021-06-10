@@ -148,7 +148,7 @@ class spec_class:
 
     def __init__(
             self, *attrs: str, _key: str = MISSING, _skip: Iterable[str] = None, _shallowcopy: Union[bool, Iterable[str]] = False, _frozen: bool = False,
-            _init: bool = True, _repr: bool = True, _eq: bool = True, _init_overflow_attr: Optional[str] = MISSING, **attrs_typed: Any
+            _init: bool = True, _repr: bool = True, _eq: bool = True, _init_overflow_attr: Optional[str] = MISSING, _bootstrap: bool = False, **attrs_typed: Any
     ):
         """
         Args:
@@ -183,6 +183,11 @@ class spec_class:
             _init_overflow_attr: If specified, any extra keyword arguments passed
                 to the constructor will be collected as a dictionary and set as
                 an attribute of this name.
+            _bootstrap: Whether to bootstrap spec-class immediately (True), or
+                wait until first instantiation (False). Default is to defer
+                bootstrapping to avoid cyclic annotation imports. This may be
+                suboptimal if subclasses are wanting to override the generated
+                methods.
             **attrs_typed: Additional attributes for which this `spec_cls`
                 should add helper methods, with the type of the attr taken to be
                 as specified, overriding (if present) any other type annotations
@@ -208,6 +213,7 @@ class spec_class:
         self.shallowcopy = _shallowcopy
         self.frozen = _frozen
         self.init_overflow_attr = _init_overflow_attr
+        self.bootstrap_immediately = _bootstrap
 
         # Check for private attr specification, and if found, raise!
         private_attrs = [attr for attr in self.attrs if attr.startswith('_')]
@@ -216,14 +222,75 @@ class spec_class:
 
     def __call__(self, spec_cls: type) -> type:
         """
-        Add helper methods for all (or specified) attributes.
+        Mark the nominated `spec_class` as a spec-class, and wrap the
+        `__new__` magic method with hooks to lazily bootstrap spec-class
+        utiltiy methods upon first instantiation.
 
         Args:
             spec_cls: The decorated class.
 
         Returns:
-            `spec_cls`, with the helper methods added.
+            `spec_cls`, with the necessary hooks to generate methods on first
+                instantiation.
+
+        Notes:
+            - We defer method generation until first instantiation to mitigate
+              cyclic import errors when type annotations are bidirectional
+              between two classes.
         """
+        spec_cls.__is_spec_class__ = True
+        spec_cls.__spec_class_bootstrap__ = lambda: self.bootstrap(spec_cls)
+        spec_cls.__spec_class_bootstrapped__ = False
+
+        if self.bootstrap_immediately:
+            self.bootstrap(spec_cls)
+        else:
+            orig_new = spec_cls.__new__ if '__new__' in spec_cls.__dict__ else None
+
+            def __new__(cls, *args, **kwargs):
+                # Bootstrap spec class
+                spec_cls.__spec_class_bootstrap__()
+
+                # Chain out to original __new__ implementation if defined on this
+                # spec class.
+                if orig_new:
+                    return orig_new(cls, *args, **kwargs)
+
+                # Otherwise, remove any additional kwargs added by this class, and
+                # chain out to the super-class implementation of __new__.
+                if args or kwargs:
+                    cls_annotations = getattr(spec_cls, '__annotations__', {})
+                    if self.key is not MISSING and self.key in cls_annotations:
+                        args = args[1:]
+                    if self.init_overflow_attr:
+                        kwargs = {}
+                    else:
+                        for attr in cls_annotations:
+                            kwargs.pop(attr, None)
+
+                return super(spec_cls, cls).__new__(cls, *args, **kwargs)
+
+            spec_cls.__new__ = __new__
+        return spec_cls
+
+    def bootstrap(self, spec_cls: type):
+        """
+        Add helper methods for all (or specified) attributes.
+
+        Args:
+            spec_cls: The decorated class.
+        """
+        if getattr(spec_cls, '__spec_class_bootstrapped__', False):
+            return
+        spec_cls.__spec_class_bootstrapped__ = True
+
+        # Bootstrap any parents of this class first (we can abort after the first
+        # such parent since that parent will bootstrap its parent, and so on)
+        for parent in spec_cls.mro()[1:]:
+            if getattr(parent, '__is_spec_class__', False):
+                parent.__spec_class_bootstrap__()
+                break
+
         # Attrs to be considered are those explicitly passed into constructor, or if none,
         # all of the type annotated fields if the class is not a subclass of an already
         # annotated spec class, or else none.
@@ -242,7 +309,6 @@ class spec_class:
                 )
             })
 
-        spec_cls.__is_spec_class__ = True
         spec_cls.__spec_class_key__ = getattr(spec_cls, '__spec_class_key__', None) if self.key is MISSING else self.key
         spec_cls.__spec_class_frozen__ = getattr(spec_cls, '__spec_class_frozen__', False) if self.frozen is None else self.frozen
         spec_cls.__spec_class_init_overflow_attr__ = getattr(spec_cls, '__spec_class_init_overflow_attr__', None) if self.init_overflow_attr is MISSING else self.init_overflow_attr
@@ -294,8 +360,6 @@ class spec_class:
             self.register_methods(spec_cls, self.get_methods_for_attribute(
                 spec_cls, attr_name, attr_type=spec_cls.__spec_class_annotations__[attr_name]
             ))
-
-        return spec_cls
 
     @classmethod
     def _validate_spec_cls(cls, spec_cls):

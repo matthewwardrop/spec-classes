@@ -23,7 +23,7 @@ class KeyedSpec:
     nested_scalar2: str = 'original value'
 
 
-@spec_class(_key='key')
+@spec_class(_key='key', _bootstrap=True)
 class Spec:
     key: str = 'key'
     scalar: int
@@ -40,10 +40,27 @@ class Spec:
 
 @pytest.fixture
 def spec_cls():
+    assert Spec.__spec_class_bootstrapped__ is True
     return Spec
 
 
 class TestFramework:
+
+    def test_bootstrapping(self):
+        @spec_class
+        class MyClass:
+            a: int
+
+        @spec_class(_bootstrap=True)
+        class MyClass2:
+            a: int
+
+        assert MyClass.__spec_class_bootstrapped__ is False
+        assert MyClass(a=1).a == 1
+        assert MyClass.__spec_class_bootstrapped__ is True
+
+        assert MyClass2.__spec_class_bootstrapped__ is True
+        assert MyClass2(a=1).a == 1
 
     def test_key(self, spec_cls):
         assert spec_cls.__spec_class_key__ == 'key'
@@ -73,6 +90,7 @@ class TestFramework:
         class ItemSub(Item):
             value2: int = 1
 
+        ItemSub.__spec_class_bootstrap__()
         assert set(ItemSub.__spec_class_annotations__) == {
             'value', 'value2'
         }
@@ -82,6 +100,7 @@ class TestFramework:
         class ItemSubSub(ItemSub):
             value3: int = 1
 
+        ItemSubSub.__spec_class_bootstrap__()
         assert set(ItemSubSub.__spec_class_annotations__) == {
             'value', 'value2', 'value3'
         }
@@ -93,6 +112,8 @@ class TestFramework:
         class Item:
             pass
 
+        Item.__spec_class_bootstrap__()
+
         assert hasattr(Item, 'with_value')
         assert hasattr(Item, 'transform_value')
         assert hasattr(Item, 'with_items')
@@ -103,6 +124,8 @@ class TestFramework:
         @spec_class(_key='key', key=str)
         class Item:
             pass
+
+        Item.__spec_class_bootstrap__()
 
         assert Item.__annotations__ == {'key': str}
 
@@ -117,6 +140,7 @@ class TestFramework:
         class Item:
             x: str
 
+        Item.__spec_class_bootstrap__()
         assert Item.__annotations__ == {'x': 'str'}
         assert Item.__spec_class_annotations__ == {'x': int}
 
@@ -250,6 +274,8 @@ class TestFramework:
             def f(self):
                 pass
 
+        Item.__spec_class_bootstrap__()
+
         assert hasattr(Item, '__init__')
         assert hasattr(Item, '__repr__')
         assert hasattr(Item, '__eq__')
@@ -274,6 +300,8 @@ class TestFramework:
             @property
             def key(self):
                 return 'key'
+
+        Item.__spec_class_bootstrap__()
 
         assert set(inspect.Signature.from_callable(Item.__init__).parameters) == {'self', 'key'}
         assert inspect.Signature.from_callable(Item.__init__).parameters['key'].default is MISSING
@@ -326,6 +354,8 @@ class TestFramework:
             deep_list: list
             shallow_list: object
 
+        Item.__spec_class_bootstrap__()
+
         assert Item.__spec_class_shallowcopy__ == {'shallow_list'}
 
         list_obj = []
@@ -337,6 +367,8 @@ class TestFramework:
             value: str
             deep_list: list
             shallow_list: object
+
+        ShallowItem.__spec_class_bootstrap__()
 
         assert ShallowItem.__spec_class_shallowcopy__ == {'value', 'deep_list', 'shallow_list'}
 
@@ -360,6 +392,8 @@ class TestFramework:
             def x(self):
                 return 1
 
+        Item.__spec_class_bootstrap__()
+
         assert set(inspect.Signature.from_callable(Item.__init__).parameters) == {'self'}
         assert isinstance(Item(), Item)
 
@@ -375,6 +409,8 @@ class TestFramework:
             def x(self, x):
                 self._x = x
 
+        Item2.__spec_class_bootstrap__()
+
         assert set(inspect.Signature.from_callable(Item2.__init__).parameters) == {'self', 'x'}
         assert inspect.Signature.from_callable(Item2.__init__).parameters['x'].default is MISSING
         assert Item2().x == 1
@@ -388,6 +424,8 @@ class TestFramework:
             def x(self):
                 return 1
 
+        Item3.__spec_class_bootstrap__()
+
         assert set(inspect.Signature.from_callable(Item3.__init__).parameters) == {'self', 'x'}
         assert inspect.Signature.from_callable(Item3.__init__).parameters['x'].default is MISSING
 
@@ -400,6 +438,8 @@ class TestFramework:
             @spec_class(_init=False)
             class Item:
                 x: int = 1
+
+            Item.__spec_class_bootstrap__()
 
     def test_singularisation(self):
         assert spec_class._get_singular_form('values') == 'value'
@@ -544,6 +584,17 @@ class TestFramework:
         assert m.with_values(['b']).values == ['b']
         assert m.with_value('a', _inplace=True).with_values(['b'], _inplace=True) is m
         assert m.with_value('a', _inplace=True).with_values(['b'], _inplace=True).values == ['b']
+
+    def test_respect_new(self):
+        @spec_class
+        class MySpec:
+            a: int
+
+            def __new__(self, a=1):
+                assert a == 2
+                return "hi"
+
+        assert MySpec(a=2) == "hi"
 
 
 class TestScalarAttribute:
@@ -899,6 +950,8 @@ class TestKeyedSpecListAttribute:
             class MySpec:
                 key: int
                 children: List[MySpec]
+
+            MySpec.__spec_class_bootstrap__()
 
         # Test that spec classes that happen to have integer key values also fail
         @spec_class(_key='key')

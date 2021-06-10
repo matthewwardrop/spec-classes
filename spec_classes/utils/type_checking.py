@@ -71,6 +71,7 @@ def get_spec_class_for_type(attr_type: Type, allow_polymorphic=False) -> Union[T
     returned.
     """
     if getattr(attr_type, '__is_spec_class__', False):
+        attr_type.__spec_class_bootstrap__()
         return attr_type
     if allow_polymorphic and getattr(attr_type, '__origin__', None) is Union:
         spec_classes = [
@@ -79,7 +80,9 @@ def get_spec_class_for_type(attr_type: Type, allow_polymorphic=False) -> Union[T
             if getattr(typ, '__is_spec_class__', False)
         ]
         if len(spec_classes) == 1:
-            return spec_classes[0]
+            spec_class = spec_classes[0]
+            spec_class.__spec_class_bootstrap__()
+            return spec_class
     return None
 
 
