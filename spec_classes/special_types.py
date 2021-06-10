@@ -1,6 +1,6 @@
 from typing import Any, Callable, Optional
 
-from spec_classes.utils.type_checking import check_type
+from spec_classes.utils.type_checking import check_type, type_label
 
 
 # Sentinel for unset inputs to spec_class methods
@@ -196,7 +196,7 @@ class spec_property:
                 pass
             attr_type = spec_class_annotations[self.attr_name]
             if not check_type(value, attr_type):
-                raise ValueError(f"Property override for `{owner.__name__ if owner else ''}.{self.attr_name or ''}` returned an invalid type [got `{repr(value)}`; expecting `{attr_type}`].")
+                raise ValueError(f"Property override for `{owner.__name__ if owner else ''}.{self.attr_name or ''}` returned an invalid type [got `{repr(value)}`; expecting `{type_label(attr_type)}`].")
 
         # Store value in cache is cache is enabled
         if self.cache:

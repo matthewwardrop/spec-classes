@@ -234,7 +234,7 @@ class TestFramework:
         s.scalar = 10
         assert s.scalar == 10
 
-        with pytest.raises(TypeError, match=r"Attempt to set `Spec\.scalar` with an invalid type \[got `'string'`; expecting `<class 'int'>`\]."):
+        with pytest.raises(TypeError, match=r"Attempt to set `Spec\.scalar` with an invalid type \[got `'string'`; expecting `int`\]."):
             s.scalar = 'string'
 
         # Check that attribute deletion works

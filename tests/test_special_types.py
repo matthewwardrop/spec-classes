@@ -93,7 +93,7 @@ class TestSpecProperty:
         assert spec_cls.with_cached_time(10.2).cached_time == 10.2
 
     def test_type_checking(self, spec_cls):
-        with pytest.raises(ValueError, match=re.escape("Property override for `MySpecClass.bad_typecheck` returned an invalid type [got `'string'`; expecting `<class 'int'>`].")):
+        with pytest.raises(ValueError, match=re.escape("Property override for `MySpecClass.bad_typecheck` returned an invalid type [got `'string'`; expecting `int`].")):
             spec_cls.bad_typecheck
 
     def test_no_methods(self, spec_cls):

@@ -9,7 +9,7 @@ from lazy_object_proxy import Proxy
 from spec_classes.errors import FrozenInstanceError
 from spec_classes.special_types import MISSING
 
-from .type_checking import check_type
+from .type_checking import check_type, type_label
 
 
 def mutate_attr(obj: Any, attr: str, value: Any, inplace: bool = False, type_check: bool = True, force: bool = False) -> Any:
@@ -25,7 +25,7 @@ def mutate_attr(obj: Any, attr: str, value: Any, inplace: bool = False, type_che
     if type_check:
         attr_type = obj.__spec_class_annotations__[attr]
         if not check_type(value, attr_type):
-            raise TypeError(f"Attempt to set `{obj.__class__.__name__}.{attr}` with an invalid type [got `{repr(value)}`; expecting `{attr_type}`].")
+            raise TypeError(f"Attempt to set `{obj.__class__.__name__}.{attr}` with an invalid type [got `{repr(value)}`; expecting `{type_label(attr_type)}`].")
     if not inplace:
         obj = copy.deepcopy(obj)
     try:
