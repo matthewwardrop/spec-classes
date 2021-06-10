@@ -675,7 +675,7 @@ class spec_class:
 
         def with_attr(self, _new_value=MISSING, *, _replace=False, _inplace=False, **attrs):
             try:
-                _new_value = getattr(self, attr_prepare_method)(_new_value, attrs)
+                _new_value = getattr(self, attr_prepare_method)(_new_value, **attrs)
             except AttributeError:
                 pass
 
@@ -776,8 +776,6 @@ class spec_class:
 
         if items:
             preparer = getattr(self, f'_prepare_{singular_name}', None)
-            if preparer:
-                preparer = functools.partial(preparer, attrs={})
             collection.add_items(items, preparer=preparer)
             return collection.collection
         return collection._create_collection()  # pylint: disable=protected-access
@@ -856,7 +854,7 @@ class spec_class:
                             value=(
                                 get_collection(self, inplace=_inplace)
                                 .add_item(
-                                    item=getattr(self, f'_prepare_{singular_name}', lambda x, attrs: x)(_item, attrs),
+                                    item=getattr(self, f'_prepare_{singular_name}', lambda x, **attrs: x)(_item, **attrs),
                                     attrs=attrs,
                                     index=_index,
                                     insert=_insert,
@@ -1010,7 +1008,7 @@ class spec_class:
                             value=(
                                 get_collection(self, inplace=_inplace)
                                 .add_item(
-                                    *getattr(self, f'_prepare_{singular_name}', lambda k, v, attrs: (k, v))(_key, _value, attrs),  # Tuple of key, value
+                                    *getattr(self, f'_prepare_{singular_name}', lambda k, v, **attrs: (k, v))(_key, _value, **attrs),  # Tuple of key, value
                                     replace=_replace,
                                     attrs=attrs,
                                 )
@@ -1145,7 +1143,7 @@ class spec_class:
                             value=(
                                 get_collection(self, inplace=_inplace)
                                 .add_item(
-                                    item=getattr(self, f'_prepare_{singular_name}', lambda x, attrs: x)(_item, attrs),
+                                    item=getattr(self, f'_prepare_{singular_name}', lambda x, **attrs: x)(_item, **attrs),
                                     replace=_replace,
                                 )
                                 .collection

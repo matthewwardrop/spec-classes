@@ -322,10 +322,10 @@ class TestFramework:
             prepared_str: str = 'a'
             prepared_items: List[str] = []
 
-            def _prepare_prepared_str(self, prepared_str, attrs):
+            def _prepare_prepared_str(self, prepared_str):
                 return 'c'
 
-            def _prepare_prepared_item(self, prepared_item, attrs):
+            def _prepare_prepared_item(self, prepared_item):
                 return 'c'
 
         assert MyClass().prepared_str == 'c'

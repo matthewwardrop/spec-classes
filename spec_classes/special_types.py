@@ -191,7 +191,7 @@ class spec_property:
         spec_class_annotations = getattr(instance, '__spec_class_annotations__', {})
         if self.attr_name in spec_class_annotations:
             try:
-                value = getattr(instance, f'_prepare_{self.attr_name}')(value, {})
+                value = getattr(instance, f'_prepare_{self.attr_name}')(value)
             except AttributeError:
                 pass
             attr_type = spec_class_annotations[self.attr_name]
