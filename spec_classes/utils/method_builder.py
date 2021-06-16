@@ -4,6 +4,7 @@ from inspect import cleandoc, Signature, Parameter
 from typing import Any, Callable, Dict, Optional, Type, Tuple
 
 from spec_classes.special_types import MISSING
+from spec_classes.utils.type_checking import type_label
 
 
 class MethodBuilder:  # pragma: no cover; This is an internal helper class only; so long as `spec_class` works, we are golden!
@@ -225,7 +226,7 @@ class MethodBuilder:  # pragma: no cover; This is an internal helper class only;
 
         exec(textwrap.dedent(f"""
             from __future__ import annotations
-            def {self.name}{str_signature} { "-> " + str(self.return_type.__name__) if self.return_type is not None and hasattr(self.return_type, '__name__') else ""}:
+            def {self.name}{str_signature} { '-> ' + repr(type_label(self.return_type.__name__)) if self.return_type is not None else ""}:
                 {"validate_attrs(attrs)" if self.parameters_sig_only and self.check_attrs_match_sig else ""}
                 return implementation({self.__call_implementation_str(self.signature)})
         """), {'implementation': self.implementation, 'MISSING': MISSING, 'validate_attrs': validate_attrs, 'DEFAULTS': defaults}, namespace)
