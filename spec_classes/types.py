@@ -85,13 +85,13 @@ def bounded(
     type_str = getattr(numeric_type, '__name__', repr(numeric_type))
     upper_bound_str = '∞)'
     lower_bound_str = '(-∞'
-    if le:
+    if le is not None:
         upper_bound_str = f'{le}]'
-    if lt:
+    if lt is not None:
         upper_bound_str = f'{lt})'
-    if ge:
+    if ge is not None:
         lower_bound_str = f'[{ge}'
-    if gt:
+    if gt is not None:
         lower_bound_str = f'({gt}'
     name = f"{type_str}∊{lower_bound_str},{upper_bound_str}"
 
