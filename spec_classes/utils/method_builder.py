@@ -226,7 +226,7 @@ class MethodBuilder:  # pragma: no cover; This is an internal helper class only;
 
         exec(textwrap.dedent(f"""
             from __future__ import annotations
-            def {self.name}{str_signature} { '-> ' + repr(type_label(self.return_type.__name__)) if self.return_type is not None else ""}:
+            def {self.name}{str_signature} { '-> ' + repr(type_label(self.return_type)) if self.return_type is not None else ""}:
                 {"validate_attrs(attrs)" if self.parameters_sig_only and self.check_attrs_match_sig else ""}
                 return implementation({self.__call_implementation_str(self.signature)})
         """), {'implementation': self.implementation, 'MISSING': MISSING, 'validate_attrs': validate_attrs, 'DEFAULTS': defaults}, namespace)
