@@ -394,7 +394,7 @@ class TestFramework:
 
         Item.__spec_class_bootstrap__()
 
-        assert set(inspect.Signature.from_callable(Item.__init__).parameters) == {'self'}
+        assert set(inspect.Signature.from_callable(Item.__init__).parameters) == {'self', 'x'}
         assert isinstance(Item(), Item)
 
         @spec_class

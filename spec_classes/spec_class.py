@@ -306,10 +306,6 @@ class spec_class:
                 if (
                     not attr.startswith('_')
                     and attr not in self.attrs_skip
-                    and not (
-                        isinstance(getattr(spec_cls, attr, None), property)
-                        and getattr(spec_cls, attr).fset is None
-                    )
                 )
             })
 
@@ -460,6 +456,17 @@ class spec_class:
             include_attrs = include_attrs or list(self.__spec_class_annotations__)
             exclude_attrs = set(exclude_attrs or [])
 
+            # We often re-render things twice to provide the compact
+            # representation where possible, and otherwise the long-form. If we
+            # have to re-render to indented form, it is cheaper for property
+            # methods to have stored the value in this cache rather than have to
+            # look it up again.
+            attr_values = {
+                attr: getattr(self, attr, MISSING)
+                for attr in include_attrs
+                if attr not in exclude_attrs
+            }
+
             def object_repr(obj, indent=False):
                 if inspect.ismethod(obj) and obj.__self__ is self:
                     return f"<bound method {obj.__name__} of self>"
@@ -491,9 +498,8 @@ class spec_class:
             # Collect unindented representations
             if not indent:
                 unindented_attrs = ', '.join([
-                    f"{attr}={object_repr(getattr(self, attr, MISSING))}"
-                    for attr in include_attrs
-                    if attr not in exclude_attrs
+                    f"{attr}={object_repr(value)}"
+                    for attr, value in attr_values.items()
                 ])
                 unindented_repr = f"{self.__class__.__name__}({unindented_attrs})"
                 if indent is False or (len(unindented_repr) <= indent_threshold and not any('\n' in attr_repr for attr_repr in unindented_attrs)):
@@ -501,9 +507,8 @@ class spec_class:
 
             # Collected indented representation
             indented_attrs = textwrap.indent(',\n'.join([
-                f"{attr}={object_repr(getattr(self, attr, MISSING), indent=True)}"
-                for attr in include_attrs
-                if attr not in exclude_attrs
+                f"{attr}={object_repr(value, indent=True)}"
+                for attr, value in attr_values.items()
             ]), '    ')
             return f"{self.__class__.__name__}(\n{indented_attrs}\n)"
 
