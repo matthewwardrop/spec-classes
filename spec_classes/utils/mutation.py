@@ -85,7 +85,7 @@ def mutate_value(
         mutate_safe = True
         while hasattr(constructor, '__origin__'):
             constructor = constructor.__origin__
-        constructor_args = _get_function_args(constructor)
+        constructor_args = _get_function_args(constructor, attrs)
         value = constructor(**{attr: value for attr, value in (attrs or {}).items() if attr in constructor_args})
         attrs = {
             attr: value
@@ -138,13 +138,18 @@ def mutate_value(
     return value
 
 
-def _get_function_args(function):
+def _get_function_args(function, attrs):
     if function is getattr(builtins, function.__name__, None):
         return set()
+    if getattr(function, '__spec_class_init_overflow_attr__', None):
+        return set(attrs)
     if not hasattr(function, '__spec_class_args__'):
         # If this "function" is a spec-class, look up its __init__ method for arguments.
         if getattr(function, '__is_spec_class__', False):
             function.__spec_class_bootstrap__()
             function = function.__init__
-        function.__spec_class_args__ = set(inspect.Signature.from_callable(function).parameters)
+        parameters = inspect.Signature.from_callable(function).parameters
+        if parameters and list(parameters.values())[-1].kind is inspect.Parameter.VAR_KEYWORD:
+            return set(attrs)
+        function.__spec_class_args__ = set(parameters)
     return function.__spec_class_args__
