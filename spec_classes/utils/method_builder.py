@@ -26,13 +26,20 @@ class MethodBuilder:  # pragma: no cover; This is an internal helper class only;
         self.notes = []
         self.parameters = [Parameter("self", Parameter.POSITIONAL_OR_KEYWORD)]
         self.parameters_sig_only = []
-        self.check_attrs_match_sig = True  # This is toggled if signature contains a var_kwarg parameter.
+        self.check_attrs_match_sig = (
+            True  # This is toggled if signature contains a var_kwarg parameter.
+        )
 
     # Signature related methods
 
     def with_arg(
-            self, name: str, desc: str, default: Any = Parameter.empty, keyword_only: bool = False,
-            annotation: Type = Parameter.empty, only_if: bool = True
+        self,
+        name: str,
+        desc: str,
+        default: Any = Parameter.empty,
+        keyword_only: bool = False,
+        annotation: Type = Parameter.empty,
+        only_if: bool = True,
     ):
         """
         Add argument to method.
@@ -40,17 +47,30 @@ class MethodBuilder:  # pragma: no cover; This is an internal helper class only;
         if not only_if:
             return self
 
-        self.args.append('\n'.join(textwrap.wrap(f"{name}: {desc}", subsequent_indent='    ')))
-        self.parameters.append(Parameter(
-            name,
-            kind=Parameter.KEYWORD_ONLY if keyword_only else Parameter.POSITIONAL_OR_KEYWORD,
-            default=default,
-            annotation=annotation,
-        ))
+        self.args.append(
+            "\n".join(textwrap.wrap(f"{name}: {desc}", subsequent_indent="    "))
+        )
+        self.parameters.append(
+            Parameter(
+                name,
+                kind=Parameter.KEYWORD_ONLY
+                if keyword_only
+                else Parameter.POSITIONAL_OR_KEYWORD,
+                default=default,
+                annotation=annotation,
+            )
+        )
 
         return self
 
-    def with_attrs(self, args: Dict[str, Type], var_kwarg: Optional[str] = None, template: str = "", defaults: Dict[str, Any] = None, only_if: bool = True):
+    def with_attrs(
+        self,
+        args: Dict[str, Type],
+        var_kwarg: Optional[str] = None,
+        template: str = "",
+        defaults: Dict[str, Any] = None,
+        only_if: bool = True,
+    ):
         """
         Add **attrs to signature, and record valid keywords as specified in `args`.
         """
@@ -67,42 +87,57 @@ class MethodBuilder:  # pragma: no cover; This is an internal helper class only;
         if not args:
             return self
 
-        self.args.extend([
-            "{}: {}".format(name, template.format(name)) for name in list(args)
-        ])
+        self.args.extend(
+            ["{}: {}".format(name, template.format(name)) for name in list(args)]
+        )
         if not self.parameters_sig_only:
-            self.parameters.append(Parameter('attrs', kind=Parameter.VAR_KEYWORD))
+            self.parameters.append(Parameter("attrs", kind=Parameter.VAR_KEYWORD))
         defaults = defaults or {}
-        self.parameters_sig_only.extend([
-            Parameter(name, Parameter.KEYWORD_ONLY, annotation=arg_type, default=defaults.get(name))
-            for name, arg_type in args.items()
-            if name != var_kwarg
-        ])
+        self.parameters_sig_only.extend(
+            [
+                Parameter(
+                    name,
+                    Parameter.KEYWORD_ONLY,
+                    annotation=arg_type,
+                    default=defaults.get(name),
+                )
+                for name, arg_type in args.items()
+                if name != var_kwarg
+            ]
+        )
         if var_kwarg:
-            self.parameters_sig_only.append(
-                Parameter(var_kwarg, Parameter.VAR_KEYWORD)
-            )
+            self.parameters_sig_only.append(Parameter(var_kwarg, Parameter.VAR_KEYWORD))
             self.check_attrs_match_sig = False
         return self
 
-    def with_spec_attrs_for(self, spec_cls: type, template: str = "", defaults=None, only_if: bool = True):
+    def with_spec_attrs_for(
+        self, spec_cls: type, template: str = "", defaults=None, only_if: bool = True
+    ):
         """
         Add **attrs based on the attributes of a spec_class.
         """
-        if not only_if or not getattr(spec_cls, '__is_spec_class__', False):
+        if not only_if or not getattr(spec_cls, "__is_spec_class__", False):
             return self
         if defaults is True:
             defaults = {
                 attr: (
                     getattr(spec_cls, attr, MISSING)
-                    if not inspect.isfunction(getattr(spec_cls, attr, None)) and not inspect.isdatadescriptor(getattr(spec_cls, attr, None)) else
-                    MISSING
+                    if not inspect.isfunction(getattr(spec_cls, attr, None))
+                    and not inspect.isdatadescriptor(getattr(spec_cls, attr, None))
+                    else MISSING
                 )
                 for attr in spec_cls.__spec_class_annotations__
             }
-        return self.with_attrs(spec_cls.__spec_class_annotations__, var_kwarg=spec_cls.__spec_class_init_overflow_attr__, template=template, defaults=defaults)
+        return self.with_attrs(
+            spec_cls.__spec_class_annotations__,
+            var_kwarg=spec_cls.__spec_class_init_overflow_attr__,
+            template=template,
+            defaults=defaults,
+        )
 
-    def with_returns(self, desc: str, annotation: Type = Parameter.empty, only_if: bool = True):
+    def with_returns(
+        self, desc: str, annotation: Type = Parameter.empty, only_if: bool = True
+    ):
         """
         Specify return type and description.
         """
@@ -130,10 +165,9 @@ class MethodBuilder:  # pragma: no cover; This is an internal helper class only;
         if not only_if:
             return self
 
-        self.notes.extend([
-            '\n'.join(textwrap.wrap(line, subsequent_indent='    '))
-            for line in lines
-        ])
+        self.notes.extend(
+            ["\n".join(textwrap.wrap(line, subsequent_indent="    ")) for line in lines]
+        )
         return self
 
     # Extractors
@@ -146,7 +180,11 @@ class MethodBuilder:  # pragma: no cover; This is an internal helper class only;
         if self.args:
             docstring += "\nArgs:\n" + textwrap.indent("\n".join(self.args), "    ")
         if self.returns:
-            docstring += "\nReturns:\n" + '\n'.join(textwrap.wrap(self.returns, initial_indent='    ', subsequent_indent='    '))
+            docstring += "\nReturns:\n" + "\n".join(
+                textwrap.wrap(
+                    self.returns, initial_indent="    ", subsequent_indent="    "
+                )
+            )
         if self.notes:
             docstring += "\nNotes:\n" + textwrap.indent("\n".join(self.notes), "    ")
         return cleandoc(docstring)
@@ -168,7 +206,9 @@ class MethodBuilder:  # pragma: no cover; This is an internal helper class only;
         return self.signature
 
     @staticmethod
-    def __check_signature_conformance(sig_method: Signature, sig_impl: Signature) -> bool:
+    def __check_signature_conformance(
+        sig_method: Signature, sig_impl: Signature
+    ) -> bool:
         """
         Check whether signatures conform to one another, assuming that the fields
         in `sig_method` are going to be passed by position for positional parameters,
@@ -184,9 +224,10 @@ class MethodBuilder:  # pragma: no cover; This is an internal helper class only;
             elif impl_param.kind is Parameter.VAR_KEYWORD:
                 impl_has_var_kwargs = True
             elif (
-                    impl_param.kind in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
-                    and impl_param.default is Parameter.empty
-                    and impl_param.name not in sig_method.parameters
+                impl_param.kind
+                in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
+                and impl_param.default is Parameter.empty
+                and impl_param.name not in sig_method.parameters
             ):
                 return False
 
@@ -199,7 +240,10 @@ class MethodBuilder:  # pragma: no cover; This is an internal helper class only;
                 if not impl_has_var_kwargs:
                     return False
             elif method_param.name not in sig_impl.parameters:
-                if method_param.kind is Parameter.POSITIONAL_ONLY or not impl_has_var_kwargs:
+                if (
+                    method_param.kind is Parameter.POSITIONAL_ONLY
+                    or not impl_has_var_kwargs
+                ):
                     return False
 
         return True
@@ -215,21 +259,38 @@ class MethodBuilder:  # pragma: no cover; This is an internal helper class only;
         signature_advertised = self.signature_advertised
 
         if not self.__check_signature_conformance(signature, impl_signature):
-            raise ValueError(f"Proposed method signature `{self.name}{signature}` is not compatible with implementation signature `implementation{impl_signature}`.")
+            raise ValueError(
+                f"Proposed method signature `{self.name}{signature}` is not compatible with implementation signature `implementation{impl_signature}`."
+            )
 
         def validate_attrs(attrs):
-            extra_attrs = set(attrs).difference([p.name for p in self.parameters_sig_only])
+            extra_attrs = set(attrs).difference(
+                [p.name for p in self.parameters_sig_only]
+            )
             if extra_attrs:
-                raise TypeError(f"{self.name}() got unexpected keyword arguments: {repr(extra_attrs)}.")
+                raise TypeError(
+                    f"{self.name}() got unexpected keyword arguments: {repr(extra_attrs)}."
+                )
 
         str_signature, defaults = self.__call_signature_str(signature)
 
-        exec(textwrap.dedent(f"""
+        exec(
+            textwrap.dedent(
+                f"""
             from __future__ import annotations
             def {self.name}{str_signature} { '-> ' + repr(type_label(self.return_type)) if self.return_type is not None else ""}:
                 {"validate_attrs(attrs)" if self.parameters_sig_only and self.check_attrs_match_sig else ""}
                 return implementation({self.__call_implementation_str(self.signature)})
-        """), {'implementation': self.implementation, 'MISSING': MISSING, 'validate_attrs': validate_attrs, 'DEFAULTS': defaults}, namespace)
+        """
+            ),
+            {
+                "implementation": self.implementation,
+                "MISSING": MISSING,
+                "validate_attrs": validate_attrs,
+                "DEFAULTS": defaults,
+            },
+            namespace,
+        )
 
         method = namespace[self.name]
         method.__doc__ = self.docstring
@@ -249,13 +310,11 @@ class MethodBuilder:  # pragma: no cover; This is an internal helper class only;
                 done_kw_only = True
             elif p.kind is Parameter.KEYWORD_ONLY and not done_kw_only:
                 done_kw_only = True
-                out.append('*')
-            param = str(p).split(':')[0]
+                out.append("*")
+            param = str(p).split(":")[0]
             if p.default is not Parameter.empty:
-                param = param.split('=')[0]
-                out.append(
-                    f'{param}=DEFAULTS["{p.name}"]'
-                )
+                param = param.split("=")[0]
+                out.append(f'{param}=DEFAULTS["{p.name}"]')
                 defaults[p.name] = p.default
             else:
                 out.append(param)
@@ -271,9 +330,9 @@ class MethodBuilder:  # pragma: no cover; This is an internal helper class only;
             if p.kind is inspect.Parameter.POSITIONAL_ONLY:
                 out.append(name)
             elif p.kind is inspect.Parameter.VAR_POSITIONAL:
-                out.append(f'*{name}')
+                out.append(f"*{name}")
             elif p.kind is inspect.Parameter.VAR_KEYWORD:
-                out.append(f'**{name}')
+                out.append(f"**{name}")
             else:
-                out.append(f'{name}={name}')
+                out.append(f"{name}={name}")
         return ", ".join(out)

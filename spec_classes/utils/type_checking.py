@@ -1,4 +1,10 @@
-from typing import Any, Union, _GenericAlias, Type, TypeVar  # pylint: disable=protected-access
+from typing import (
+    Any,
+    Union,
+    _GenericAlias,
+    Type,
+    TypeVar,
+)  # pylint: disable=protected-access
 
 
 def type_match(type_input: Type, type_reference: type) -> bool:
@@ -7,7 +13,7 @@ def type_match(type_input: Type, type_reference: type) -> bool:
     which is permitted to be a sequence of multiple values; but cannot be
     a parameterized generic type.
     """
-    while hasattr(type_input, '__origin__'):
+    while hasattr(type_input, "__origin__"):
         type_input = type_input.__origin__
     return isinstance(type_input, type) and issubclass(type_input, type_reference)
 
@@ -19,7 +25,7 @@ def check_type(value: Any, attr_type: Type) -> bool:
     if attr_type is Any:
         return True
 
-    if hasattr(attr_type, '__origin__'):  # we are dealing with a `typing` object.
+    if hasattr(attr_type, "__origin__"):  # we are dealing with a `typing` object.
 
         if attr_type.__origin__ is Union:
             return any(check_type(value, type_) for type_ in attr_type.__args__)
@@ -27,11 +33,15 @@ def check_type(value: Any, attr_type: Type) -> bool:
         if isinstance(attr_type, _GenericAlias):
             if not isinstance(value, attr_type.__origin__):
                 return False
-            if attr_type._name in ('List', 'Set') and not isinstance(attr_type.__args__[0], TypeVar):  # pylint: disable=protected-access
+            if attr_type._name in ("List", "Set") and not isinstance(
+                attr_type.__args__[0], TypeVar
+            ):  # pylint: disable=protected-access
                 for item in value:
                     if not check_type(item, attr_type.__args__[0]):
                         return False
-            elif attr_type._name == 'Dict' and not isinstance(attr_type.__args__[0], TypeVar):  # pylint: disable=protected-access
+            elif attr_type._name == "Dict" and not isinstance(
+                attr_type.__args__[0], TypeVar
+            ):  # pylint: disable=protected-access
                 for k, v in value.items():
                     if not check_type(k, attr_type.__args__[0]):
                         return False
@@ -39,7 +49,9 @@ def check_type(value: Any, attr_type: Type) -> bool:
                         return False
             return True
 
-        return isinstance(value, attr_type.__origin__)  # pragma: no cover; This is here as a fallback currently, just in case!
+        return isinstance(
+            value, attr_type.__origin__
+        )  # pragma: no cover; This is here as a fallback currently, just in case!
 
     return isinstance(value, attr_type)
 
@@ -49,7 +61,7 @@ def get_collection_item_type(container_type: Type) -> Type:
     Return the type of object inside a typing container (List, Set, Dict),
     or `None` if this isn't annotated.
     """
-    if not hasattr(container_type, '__args__'):  # i.e. this is not a `typing` container
+    if not hasattr(container_type, "__args__"):  # i.e. this is not a `typing` container
         return Any
 
     item_type = Any
@@ -62,7 +74,9 @@ def get_collection_item_type(container_type: Type) -> Type:
     return item_type
 
 
-def get_spec_class_for_type(attr_type: Type, allow_polymorphic=False) -> Union[Type, None]:
+def get_spec_class_for_type(
+    attr_type: Type, allow_polymorphic=False
+) -> Union[Type, None]:
     """
     Get the spec class to associated with a given attribute type. This is
     useful when `attr_type` is a polymorphic type, e.g.
@@ -70,14 +84,14 @@ def get_spec_class_for_type(attr_type: Type, allow_polymorphic=False) -> Union[T
     polymorphic type. If there is not exactly one spec class type, `None` is
     returned.
     """
-    if getattr(attr_type, '__is_spec_class__', False):
+    if getattr(attr_type, "__is_spec_class__", False):
         attr_type.__spec_class_bootstrap__()
         return attr_type
-    if allow_polymorphic and getattr(attr_type, '__origin__', None) is Union:
+    if allow_polymorphic and getattr(attr_type, "__origin__", None) is Union:
         spec_classes = [
             typ
             for typ in attr_type.__args__
-            if getattr(typ, '__is_spec_class__', False)
+            if getattr(typ, "__is_spec_class__", False)
         ]
         if len(spec_classes) == 1:
             spec_class = spec_classes[0]

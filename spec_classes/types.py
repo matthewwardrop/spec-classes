@@ -29,14 +29,18 @@ class ValidatedType(metaclass=ValidatedTypeMeta):
     """
 
     def __new__(cls, *args, **kwargs):
-        raise RuntimeError(f"`{type_label(cls)}` is intended to be used as a type annotation, and should not be instantiated.")
+        raise RuntimeError(
+            f"`{type_label(cls)}` is intended to be used as a type annotation, and should not be instantiated."
+        )
 
     @abstractclassmethod
     def validate(cls, obj: Any) -> bool:
         ...  # pragma: no cover
 
 
-def validated(validator: Callable[(Any, ), bool], name: str = 'validated') -> ValidatedType:
+def validated(
+    validator: Callable[(Any,), bool], name: str = "validated"
+) -> ValidatedType:
     """
     Construct a validated type based on the nominated `validator`.
 
@@ -47,20 +51,20 @@ def validated(validator: Callable[(Any, ), bool], name: str = 'validated') -> Va
     """
     return type(
         name,
-        (ValidatedType, ),
+        (ValidatedType,),
         {
-            'validate': validator,
+            "validate": validator,
         },
     )
 
 
 def bounded(
-        numeric_type: Type,
-        *,
-        ge: numbers.Number = None,
-        gt: numbers.Number = None,
-        le: numbers.Number = None,
-        lt: numbers.Number = None,
+    numeric_type: Type,
+    *,
+    ge: numbers.Number = None,
+    gt: numbers.Number = None,
+    le: numbers.Number = None,
+    lt: numbers.Number = None,
 ) -> ValidatedType:
     """
     Construct a validated type that bounds a numeric type from above and/or below.
@@ -82,17 +86,17 @@ def bounded(
         raise ValueError("Can only specify at most one of `lt` or `le`.")
 
     # Generate name of type
-    type_str = getattr(numeric_type, '__name__', repr(numeric_type))
-    upper_bound_str = '∞)'
-    lower_bound_str = '(-∞'
+    type_str = getattr(numeric_type, "__name__", repr(numeric_type))
+    upper_bound_str = "∞)"
+    lower_bound_str = "(-∞"
     if le is not None:
-        upper_bound_str = f'{le}]'
+        upper_bound_str = f"{le}]"
     if lt is not None:
-        upper_bound_str = f'{lt})'
+        upper_bound_str = f"{lt})"
     if ge is not None:
-        lower_bound_str = f'[{ge}'
+        lower_bound_str = f"[{ge}"
     if gt is not None:
-        lower_bound_str = f'({gt}'
+        lower_bound_str = f"({gt}"
     name = f"{type_str}∊{lower_bound_str},{upper_bound_str}"
 
     # Validator

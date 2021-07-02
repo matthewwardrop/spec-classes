@@ -44,7 +44,14 @@ class AttrProxy:
     retrieve it.
     """
 
-    def __init__(self, attr: str, *, passthrough=False, transform: Optional[Callable[[Any], Any]] = None, fallback=MISSING):
+    def __init__(
+        self,
+        attr: str,
+        *,
+        passthrough=False,
+        transform: Optional[Callable[[Any], Any]] = None,
+        fallback=MISSING,
+    ):
         self.attr = attr
         self.transform = transform
         self.passthrough = passthrough
@@ -58,8 +65,8 @@ class AttrProxy:
             return None
         return (
             self.attr
-            if self.passthrough else
-            f"__spec_class_attrproxy_{self.host_attr}_override"
+            if self.passthrough
+            else f"__spec_class_attrproxy_{self.host_attr}_override"
         )
 
     def __get__(self, instance: Any, owner=None):
@@ -127,12 +134,25 @@ class spec_property:
 
     def __new__(cls, *args, **kwargs):
         if not args:
+
             def decorator(func):
                 return spec_property(func, **kwargs)
+
             return decorator
         return super().__new__(cls)
 
-    def __init__(self, fget=None, fset=None, fdel=None, doc=None, overridable=True, cache=False, invalidated_by=None, owner=None, attr_name=None):
+    def __init__(
+        self,
+        fget=None,
+        fset=None,
+        fdel=None,
+        doc=None,
+        overridable=True,
+        cache=False,
+        invalidated_by=None,
+        owner=None,
+        attr_name=None,
+    ):
         # Standard `property` attributes
         self.fget = fget
         self.fset = fset
@@ -151,13 +171,43 @@ class spec_property:
     # Standard Python property methods to allow customization of getters, setters and deleters.
 
     def getter(self, fget):
-        return type(self)(fget, self.fset, self.fdel, self.__doc__, self.overridable, self.cache, self.invalidated_by, self.owner, self.attr_name)
+        return type(self)(
+            fget,
+            self.fset,
+            self.fdel,
+            self.__doc__,
+            self.overridable,
+            self.cache,
+            self.invalidated_by,
+            self.owner,
+            self.attr_name,
+        )
 
     def setter(self, fset):
-        return type(self)(self.fget, fset, self.fdel, self.__doc__, self.overridable, self.cache, self.invalidated_by, self.owner, self.attr_name)
+        return type(self)(
+            self.fget,
+            fset,
+            self.fdel,
+            self.__doc__,
+            self.overridable,
+            self.cache,
+            self.invalidated_by,
+            self.owner,
+            self.attr_name,
+        )
 
     def deleter(self, fdel):
-        return type(self)(self.fget, self.fset, fdel, self.__doc__, self.overridable, self.cache, self.invalidated_by, self.owner, self.attr_name)
+        return type(self)(
+            self.fget,
+            self.fset,
+            fdel,
+            self.__doc__,
+            self.overridable,
+            self.cache,
+            self.invalidated_by,
+            self.owner,
+            self.attr_name,
+        )
 
     # Descriptor protocol implementation
 
@@ -180,7 +230,9 @@ class spec_property:
 
         # If there is no assigned getter
         if self.fget is None:
-            raise AttributeError(f"Property override for `{self._qualified_name}` does not have a getter method.")
+            raise AttributeError(
+                f"Property override for `{self._qualified_name}` does not have a getter method."
+            )
 
         # Get value from getter
         value = self.fget(instance)
@@ -188,15 +240,17 @@ class spec_property:
         # If attribute is annotated with a `spec_class` type, apply any
         # transforms using `_prepare_foo()` methods, and then check that the
         # attribute type is correct.
-        spec_class_annotations = getattr(instance, '__spec_class_annotations__', {})
+        spec_class_annotations = getattr(instance, "__spec_class_annotations__", {})
         if self.attr_name in spec_class_annotations:
             try:
-                value = getattr(instance, f'_prepare_{self.attr_name}')(value)
+                value = getattr(instance, f"_prepare_{self.attr_name}")(value)
             except AttributeError:
                 pass
             attr_type = spec_class_annotations[self.attr_name]
             if not check_type(value, attr_type):
-                raise ValueError(f"Property override for `{owner.__name__ if owner else ''}.{self.attr_name or ''}` returned an invalid type [got `{repr(value)}`; expecting `{type_label(attr_type)}`].")
+                raise ValueError(
+                    f"Property override for `{owner.__name__ if owner else ''}.{self.attr_name or ''}` returned an invalid type [got `{repr(value)}`; expecting `{type_label(attr_type)}`]."
+                )
 
         # Store value in cache is cache is enabled
         if self.cache:
@@ -209,7 +263,9 @@ class spec_property:
             if self.overridable:
                 instance.__dict__[self.attr_name] = value
                 return
-            raise AttributeError(f"Property override for `{self._qualified_name}` does not have a setter and/or is not configured to be overridable.")
+            raise AttributeError(
+                f"Property override for `{self._qualified_name}` does not have a setter and/or is not configured to be overridable."
+            )
         self.fset(instance, value)
 
     def __delete__(self, instance):
@@ -217,7 +273,9 @@ class spec_property:
             if (self.overridable or self.cache) and self.attr_name in instance.__dict__:
                 del instance.__dict__[self.attr_name]
                 return
-            raise AttributeError(f"Property override for `{self._qualified_name}` has no cache or override to delete.")
+            raise AttributeError(
+                f"Property override for `{self._qualified_name}` has no cache or override to delete."
+            )
         self.fdel(instance)
 
     # Let spec-class know to invalidate any cache based on `.invalidate_by`
