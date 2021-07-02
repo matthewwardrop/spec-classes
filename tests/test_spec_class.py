@@ -494,6 +494,42 @@ class TestFramework:
         with pytest.raises(TypeError, match=r"Attempt to set `MySubClass\.c` with an invalid type"):
             MySubClass()
 
+    def test_subclassing(self):
+
+        @spec_class
+        class A:
+            a: int
+            a_overridden: int
+            a_defaulted: int
+
+            def __init__(self, a=MISSING, a_overridden=MISSING, a_defaulted=MISSING):
+                self.a = 100
+                self.a_overridden = 100
+                self.a_defaulted = 100
+
+        @spec_class
+        class B:
+            b: int
+
+            def __init__(self, b=10):
+                self.b = 100
+
+        @spec_class
+        class C(A, B):
+            a_overridden: int = 10
+            a_defaulted = 10
+            c: int
+
+        assert A().a_overridden == 100
+        assert list(C().__spec_class_annotations__) == ['b', 'a', 'a_overridden', 'a_defaulted', 'c']
+        assert C().a == 100
+        assert C().a_overridden == 10
+        assert C().a_defaulted == 100
+        assert C().b == 100
+        assert not hasattr(C(), 'c')
+        assert C(a=1).a == 100
+        assert C(b=1).b == 100
+
     def test_special_types(self):
         @spec_class
         class Item:

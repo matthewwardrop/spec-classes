@@ -36,7 +36,7 @@ class ValidatedType(metaclass=ValidatedTypeMeta):
         ...  # pragma: no cover
 
 
-def validated(validator: Callable[(Any, ), bool], name: str='validated') -> ValidatedType:
+def validated(validator: Callable[(Any, ), bool], name: str = 'validated') -> ValidatedType:
     """
     Construct a validated type based on the nominated `validator`.
 

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import copy
-import functools
 import inspect
 import textwrap
 import typing
@@ -148,7 +147,7 @@ class spec_class:
 
     def __init__(
             self, key: str = MISSING, shallowcopy: Union[bool, Iterable[str]] = False, frozen: bool = False,
-            init: bool = True, repr: bool = True, eq: bool = True,  bootstrap: bool = False,
+            init: bool = True, repr: bool = True, eq: bool = True, bootstrap: bool = False,
             attrs: Iterable[str] = MISSING, attrs_typed: Mapping[str, Type] = MISSING, attrs_skip: Iterable[str] = MISSING,
             init_overflow_attr: Optional[str] = MISSING,
     ):
@@ -290,10 +289,9 @@ class spec_class:
 
         # Bootstrap any parents of this class first (we can abort after the first
         # such parent since that parent will bootstrap its parent, and so on)
-        for parent in spec_cls.mro()[1:]:
+        for parent in spec_cls.__bases__:
             if getattr(parent, '__is_spec_class__', False):
                 parent.__spec_class_bootstrap__()
-                break
 
         # Attrs to be considered are those explicitly passed into constructor, or if none,
         # all of the type annotated fields if the class is not a subclass of an already
@@ -325,8 +323,11 @@ class spec_class:
         })
 
         # Generate and record managed annotations subset
+        spec_cls.__spec_class_annotations__ = {}
+        for parent in reversed(spec_cls.__bases__):
+            if getattr(parent, '__is_spec_class__', False):
+                spec_cls.__spec_class_annotations__.update(parent.__spec_class_annotations__)
         parsed_type_hints = typing.get_type_hints(spec_cls, localns={spec_cls.__name__: spec_cls})
-        spec_cls.__spec_class_annotations__ = getattr(spec_cls, '__spec_class_annotations__', {}).copy()
         spec_cls.__spec_class_annotations__.update({
             attr: self.attrs[attr] if self.attrs.get(attr, Any) is not Any else parsed_type_hints.get(attr, Any)
             for attr in spec_cls.__annotations__
@@ -386,12 +387,28 @@ class spec_class:
                 spec_class_key = None
 
         def init_impl(self, **kwargs):
+
+            # Initialise any non-local spec parameters via parent constructors
+            incoming_args = set(kwargs)
+            for parent in spec_cls.__bases__:
+                if getattr(parent, '__is_spec_class__', False):
+                    a = {
+                        attr: kwargs.pop(attr)
+                        for attr in list(kwargs)
+                        if attr in parent.__spec_class_annotations__
+                        and attr not in spec_cls.__annotations__
+                    }
+                    parent.__init__(self, **a)
+            super_attrs = incoming_args.difference(kwargs)
+
             is_frozen = self.__spec_class_frozen__
             self.__spec_class_frozen__ = False
 
             get_attr_default = getattr(self, '__spec_class_get_attr_default__', None)
 
-            for attr in self.__spec_class_annotations__:
+            for attr in spec_cls.__annotations__:
+                if attr in super_attrs:
+                    continue
                 if attr == self.__spec_class_init_overflow_attr__:
                     continue
                 value = kwargs.get(attr, MISSING)
