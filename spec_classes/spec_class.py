@@ -354,12 +354,6 @@ class spec_class:
         )
 
         # Generate and record managed annotations subset
-        spec_cls.__spec_class_annotations__ = {}
-        for parent in reversed(spec_cls.__bases__):
-            if getattr(parent, "__is_spec_class__", False):
-                spec_cls.__spec_class_annotations__.update(
-                    parent.__spec_class_annotations__
-                )
         annotation_types = {}
         if hasattr(spec_cls, "ANNOTATION_TYPES"):
             spec_annotation_types = spec_cls.ANNOTATION_TYPES
@@ -370,14 +364,23 @@ class spec_class:
         parsed_type_hints = typing.get_type_hints(
             spec_cls, localns={spec_cls.__name__: spec_cls, **annotation_types}
         )
+        spec_cls.__spec_class_annotations_local__ = {
+            attr: self.attrs[attr]
+            if self.attrs.get(attr, Any) is not Any
+            else parsed_type_hints.get(attr, Any)
+            for attr in spec_cls.__annotations__
+            if attr in ({self.key} | managed_attrs).difference([None])
+        }
+
+        # Assemble for convenience a dictionary with all parent annotations too
+        spec_cls.__spec_class_annotations__ = {}
+        for parent in reversed(spec_cls.__bases__):
+            if getattr(parent, "__is_spec_class__", False):
+                spec_cls.__spec_class_annotations__.update(
+                    parent.__spec_class_annotations__
+                )
         spec_cls.__spec_class_annotations__.update(
-            {
-                attr: self.attrs[attr]
-                if self.attrs.get(attr, Any) is not Any
-                else parsed_type_hints.get(attr, Any)
-                for attr in spec_cls.__annotations__
-                if attr in ({self.key} | managed_attrs).difference([None])
-            }
+            spec_cls.__spec_class_annotations_local__
         )
 
         # Build invalidation cache
@@ -467,7 +470,7 @@ class spec_class:
 
             get_attr_default = getattr(self, "__spec_class_get_attr_default__", None)
 
-            for attr in spec_cls.__annotations__:
+            for attr in spec_cls.__spec_class_annotations_local__:
                 if attr in super_attrs:
                     continue
                 if attr == self.__spec_class_init_overflow_attr__:
