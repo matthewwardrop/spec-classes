@@ -739,6 +739,30 @@ class TestFramework:
 
         assert MySpec(a=2) == "hi"
 
+    def test_annotation_types(self):
+        @spec_class
+        class MySpec:
+
+            ANNOTATION_TYPES = {"my_str": str}
+
+            a: "my_str"
+
+        MySpec.__spec_class_bootstrap__()
+        assert MySpec.__spec_class_annotations__["a"] is str
+
+        @spec_class
+        class MySpec2:
+            @classmethod
+            def ANNOTATION_TYPES(cls):
+                return {
+                    "my_str": str,
+                }
+
+            a: "my_str"
+
+        MySpec2.__spec_class_bootstrap__()
+        assert MySpec2.__spec_class_annotations__["a"] is str
+
 
 class TestScalarAttribute:
     def test_with(self, spec_cls):

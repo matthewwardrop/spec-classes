@@ -360,8 +360,15 @@ class spec_class:
                 spec_cls.__spec_class_annotations__.update(
                     parent.__spec_class_annotations__
                 )
+        annotation_types = {}
+        if hasattr(spec_cls, "ANNOTATION_TYPES"):
+            spec_annotation_types = spec_cls.ANNOTATION_TYPES
+            if hasattr(spec_annotation_types, "__call__"):
+                spec_annotation_types = spec_cls.ANNOTATION_TYPES()
+            if isinstance(spec_annotation_types, Mapping):
+                annotation_types.update(spec_annotation_types)
         parsed_type_hints = typing.get_type_hints(
-            spec_cls, localns={spec_cls.__name__: spec_cls}
+            spec_cls, localns={spec_cls.__name__: spec_cls, **annotation_types}
         )
         spec_cls.__spec_class_annotations__.update(
             {
