@@ -566,6 +566,8 @@ class spec_class:
             }
 
             def object_repr(obj, indent=False):
+                if obj is self:
+                    return "<self>"
                 if inspect.ismethod(obj) and obj.__self__ is self:
                     return f"<bound method {obj.__name__} of self>"
                 if hasattr(obj, "__repr__"):
