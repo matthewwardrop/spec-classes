@@ -892,21 +892,6 @@ class spec_class:
 
         or_its_attributes = " or its attributes" if attr_spec_type else ""
         return {
-            f"get_{attr_name}": (
-                MethodBuilder(f"get_{attr_name}", get_attr)
-                .with_preamble(f"Retrieve the value of attribute `{attr_name}`.")
-                .with_arg(
-                    "_raise_if_missing",
-                    "Whether to raise an AttributeError when `{attr_name}` has not been set.",
-                    default=True,
-                    keyword_only=True,
-                    annotation=bool,
-                )
-                .with_returns(
-                    "The current value of the attribute (or `MISSING` if `_raise_if_missing` is `False`).",
-                    annotation=attr_type,
-                )
-            ),
             f"with_{attr_name}": (
                 MethodBuilder(f"with_{attr_name}", with_attr)
                 .with_preamble(
@@ -1078,61 +1063,6 @@ class spec_class:
             ]
 
         return {
-            f"get_{singular_name}": (
-                MethodBuilder(
-                    f"get_{singular_name}",
-                    lambda self, _value_or_index=MISSING, *, _by_index=False, _all_matches=False, _raise_if_missing=True, **attr_filters: (
-                        get_collection(self).get_item(
-                            value_or_index=_value_or_index,
-                            attr_filters=attr_filters,
-                            by_index=_by_index,
-                            all_matches=_all_matches,
-                            raise_if_missing=_raise_if_missing,
-                        )
-                    ),
-                )
-                .with_preamble(
-                    f"Return `{attr_type}` instance(s) corresponding to a given value or index."
-                    + (
-                        " You can also filter by the nested spec class attributes."
-                        if item_spec_type
-                        else ""
-                    )
-                )
-                .with_arg(
-                    "_value_or_index",
-                    "The value for which to extract an item, or (if `by_index=True`) its index.",
-                    default=MISSING if item_spec_type else Parameter.empty,
-                    annotation=Union[fn_item_type, fn_index_type],
-                )
-                .with_arg(
-                    "_by_index",
-                    "If True, value_or_index is the index of the item to extract.",
-                    keyword_only=True,
-                    default=False,
-                    annotation=bool,
-                )
-                .with_arg(
-                    "_all_matches",
-                    "Whether to return all matching items in container, or just the first.",
-                    default=False,
-                    keyword_only=True,
-                    annotation=bool,
-                    only_if=item_spec_type,
-                )
-                .with_arg(
-                    "_raise_if_missing",
-                    "Whether to raise an AttributeError when an item is not found.",
-                    default=True,
-                    keyword_only=True,
-                    annotation=bool,
-                )
-                .with_spec_attrs_for(
-                    item_spec_type,
-                    template=f"An optional filter for `{singular_name}.{{}}`.",
-                )
-                .with_returns("The extracted item.", annotation=item_type)
-            ),
             f"with_{singular_name}": (
                 MethodBuilder(
                     f"with_{singular_name}",
@@ -1365,53 +1295,6 @@ class spec_class:
             fn_value_type = item_type
 
         return {
-            f"get_{singular_name}": (
-                MethodBuilder(
-                    f"get_{singular_name}",
-                    lambda self, _key=MISSING, *, _all_matches=False, _raise_if_missing=True, **attr_filters: (
-                        get_collection(self).get_item(
-                            key=_key,
-                            attr_filters=attr_filters,
-                            all_matches=_all_matches,
-                            raise_if_missing=_raise_if_missing,
-                        )
-                    ),
-                )
-                .with_preamble(
-                    f"Return `{attr_type}` instance(s) corresponding to a given value or index."
-                    + (
-                        " You can also filter by the nested spec class attributes."
-                        if item_spec_type
-                        else ""
-                    )
-                )
-                .with_arg(
-                    "_key",
-                    "The key for which to extract an item.",
-                    default=MISSING if item_spec_type else Parameter.empty,
-                    annotation=fn_key_type,
-                )
-                .with_arg(
-                    "_all_matches",
-                    "Whether to return all matching items in container, or just the first.",
-                    default=False,
-                    keyword_only=True,
-                    annotation=bool,
-                    only_if=item_spec_type,
-                )
-                .with_arg(
-                    "_raise_if_missing",
-                    "Whether to raise an AttributeError when an item is not found.",
-                    default=True,
-                    keyword_only=True,
-                    annotation=bool,
-                )
-                .with_spec_attrs_for(
-                    item_spec_type,
-                    template=f"An optional filter for `{singular_name}.{{}}`.",
-                )
-                .with_returns("The extracted item.", annotation=item_type)
-            ),
             f"with_{singular_name}": (
                 MethodBuilder(
                     f"with_{singular_name}",
@@ -1597,53 +1480,6 @@ class spec_class:
             )
 
         return {
-            f"get_{singular_name}": (
-                MethodBuilder(
-                    f"get_{singular_name}",
-                    lambda self, _item=MISSING, *, _all_matches=False, _raise_if_missing=True, **attr_filters: (
-                        get_collection(self).get_item(
-                            item=_item,
-                            all_matches=_all_matches,
-                            raise_if_missing=_raise_if_missing,
-                            attr_filters=attr_filters,
-                        )
-                    ),
-                )
-                .with_preamble(
-                    f"Return `{attr_type}` instance(s) corresponding to a given value or index."
-                    + (
-                        " You can also filter by the nested spec class attributes."
-                        if item_spec_type
-                        else ""
-                    )
-                )
-                .with_arg(
-                    "_item",
-                    "The item to extract.",
-                    default=MISSING if item_spec_type else Parameter.empty,
-                    annotation=item_type,
-                )
-                .with_arg(
-                    "_all_matches",
-                    "Whether to return all matching items in container, or just the first.",
-                    default=False,
-                    keyword_only=True,
-                    annotation=bool,
-                    only_if=item_spec_type,
-                )
-                .with_arg(
-                    "_raise_if_missing",
-                    "Whether to raise an AttributeError when an item is not found.",
-                    default=True,
-                    keyword_only=True,
-                    annotation=bool,
-                )
-                .with_spec_attrs_for(
-                    item_spec_type,
-                    template=f"An optional filter for `{singular_name}.{{}}`.",
-                )
-                .with_returns("The extracted item.", annotation=item_type)
-            ),
             f"with_{singular_name}": (
                 MethodBuilder(
                     f"with_{singular_name}",

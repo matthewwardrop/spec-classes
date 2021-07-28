@@ -802,12 +802,11 @@ class TestSpecAttribute:
         spec = spec_cls()
 
         assert "scalar" not in spec.__dict__
-        assert spec.get_scalar(_raise_if_missing=False) is MISSING
 
         with pytest.raises(
             AttributeError, match=r"`Spec\.scalar` has not yet been assigned a value\."
         ):
-            spec.get_scalar()
+            spec.scalar
 
     def test_with(self, spec_cls):
 
@@ -884,28 +883,6 @@ class TestSpecAttribute:
 
 
 class TestListAttribute:
-    def test_get(self, spec_cls):
-        spec = spec_cls(list_values=[3, 2, 1])
-        assert set(inspect.Signature.from_callable(spec.get_list_value).parameters) == {
-            "_value_or_index",
-            "_by_index",
-            "_raise_if_missing",
-        }
-
-        assert spec.get_list_value(1) == 1  # By value
-        assert spec.get_list_value(10, _raise_if_missing=False) is MISSING  # By value
-        assert spec.get_list_value(0, _by_index=True) == 3  # By index
-
-        # Test collection missing behaviour
-        del spec.__dict__["list_values"]
-        assert spec.get_list_value(10, _raise_if_missing=False) is MISSING
-
-        with pytest.raises(
-            AttributeError,
-            match=r"No item by key/index `10` found in `Spec\.list_values`\.",
-        ):
-            spec.get_list_value(10)
-
     def test_with(self, spec_cls):
 
         spec = spec_cls()
@@ -991,60 +968,6 @@ class TestListAttribute:
 
 
 class TestUnkeyedSpecListAttribute:
-    def test_get(self, spec_cls):
-        spec = spec_cls(spec_list_items=[UnkeyedSpec(), UnkeyedSpec(nested_scalar=10)])
-        assert set(
-            inspect.Signature.from_callable(spec.get_spec_list_item).parameters
-        ) == {
-            "_value_or_index",
-            "_by_index",
-            "_all_matches",
-            "_raise_if_missing",
-            "nested_scalar",
-            "nested_scalar2",
-        }
-
-        assert spec.get_spec_list_item(UnkeyedSpec()) == UnkeyedSpec()  # By value
-        assert spec.get_spec_list_item(1, _by_index=True) == UnkeyedSpec(
-            nested_scalar=10
-        )  # By index
-        assert (
-            spec.get_spec_list_item(10, _by_index=True, _raise_if_missing=False)
-            is MISSING
-        )  # By index
-
-        assert spec.get_spec_list_item(nested_scalar=10) == UnkeyedSpec(
-            nested_scalar=10
-        )
-        assert spec.get_spec_list_item(_all_matches=True, nested_scalar=10) == [
-            UnkeyedSpec(nested_scalar=10)
-        ]
-        assert (
-            spec.get_spec_list_item(_raise_if_missing=False, nested_scalar=11)
-            is MISSING
-        )
-
-        with pytest.raises(
-            AttributeError,
-            match=r"No item by key/index `UnkeyedSpec\(nested_scalar=20, nested_scalar2='original value'\)` found in `Spec\.spec_list_items`\.",
-        ):
-            spec.get_spec_list_item(UnkeyedSpec(nested_scalar=20))
-
-        with pytest.raises(
-            AttributeError,
-            match=r"No items with nominated attribute filters found in `Spec\.spec_list_items`.",
-        ):
-            spec.get_spec_list_item(nested_scalar=11)
-
-        # Test collection missing behaviour
-        del spec.__dict__["spec_list_items"]
-        assert (
-            spec.get_spec_list_item(
-                nested_scalar=10, _raise_if_missing=False, _all_matches=True
-            )
-            == []
-        )
-
     def test_with(self, spec_cls):
 
         spec = spec_cls()
@@ -1178,64 +1101,6 @@ class TestUnkeyedSpecListAttribute:
 
 
 class TestKeyedSpecListAttribute:
-    def test_get(self, spec_cls):
-        spec = spec_cls(
-            keyed_spec_list_items=[
-                KeyedSpec("key"),
-                KeyedSpec("key2", nested_scalar=10),
-            ]
-        )
-        assert set(
-            inspect.Signature.from_callable(spec.get_keyed_spec_list_item).parameters
-        ) == {
-            "_value_or_index",
-            "_by_index",
-            "_all_matches",
-            "_raise_if_missing",
-            "key",
-            "nested_scalar",
-            "nested_scalar2",
-        }
-
-        assert spec.get_keyed_spec_list_item(KeyedSpec("key")) == KeyedSpec(
-            "key"
-        )  # By value
-        assert spec.get_keyed_spec_list_item(1, _by_index=True) == KeyedSpec(
-            "key2", nested_scalar=10
-        )  # By index
-        assert (
-            spec.get_keyed_spec_list_item(10, _by_index=True, _raise_if_missing=False)
-            is MISSING
-        )  # By index
-        assert spec.get_keyed_spec_list_item(
-            "key", _raise_if_missing=False
-        ) == KeyedSpec(
-            "key"
-        )  # By key
-
-        assert spec.get_keyed_spec_list_item(nested_scalar=10) == KeyedSpec(
-            "key2", nested_scalar=10
-        )
-        assert spec.get_keyed_spec_list_item(_all_matches=True, nested_scalar=10) == [
-            KeyedSpec("key2", nested_scalar=10)
-        ]
-        assert (
-            spec.get_keyed_spec_list_item(_raise_if_missing=False, nested_scalar=11)
-            is MISSING
-        )
-
-        with pytest.raises(
-            AttributeError,
-            match=r"No items with nominated attribute filters found in `Spec.keyed_spec_list_items`\.",
-        ):
-            spec.get_keyed_spec_list_item(nested_scalar=11)
-
-        with pytest.raises(
-            AttributeError,
-            match=r"No item by key/index `'key3'` found in `Spec\.keyed_spec_list_items`\.",
-        ):
-            spec.get_keyed_spec_list_item("key3")
-
     def test_with(self, spec_cls):
 
         spec = spec_cls()
@@ -1468,22 +1333,6 @@ class TestKeyedSpecListAttribute:
 
 
 class TestDictAttribute:
-    def test_get(self, spec_cls):
-        spec = spec_cls(dict_values={"a": 1, "b": 2, "c": 3})
-        assert set(inspect.Signature.from_callable(spec.get_dict_value).parameters) == {
-            "_key",
-            "_raise_if_missing",
-        }
-
-        assert spec.get_dict_value("a") == 1  # By key
-        assert spec.get_dict_value("d", _raise_if_missing=False) is MISSING  # By key
-
-        with pytest.raises(
-            AttributeError,
-            match=r"No item by key/index `'d'` found in `Spec\.dict_values`\.",
-        ):
-            spec.get_dict_value("d")
-
     def test_with(self, spec_cls):
 
         spec = spec_cls()
@@ -1554,34 +1403,6 @@ class TestDictAttribute:
 
 
 class TestUnkeyedSpecDictAttribute:
-    def test_get(self, spec_cls):
-        spec = spec_cls(
-            spec_dict_items={
-                "a": UnkeyedSpec(nested_scalar=1),
-                "b": UnkeyedSpec(nested_scalar=2),
-            }
-        )
-        assert set(
-            inspect.Signature.from_callable(spec.get_spec_dict_item).parameters
-        ) == {
-            "_key",
-            "_all_matches",
-            "_raise_if_missing",
-            "nested_scalar",
-            "nested_scalar2",
-        }
-
-        assert spec.get_spec_dict_item("a") == UnkeyedSpec(nested_scalar=1)  # By key
-        assert (
-            spec.get_spec_dict_item("c", _raise_if_missing=False) is MISSING
-        )  # By key
-
-        with pytest.raises(
-            AttributeError,
-            match=r"No item by key/index `'d'` found in `Spec\.spec_dict_items`\.",
-        ):
-            spec.get_spec_dict_item("d")
-
     def test_with(self, spec_cls):
 
         spec = spec_cls()
@@ -1659,37 +1480,6 @@ class TestUnkeyedSpecDictAttribute:
 
 
 class TestKeyedSpecDictAttribute:
-    def test_get(self, spec_cls):
-        spec = spec_cls(
-            keyed_spec_dict_items={
-                "a": KeyedSpec("a", nested_scalar=1),
-                "b": KeyedSpec("b", nested_scalar=2),
-            }
-        )
-        assert set(
-            inspect.Signature.from_callable(spec.get_keyed_spec_dict_item).parameters
-        ) == {
-            "_key",
-            "_all_matches",
-            "_raise_if_missing",
-            "key",
-            "nested_scalar",
-            "nested_scalar2",
-        }
-
-        assert spec.get_keyed_spec_dict_item("a") == KeyedSpec(
-            "a", nested_scalar=1
-        )  # By key
-        assert (
-            spec.get_keyed_spec_dict_item("c", _raise_if_missing=False) is MISSING
-        )  # By key
-
-        with pytest.raises(
-            AttributeError,
-            match=r"No item by key/index `'d'` found in `Spec\.keyed_spec_dict_items`\.",
-        ):
-            spec.get_keyed_spec_dict_item("d")
-
     def test_with(self, spec_cls):
 
         spec = spec_cls()
@@ -1808,22 +1598,6 @@ class TestKeyedSpecDictAttribute:
 
 
 class TestSetAttribute:
-    def test_get(self, spec_cls):
-        spec = spec_cls(set_values={"a", "b"})
-        assert set(inspect.Signature.from_callable(spec.get_set_value).parameters) == {
-            "_item",
-            "_raise_if_missing",
-        }
-
-        assert spec.get_set_value("a") == "a"
-        assert spec.get_set_value("c", _raise_if_missing=False) is MISSING
-
-        with pytest.raises(
-            AttributeError,
-            match=r"No item by key/index `'d'` found in `Spec\.set_values`\.",
-        ):
-            spec.get_set_value("d")
-
     def test_with(self, spec_cls):
 
         spec = spec_cls()
