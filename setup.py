@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 setup(
@@ -13,7 +13,7 @@ setup(
     setup_requires=['setupmeta>=3.0'],
     install_requires='@requirements.txt',
     extras_require={'test': '@requirements_test.txt'},
-    packages=['spec_classes', 'spec_classes.utils'],
+    packages=find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

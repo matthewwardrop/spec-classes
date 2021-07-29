@@ -6,7 +6,7 @@ from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from typing import Any, Callable, Dict, Type, Union
 
-from spec_classes.special_types import MISSING
+from spec_classes.types import MISSING
 
 from .mutation import mutate_value
 from .type_checking import (

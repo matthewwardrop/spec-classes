@@ -1,8 +1,8 @@
-from abc import ABCMeta, abstractclassmethod
 import numbers
+from abc import ABCMeta, abstractclassmethod
 from typing import Any, Type, Callable
 
-from .utils.type_checking import check_type, type_label
+from spec_classes.utils.type_checking import check_type, type_label
 
 
 class ValidatedTypeMeta(ABCMeta):

@@ -12,7 +12,7 @@ import inflect
 from lazy_object_proxy import Proxy
 
 from .errors import FrozenInstanceError
-from .special_types import MISSING
+from .types import MISSING
 from .utils.collections import DictCollection, ListCollection, SetCollection
 from .utils.method_builder import MethodBuilder
 from .utils.mutation import mutate_attr, mutate_value, invalidate_attrs

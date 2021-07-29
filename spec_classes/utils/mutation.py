@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, Set, Type, Union
 from lazy_object_proxy import Proxy
 
 from spec_classes.errors import FrozenInstanceError
-from spec_classes.special_types import MISSING
+from spec_classes.types import MISSING
 
 from .type_checking import check_type, type_label
 

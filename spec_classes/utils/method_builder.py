@@ -3,7 +3,7 @@ import textwrap
 from inspect import cleandoc, Signature, Parameter
 from typing import Any, Callable, Dict, Optional, Type, Tuple
 
-from spec_classes.special_types import MISSING
+from spec_classes.types import MISSING
 from spec_classes.utils.type_checking import type_label
 
 
