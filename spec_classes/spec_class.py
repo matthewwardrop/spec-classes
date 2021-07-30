@@ -5,15 +5,25 @@ import inspect
 import textwrap
 import typing
 from collections import defaultdict
+from collections.abc import MutableSequence, MutableMapping, MutableSet
 from inspect import Signature, Parameter
-from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Type, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Mapping,
+    Optional,
+    Type,
+    Union,
+)
 
 import inflect
 from lazy_object_proxy import Proxy
 
 from .errors import FrozenInstanceError
 from .types import MISSING
-from .utils.collections import DictCollection, ListCollection, SetCollection
+from .utils.collections import MappingCollection, SequenceCollection, SetCollection
 from .utils.method_builder import MethodBuilder
 from .utils.mutation import mutate_attr, mutate_value, invalidate_attrs
 from .utils.type_checking import (
@@ -50,7 +60,7 @@ class spec_class:
         - `with_<attribute>(...)`: Update the attribute value.
         - `transform_<attribute>(...)`: Update the attribute value by calling
             a passed function on the existing value.
-    - collection types (list, set, dict):
+    - collection types (sequence, mapping, set):
         - `with_<singular_noun_for_attribute>(...)`: Add/modify a member of the
             collection.
         - `transform_<singular_noun_for_attribute>(...)`: Update a member of a
@@ -577,7 +587,8 @@ class spec_class:
                         pass
 
                 if indent:
-                    if isinstance(obj, list):
+                    if isinstance(obj, MutableSequence):
+                        print(obj)
                         if not obj:
                             return "[]"
                         items_repr = textwrap.indent(
@@ -587,7 +598,7 @@ class spec_class:
                             "    ",
                         )
                         return f"[\n{items_repr}\n]"
-                    if isinstance(obj, dict):
+                    if isinstance(obj, MutableMapping):
                         if not obj:
                             return "{}"
                         items_repr = textwrap.indent(
@@ -777,13 +788,19 @@ class spec_class:
             spec_cls,
             attr_name,
             attr_type,
-            is_collection=type_match(attr_type, (list, dict, set)),
+            is_collection=type_match(
+                attr_type, (MutableSequence, MutableMapping, MutableSet)
+            ),
         )
-        if type_match(attr_type, list):
-            methods.update(self._get_methods_for_list(spec_cls, attr_name, attr_type))
-        elif type_match(attr_type, dict):
-            methods.update(self._get_methods_for_dict(spec_cls, attr_name, attr_type))
-        elif type_match(attr_type, set):
+        if type_match(attr_type, MutableSequence):
+            methods.update(
+                self._get_methods_for_sequence(spec_cls, attr_name, attr_type)
+            )
+        elif type_match(attr_type, MutableMapping):
+            methods.update(
+                self._get_methods_for_mapping(spec_cls, attr_name, attr_type)
+            )
+        elif type_match(attr_type, MutableSet):
             methods.update(self._get_methods_for_set(spec_cls, attr_name, attr_type))
         return methods
 
@@ -990,11 +1007,11 @@ class spec_class:
     def _populate_collection(cls, self, attr_name, attr_type, items):
         singular_name = cls._get_singular_form(attr_name)
 
-        if type_match(attr_type, list):
-            collection = ListCollection(attr_type, name=attr_name)
-        elif type_match(attr_type, dict):
-            collection = DictCollection(attr_type, name=attr_name)
-        elif type_match(attr_type, set):
+        if type_match(attr_type, MutableSequence):
+            collection = SequenceCollection(attr_type, name=attr_name)
+        elif type_match(attr_type, MutableMapping):
+            collection = MappingCollection(attr_type, name=attr_name)
+        elif type_match(attr_type, MutableSet):
             collection = SetCollection(attr_type, name=attr_name)
         else:
             raise TypeError(
@@ -1008,11 +1025,11 @@ class spec_class:
         return collection._create_collection()  # pylint: disable=protected-access
 
     @classmethod
-    def _get_methods_for_list(
+    def _get_methods_for_sequence(
         cls, spec_cls: type, attr_name: str, attr_type: Type
     ) -> Dict[str, Callable]:
         """
-        Generate and return the methods for a list container. There are three
+        Generate and return the methods for a sequence container. There are three
         scenarios dealt with here. They are when the container item type is:
         (1) a non-spec type.
         (2) another class decorated with `spec_cls` that does not have a key
@@ -1023,7 +1040,7 @@ class spec_class:
         Each scenario progressively enriches the generated methods. From (1 -> 2)
         the methods garner the ability to mutate elements of the nested spec
         class directly. From (2 -> 3) the methods garner the ability to lookup
-        items in the list by key (as well as integer).
+        items in the sequence by key (as well as integer).
 
         Notes: List containers do not support keyed specs with integer keys.
         """
@@ -1034,11 +1051,11 @@ class spec_class:
             item_spec_type and item_spec_type.__spec_class_key__ is not None
         )
 
-        # Check list collection type is valid (i.e. nested spec-type doesn't have integer keys)
-        ListCollection(attr_type, name=attr_name)
+        # Check sequence collection type is valid (i.e. nested spec-type doesn't have integer keys)
+        SequenceCollection(attr_type, name=attr_name)
 
         def get_collection(self, inplace=True):
-            return ListCollection(
+            return SequenceCollection(
                 collection_type=attr_type,
                 collection=cls._get_attr(self, attr_name, MISSING),
                 name=f"{self.__class__.__name__}.{attr_name}",
@@ -1246,11 +1263,11 @@ class spec_class:
         }
 
     @classmethod
-    def _get_methods_for_dict(
+    def _get_methods_for_mapping(
         cls, spec_cls: type, attr_name: str, attr_type: Type
     ) -> Dict[str, Callable]:
         """
-        Generate and return the methods for a dict container. There are three
+        Generate and return the methods for a mapping container. There are three
         scenarios dealt with here. They are when the container item type is:
         (1) a non-spec type.
         (2) another class decorated with `spec_cls` that does not have a key
@@ -1271,7 +1288,7 @@ class spec_class:
         )
 
         def get_collection(self, inplace=True):
-            return DictCollection(
+            return MappingCollection(
                 collection_type=attr_type,
                 collection=cls._get_attr(self, attr_name, MISSING),
                 name=f"{self.__class__.__name__}.{attr_name}",

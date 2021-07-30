@@ -156,9 +156,10 @@ class ManagedCollection(metaclass=ABCMeta):
             return item
         return (attrs or {}).get(spec_cls.__spec_class_key__, MISSING)
 
-    @abstractmethod
     def _create_collection(self):
-        ...  # pragma: no cover
+        if hasattr(self.collection_type, "__origin__"):
+            return self.collection_type.__origin__()
+        return self.collection_type()
 
     @abstractmethod
     def _extractor(self, value_or_index) -> IndexedItem:
@@ -185,7 +186,7 @@ class ManagedCollection(metaclass=ABCMeta):
         ...  # pragma: no cover
 
 
-class ListCollection(ManagedCollection):
+class SequenceCollection(ManagedCollection):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -195,9 +196,6 @@ class ListCollection(ManagedCollection):
             ]
             if type_match(item_key_type, int):
                 self._abort_due_to_integer_keys()
-
-    def _create_collection(self):
-        return []
 
     def _abort_due_to_integer_keys(self):
         raise ValueError(
@@ -351,10 +349,7 @@ class ListCollection(ManagedCollection):
         return self
 
 
-class DictCollection(ManagedCollection):
-    def _create_collection(self):
-        return {}
-
+class MappingCollection(ManagedCollection):
     def _extractor(self, value_or_index):
         default = MISSING
         if self.item_spec_type_is_keyed:
@@ -443,9 +438,6 @@ class DictCollection(ManagedCollection):
 
 
 class SetCollection(ManagedCollection):
-    def _create_collection(self):
-        return set()
-
     def _extractor(self, value_or_index):
         return (
             value_or_index,
