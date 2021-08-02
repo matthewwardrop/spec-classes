@@ -69,4 +69,4 @@ class TestTypeChecking:
         assert type_label(str) == "str"
         assert type_label(object) == "object"
         assert type_label(Spec) == "Spec"
-        assert type_label(List[str]) == "object"
+        assert type_label(List[str]) == "typing.List[str]"

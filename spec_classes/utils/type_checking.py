@@ -2,6 +2,7 @@ from typing import (
     Any,
     Union,
     _GenericAlias,
+    GenericAlias,
     Type,
     TypeVar,
 )  # pylint: disable=protected-access
@@ -109,4 +110,6 @@ def type_label(attr_type: Type) -> str:
     """
     if isinstance(attr_type, type):
         return attr_type.__name__
+    if isinstance(attr_type, (_GenericAlias, GenericAlias)):
+        return repr(attr_type)
     return "object"
