@@ -23,7 +23,7 @@ from lazy_object_proxy import Proxy
 
 from .errors import FrozenInstanceError
 from .types import MISSING
-from .utils.collections import MappingCollection, SequenceCollection, SetCollection
+from .collections import MappingCollection, SequenceCollection, SetCollection
 from .utils.method_builder import MethodBuilder
 from .utils.mutation import mutate_attr, mutate_value, invalidate_attrs
 from .utils.type_checking import (
