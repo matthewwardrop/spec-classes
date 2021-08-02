@@ -745,7 +745,7 @@ class TestFramework:
 
             ANNOTATION_TYPES = {"my_str": str}
 
-            a: "my_str"
+            a: my_str  # noqa: F821; type defined by ANNOTATION_TYPES
 
         MySpec.__spec_class_bootstrap__()
         assert MySpec.__spec_class_annotations__["a"] is str
@@ -758,7 +758,7 @@ class TestFramework:
                     "my_str": str,
                 }
 
-            a: "my_str"
+            a: my_str  # noqa: F821; type defined by ANNOTATION_TYPES
 
         MySpec2.__spec_class_bootstrap__()
         assert MySpec2.__spec_class_annotations__["a"] is str

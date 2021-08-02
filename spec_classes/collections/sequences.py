@@ -23,9 +23,9 @@ class SequenceCollection(ManagedCollection):
             f"`{self.name}` and consider using a `Dict` container instead."
         )
 
-    def _extractor(
+    def _extractor(  # pylint: disable=arguments-differ
         self, value_or_index, by_index=False
-    ) -> IndexedItem:  # pylint: disable=arguments-differ
+    ) -> IndexedItem:
         if self.collection is MISSING or value_or_index is MISSING:
             return None, MISSING
 

@@ -39,7 +39,7 @@ class ValidatedType(metaclass=ValidatedTypeMeta):
 
 
 def validated(
-    validator: Callable[(Any,), bool], name: str = "validated"
+    validator: Callable[[Any], bool], name: str = "validated"
 ) -> ValidatedType:
     """
     Construct a validated type based on the nominated `validator`.

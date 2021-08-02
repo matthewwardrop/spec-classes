@@ -2,7 +2,6 @@ from typing import (
     Any,
     Union,
     _GenericAlias,
-    GenericAlias,
     Type,
     TypeVar,
 )  # pylint: disable=protected-access
@@ -108,6 +107,11 @@ def type_label(attr_type: Type) -> str:
     `attr_type` points to a `spec_cls` decorated type, we don't make this
     method general.
     """
+    try:  # Python 3.9 added GenericAlias to the typing module
+        from typing import GenericAlias  # pylint: disable=import-outside-toplevel
+    except ImportError:
+        GenericAlias = type(None)
+
     if isinstance(attr_type, type):
         return attr_type.__name__
     if isinstance(attr_type, (_GenericAlias, GenericAlias)):

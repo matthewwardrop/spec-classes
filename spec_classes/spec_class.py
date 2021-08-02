@@ -166,7 +166,7 @@ class spec_class:
         shallowcopy: Union[bool, Iterable[str]] = False,
         frozen: bool = False,
         init: bool = True,
-        repr: bool = True,
+        repr: bool = True,  # pylint: disable=redefined-builtin
         eq: bool = True,
         bootstrap: bool = False,
         attrs: Iterable[str] = MISSING,
@@ -298,7 +298,9 @@ class spec_class:
                         for attr in cls_annotations:
                             kwargs.pop(attr, None)
 
-                return super(spec_cls, cls).__new__(cls, *args, **kwargs)
+                return super(spec_cls, cls).__new__(  # pylint: disable=bad-super-call
+                    cls, *args, **kwargs
+                )
 
             spec_cls.__new__ = __new__
         return spec_cls
@@ -855,11 +857,6 @@ class spec_class:
     ):
         attr_spec_type = get_spec_class_for_type(attr_type)
         attr_prepare_method = f"_prepare_{attr_name}"
-
-        def get_attr(self, _raise_if_missing=True):
-            if _raise_if_missing:
-                return getattr(self, attr_name)
-            return cls._get_attr(self, attr_name)
 
         def with_attr(
             self, _new_value=MISSING, *, _replace=False, _inplace=False, **attrs
