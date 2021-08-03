@@ -1,4 +1,4 @@
-# Spec Classes
+# ![Spec Classes](logo-with-text.png)
 [![PyPI - Version](https://img.shields.io/pypi/v/spec-classes.svg)](https://pypi.org/project/spec-classes/)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/spec-classes.svg)
 ![PyPI - Status](https://img.shields.io/pypi/status/spec-classes.svg)
