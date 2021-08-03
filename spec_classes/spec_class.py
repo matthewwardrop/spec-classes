@@ -1154,7 +1154,7 @@ class spec_class:
             f"transform_{singular_name}": (
                 MethodBuilder(
                     f"transform_{singular_name}",
-                    lambda self, _value_or_index, _transform, *, _by_index=False, _inplace=False, **attr_transforms: (
+                    lambda self, _value_or_index, _transform, *, _by_index=MISSING, _inplace=False, **attr_transforms: (
                         mutate_attr(
                             obj=self,
                             attr=attr_name,
@@ -1191,7 +1191,7 @@ class spec_class:
                     "_by_index",
                     "If True, value_or_index is the index of the item to transform.",
                     keyword_only=True,
-                    default=False,
+                    default=MISSING,
                     annotation=bool,
                 )
                 .with_arg(
@@ -1213,7 +1213,7 @@ class spec_class:
             f"without_{singular_name}": (
                 MethodBuilder(
                     f"without_{singular_name}",
-                    lambda self, _value_or_index, *, _by_index=False, _inplace=False: (
+                    lambda self, _value_or_index, *, _by_index=MISSING, _inplace=False: (
                         mutate_attr(
                             obj=self,
                             attr=attr_name,
@@ -1241,7 +1241,7 @@ class spec_class:
                 .with_arg(
                     "_by_index",
                     "If True, value_or_index is the index of the item to remove.",
-                    default=False,
+                    default=MISSING,
                     keyword_only=True,
                     annotation=bool,
                 )

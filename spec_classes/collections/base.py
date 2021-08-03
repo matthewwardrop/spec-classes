@@ -32,6 +32,13 @@ class ManagedCollection(metaclass=ABCMeta):
         self.item_spec_type_is_keyed = (
             self.item_spec_type and self.item_spec_type.__spec_class_key__ is not None
         )
+        self.item_spec_key_type = (
+            self.item_spec_type.__spec_class_annotations__[
+                self.item_spec_type.__spec_class_key__
+            ]
+            if self.item_spec_type_is_keyed
+            else None
+        )
 
     def _mutate_collection(
         self,
@@ -39,6 +46,7 @@ class ManagedCollection(metaclass=ABCMeta):
         extractor: Callable,
         inserter: Callable,
         *,
+        require_existing: bool = False,
         new_item: Any = MISSING,
         transform: Callable = None,
         attrs: Dict[str, Any] = None,
@@ -62,6 +70,10 @@ class ManagedCollection(metaclass=ABCMeta):
         if self.collection is MISSING:
             self.collection = self._create_collection()
         index, old_item = extractor(value_or_index)
+        if require_existing and (index is None or old_item is MISSING):
+            raise IndexError(
+                f"Value or index `{repr(value_or_index)}` not found in collection `{self.name}`."
+            )
         new_item = mutate_value(
             old_value=old_item,
             new_value=new_item,

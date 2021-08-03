@@ -883,6 +883,15 @@ class TestSpecAttribute:
 
 
 class TestListAttribute:
+    @pytest.fixture
+    def list_spec(self):
+        @spec_class
+        class ListSpec:
+            list_values: List[int]
+            list_str_values: List[str]
+
+        return ListSpec(list_values=[1, 2, 3], list_str_values=["a", "b", "c"])
+
     def test_with(self, spec_cls):
 
         spec = spec_cls()
@@ -898,6 +907,7 @@ class TestListAttribute:
         # Constructors
         assert "list_values" not in spec.__dict__
         assert spec.with_list_values().list_values == []
+        assert spec.with_list_value().list_values == [0]
         assert spec.with_list_value(1).list_values == [1]
 
         # Pass through values
@@ -908,20 +918,16 @@ class TestListAttribute:
             4
         ).list_values == [3, 3, 4]
 
-        # insert
-        assert spec.with_list_values([1, 2, 3]).with_list_value(
-            4, _index=0, _insert=True
-        ).list_values == [4, 1, 2, 3]
-
         # replace
+        assert spec.with_list_value(1).with_list_value(2, _index=0).list_values == [2]
         assert spec.with_list_value(1).with_list_value(
             2, _index=0, _insert=False
         ).list_values == [2]
 
-        # remove
-        assert spec.with_list_values([1, 2, 3]).without_list_value(
-            1
-        ).without_list_value(-1, _by_index=True).list_values == [2]
+        # insert
+        assert spec.with_list_values([1, 2, 3]).with_list_value(
+            4, _index=0, _insert=True
+        ).list_values == [4, 1, 2, 3]
 
         with pytest.raises(ValueError, match="Attempted to add an invalid item "):
             spec.with_list_value("string")
@@ -929,9 +935,9 @@ class TestListAttribute:
         spec.list_values = [1, 2, 3, 4]
         assert spec.list_values == [1, 2, 3, 4]
 
-    def test_transform(self, spec_cls):
+    def test_transform(self, list_spec):
 
-        spec = spec_cls(list_values=[1])
+        spec = list_spec.with_list_values([1]).with_list_str_values(["a"])
         assert set(
             inspect.Signature.from_callable(spec.transform_list_value).parameters
         ) == {
@@ -946,25 +952,53 @@ class TestListAttribute:
 
         # by value
         assert spec.transform_list_value(1, lambda x: x * 2).list_values == [2]
+        assert spec.transform_list_str_value("a", lambda x: x * 2).list_str_values == [
+            "aa"
+        ]
 
         # by index
         assert spec.transform_list_value(
             0, lambda x: x * 2, _by_index=True
         ).list_values == [2]
+        assert spec.transform_list_str_value(0, lambda x: x * 2).list_str_values == [
+            "aa"
+        ]
 
-    def test_without(self, spec_cls):
+        # check raises if value not in list to be transformed
+        with pytest.raises(
+            IndexError,
+            match=r"Value or index `2` not found in collection `ListSpec.list_values`\.",
+        ):
+            spec.transform_list_value(2, lambda x: x)
+        with pytest.raises(
+            IndexError,
+            match=r"Value or index `'b'` not found in collection `ListSpec.list_str_values`\.",
+        ):
+            spec.transform_list_str_value("b", lambda x: x)
+        with pytest.raises(
+            IndexError,
+            match=r"Value or index `2` not found in collection `ListSpec.list_str_values`\.",
+        ):
+            spec.transform_list_str_value(2, lambda x: x)
 
-        spec = spec_cls(list_values=[1, 2, 3])
+    def test_without(self, list_spec):
         assert set(
-            inspect.Signature.from_callable(spec.without_list_value).parameters
+            inspect.Signature.from_callable(list_spec.without_list_value).parameters
         ) == {
             "_value_or_index",
             "_by_index",
             "_inplace",
         }
 
-        assert spec.without_list_value(1).list_values == [2, 3]
-        assert spec.without_list_value(1, _by_index=True).list_values == [1, 3]
+        assert list_spec.without_list_value(1).list_values == [2, 3]
+        assert list_spec.without_list_value(1, _by_index=True).list_values == [1, 3]
+
+        assert list_spec.without_list_str_value("a").list_str_values == ["b", "c"]
+        assert list_spec.without_list_str_value(1).list_str_values == ["a", "c"]
+        assert list_spec.without_list_str_value(1, _by_index=True).list_str_values == [
+            "a",
+            "c",
+        ]
 
 
 class TestUnkeyedSpecListAttribute:
@@ -1026,6 +1060,13 @@ class TestUnkeyedSpecListAttribute:
         assert spec.with_spec_list_items(
             [unkeyed, unkeyed, unkeyed]
         ).without_spec_list_item(unkeyed).without_spec_list_item(
+            -1
+        ).spec_list_items == [
+            unkeyed
+        ]
+        assert spec.with_spec_list_items(
+            [unkeyed, unkeyed, unkeyed]
+        ).without_spec_list_item(unkeyed).without_spec_list_item(
             -1, _by_index=True
         ).spec_list_items == [
             unkeyed
@@ -1067,7 +1108,7 @@ class TestUnkeyedSpecListAttribute:
 
         # by index
         assert spec.transform_spec_list_item(
-            0, lambda x: x.with_nested_scalar(3), _by_index=True
+            0, lambda x: x.with_nested_scalar(3)
         ).spec_list_items == [
             UnkeyedSpec(nested_scalar=3),
             UnkeyedSpec(nested_scalar=1),
@@ -1095,6 +1136,9 @@ class TestUnkeyedSpecListAttribute:
         assert spec.without_spec_list_item(
             UnkeyedSpec(nested_scalar=1)
         ).spec_list_items == [UnkeyedSpec(nested_scalar=2)]
+        assert spec.without_spec_list_item(1).spec_list_items == [
+            UnkeyedSpec(nested_scalar=1)
+        ]
         assert spec.without_spec_list_item(1, _by_index=True).spec_list_items == [
             UnkeyedSpec(nested_scalar=1)
         ]
@@ -1122,9 +1166,6 @@ class TestKeyedSpecListAttribute:
         assert spec.with_keyed_spec_list_items().keyed_spec_list_items == []
         keyed = KeyedSpec()
         assert spec.with_keyed_spec_list_item(keyed).keyed_spec_list_items[0] is keyed
-        assert isinstance(
-            spec.with_keyed_spec_list_item().keyed_spec_list_items[0], KeyedSpec
-        )
         assert spec.with_keyed_spec_list_item("mykey").keyed_spec_list_items == [
             KeyedSpec("mykey")
         ]
@@ -1151,50 +1192,20 @@ class TestKeyedSpecListAttribute:
             KeyedSpec(key="2"),
             KeyedSpec(key="1"),
         ]
-        with pytest.raises(
-            ValueError,
-            match=r"Adding .* to list would result in more than instance with the same key: '1'",
-        ):
-            assert (
-                spec.with_keyed_spec_list_item("1")
-                .with_keyed_spec_list_item(KeyedSpec(key="1"), _insert=True)
-                .keyed_spec_list_items
-            )
+        assert (
+            spec.with_keyed_spec_list_item("1")
+            .with_keyed_spec_list_item(KeyedSpec(key="1"))
+            .keyed_spec_list_items
+        ) == [
+            KeyedSpec(key="1"),
+            KeyedSpec(key="1"),
+        ]
 
-        # replace / update
-        assert spec.with_keyed_spec_list_items(
-            [KeyedSpec("1", nested_scalar2="value")]
-        ).with_keyed_spec_list_item("1", nested_scalar=10).keyed_spec_list_items == [
-            KeyedSpec(key="1", nested_scalar=10, nested_scalar2="value")
-        ]
-        assert spec.with_keyed_spec_list_items(
-            [KeyedSpec("1", nested_scalar2="value")]
-        ).with_keyed_spec_list_item(
-            _index="1", _insert=False, nested_scalar=10
-        ).keyed_spec_list_items == [
-            KeyedSpec(key="1", nested_scalar=10, nested_scalar2="value")
-        ]
-        assert spec.with_keyed_spec_list_items(
-            [KeyedSpec("1", nested_scalar2="value")]
-        ).with_keyed_spec_list_item(
-            _index=0, _insert=False, nested_scalar=10
-        ).keyed_spec_list_items == [
-            KeyedSpec(key="1", nested_scalar=10, nested_scalar2="value")
-        ]
-        assert spec.with_keyed_spec_list_items(
-            [KeyedSpec("1", nested_scalar2="value")]
-        ).with_keyed_spec_list_item(
-            "1", _index=0, _insert=False, nested_scalar=10
-        ).keyed_spec_list_items == [
-            KeyedSpec(key="1", nested_scalar=10, nested_scalar2="value")
-        ]
-        assert spec.with_keyed_spec_list_items(
-            [KeyedSpec("1", nested_scalar2="value")]
-        ).with_keyed_spec_list_item(
-            _index=0, _insert=False, _replace=True, nested_scalar=10
-        ).keyed_spec_list_items == [
-            KeyedSpec(key="key", nested_scalar=10, nested_scalar2="original value")
-        ]
+        # invalid indices
+        with pytest.raises(TypeError):
+            spec.with_keyed_spec_list_items(
+                [KeyedSpec("1", nested_scalar2="value")]
+            ).with_keyed_spec_list_item(_index="1", _insert=False, nested_scalar=10)
 
     def test_transform(self, spec_cls):
 
@@ -1213,14 +1224,6 @@ class TestKeyedSpecListAttribute:
             "nested_scalar2",
         }
 
-        assert spec.transform_keyed_spec_list_item(
-            "c", lambda x: x
-        ).keyed_spec_list_items == [
-            KeyedSpec(key="a"),
-            KeyedSpec(key="b"),
-            KeyedSpec(key="c"),
-        ]
-
         # by value
         assert spec.transform_keyed_spec_list_item(
             "a", lambda x: x.with_nested_scalar(3)
@@ -1237,7 +1240,7 @@ class TestKeyedSpecListAttribute:
 
         # by index
         assert spec.transform_keyed_spec_list_item(
-            "a", lambda x: x.with_nested_scalar(3), _by_index=True
+            "a", lambda x: x.with_nested_scalar(3)
         ).keyed_spec_list_items == [
             KeyedSpec(key="a", nested_scalar=3),
             KeyedSpec(key="b"),
@@ -1248,6 +1251,10 @@ class TestKeyedSpecListAttribute:
             KeyedSpec(key="a", nested_scalar=3),
             KeyedSpec(key="b"),
         ]
+
+        # invalid indices
+        with pytest.raises(IndexError):
+            spec.transform_keyed_spec_list_item("c", lambda x: x)
 
     def test_without(self, spec_cls):
 
@@ -1268,68 +1275,16 @@ class TestKeyedSpecListAttribute:
         assert spec.without_keyed_spec_list_item("a").keyed_spec_list_items == [
             KeyedSpec(key="b")
         ]
-        assert spec.without_keyed_spec_list_item(
-            "a", _by_index=True
-        ).keyed_spec_list_items == [KeyedSpec(key="b")]
-        assert spec.without_keyed_spec_list_item(
-            0, _by_index=True
-        ).keyed_spec_list_items == [KeyedSpec(key="b")]
-
-    def test_edge_cases(self):
-        # Test that two spec classes with the same key cannot be added.
-        assert Spec().with_keyed_spec_list_item("a").with_keyed_spec_list_item(
-            "b"
-        ).with_keyed_spec_list_item("a", _index=0, _insert=0).keyed_spec_list_items == [
-            KeyedSpec("a"),
-            KeyedSpec("b"),
+        assert spec.without_keyed_spec_list_item("a").keyed_spec_list_items == [
+            KeyedSpec(key="b")
         ]
-
-        with pytest.raises(
-            ValueError,
-            match=r"Adding KeyedSpec\(key='a', nested_scalar=1, nested_scalar2='original value'\) to list would result in more than instance with the same key: 'a'",
-        ):
-            Spec().with_keyed_spec_list_item("a").with_keyed_spec_list_item(
-                "c"
-            ).transform_keyed_spec_list_item("c", key=lambda x: "a")
-
-        # Test that spec classes with integer keys raise an error.
-        with pytest.raises(
-            ValueError,
-            match="List containers do not support keyed spec classes with integral keys.",
-        ):
-
-            @spec_class(key="key")
-            class MySpec:
-                key: int
-                children: List[MySpec]
-
-            MySpec.__spec_class_bootstrap__()
-
-        # Test that spec classes that happen to have integer key values also fail
-        @spec_class(key="key")
-        class MySpec2:
-            key: Any
-            children: List[MySpec2]
-
-        with pytest.raises(
-            ValueError,
-            match="List containers do not support keyed spec classes with integral keys",
-        ):
-            MySpec2(None).with_child(1)
-
-        with pytest.raises(
-            ValueError,
-            match="List containers do not support keyed spec classes with integral keys",
-        ):
-            MySpec2(None).with_child(MySpec2(1))
-
-        # Test that float keys work fine.
-        @spec_class(key="key")
-        class MySpec3:
-            key: float
-            children: List[MySpec3]
-
-        assert MySpec3(1.0).with_child(1.0).children == [MySpec3(1.0)]
+        assert spec.without_keyed_spec_list_item(0).keyed_spec_list_items == [
+            KeyedSpec(key="b")
+        ]
+        assert spec.without_keyed_spec_list_item("c").keyed_spec_list_items == [
+            KeyedSpec(key="a"),
+            KeyedSpec(key="b"),
+        ]
 
 
 class TestDictAttribute:
