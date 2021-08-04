@@ -109,13 +109,13 @@ def type_label(attr_type: Type) -> str:
     `attr_type` points to a `spec_cls` decorated type, we don't make this
     method general.
     """
-    try:  # Python 3.9 added GenericAlias to the typing module
-        from typing import GenericAlias  # pylint: disable=import-outside-toplevel
-    except ImportError:
-        GenericAlias = type(None)
-
-    if isinstance(attr_type, type):
+    if hasattr(attr_type, "__origin__"):  # Generics
+        label = type_label(attr_type.__origin__)
+        if hasattr(attr_type, "__args__"):
+            return (
+                f"{label}[{', '.join(type_label(arg) for arg in attr_type.__args__)}]"
+            )
+        return label
+    if hasattr(attr_type, "__name__"):
         return attr_type.__name__
-    if isinstance(attr_type, (_GenericAlias, GenericAlias)):
-        return repr(attr_type)
-    return "object"
+    return repr(attr_type)
