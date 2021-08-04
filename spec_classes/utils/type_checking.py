@@ -1,9 +1,11 @@
 from typing import (
     Any,
-    Union,
-    _GenericAlias,
+    Mapping,
+    Sequence,
     Type,
     TypeVar,
+    Union,
+    _GenericAlias,
 )  # pylint: disable=protected-access
 
 
@@ -65,9 +67,9 @@ def get_collection_item_type(container_type: Type) -> Type:
         return Any
 
     item_type = Any
-    if type_match(container_type, dict) and len(container_type.__args__) == 2:
+    if type_match(container_type, Mapping) and len(container_type.__args__) == 2:
         item_type = container_type.__args__[1]
-    elif len(container_type.__args__) == 1:
+    elif type_match(container_type, Sequence) or len(container_type.__args__) == 1:
         item_type = container_type.__args__[0]
     if isinstance(item_type, TypeVar):
         item_type = Any
