@@ -7,7 +7,9 @@ from .base import ManagedCollection
 
 
 class SetCollection(ManagedCollection):
-    def _extractor(self, value_or_index):
+    def _extractor(self, value_or_index, raise_if_missing=False):
+        if raise_if_missing and value_or_index not in self.collection:
+            raise ValueError(f"Value `{repr(value_or_index)}` not in `{self.name}`.")
         return (
             value_or_index,
             value_or_index if value_or_index in self.collection else MISSING,
@@ -65,6 +67,7 @@ class SetCollection(ManagedCollection):
             inserter=functools.partial(self._inserter, replace=True),
             transform=transform,
             attr_transforms=attr_transforms,
+            require_pre_existent=True,
         )
 
     def remove_item(self, item):  # pylint: disable=arguments-differ

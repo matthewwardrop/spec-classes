@@ -8,50 +8,37 @@ from .base import IndexedItem, ManagedCollection
 
 class SequenceCollection(ManagedCollection):
     def _extractor(  # pylint: disable=arguments-differ
-        self, value_or_index, by_index=MISSING
+        self,
+        value_or_index,
+        raise_if_missing=False,
+        by_index=MISSING,
     ) -> IndexedItem:
         if self.collection is MISSING or value_or_index is MISSING:
             return None, MISSING
 
         if by_index is MISSING:
-            by_index = isinstance(value_or_index, int) and not (
-                check_type(value_or_index, self.item_type)
-                or self.item_spec_type_is_keyed
-                and check_type(value_or_index, self.item_spec_key_type)
-            )
+            by_index = not check_type(value_or_index, self.item_type)
 
         if by_index:
             try:
                 return (value_or_index, self.collection[value_or_index])
             except IndexError:
+                if raise_if_missing:
+                    raise IndexError(
+                        f"Index `{repr(value_or_index)}` not found in collection `{self.name}`."
+                    ) from None
                 return (value_or_index, MISSING)
 
-        if check_type(value_or_index, self.item_type):
-            return (
-                self.collection.index(value_or_index)
-                if value_or_index in self.collection
-                else None,
-                value_or_index,
-            )
+        try:
+            value_index = self.collection.index(value_or_index)
+        except ValueError:
+            value_index = None
 
-        if self.item_spec_type_is_keyed and check_type(
-            value_or_index, self.item_spec_key_type
-        ):
-            for i, item in enumerate(self.collection):
-                if (
-                    isinstance(item, self.item_spec_type)
-                    and getattr(item, self.item_spec_type.__spec_class_key__)
-                    == value_or_index
-                ):
-                    return i, item
-            return None, functools.partial(
-                self.item_spec_type,
-                **{self.item_spec_type.__spec_class_key__: value_or_index},
+        if raise_if_missing and value_index is None:
+            raise ValueError(
+                f"Item `{repr(value_or_index)}` not found in collection `{self.name}`."
             )
-
-        raise ValueError(
-            f"Cannot lookup item from collection `{self.name}` with unrecognized type: `{repr(type(value_or_index))}`."
-        )
+        return (value_index, value_or_index)
 
     def _inserter(self, index, item, insert=False):  # pylint: disable=arguments-differ
         if not check_type(item, self.item_type):
@@ -116,7 +103,7 @@ class SequenceCollection(ManagedCollection):
             inserter=self._inserter,
             transform=transform,
             attr_transforms=attr_transforms,
-            require_existing=True,
+            require_pre_existent=True,
         )
 
     def remove_item(

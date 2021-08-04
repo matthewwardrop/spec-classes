@@ -46,7 +46,7 @@ class ManagedCollection(metaclass=ABCMeta):
         extractor: Callable,
         inserter: Callable,
         *,
-        require_existing: bool = False,
+        require_pre_existent: bool = False,
         new_item: Any = MISSING,
         transform: Callable = None,
         attrs: Dict[str, Any] = None,
@@ -69,11 +69,9 @@ class ManagedCollection(metaclass=ABCMeta):
         """
         if self.collection is MISSING:
             self.collection = self._create_collection()
-        index, old_item = extractor(value_or_index)
-        if require_existing and (index is None or old_item is MISSING):
-            raise IndexError(
-                f"Value or index `{repr(value_or_index)}` not found in collection `{self.name}`."
-            )
+        index, old_item = extractor(
+            value_or_index, raise_if_missing=require_pre_existent
+        )
         new_item = mutate_value(
             old_value=old_item,
             new_value=new_item,
@@ -169,7 +167,7 @@ class ManagedCollection(metaclass=ABCMeta):
         return self.collection_type()
 
     @abstractmethod
-    def _extractor(self, value_or_index) -> IndexedItem:
+    def _extractor(self, value_or_index, raise_if_missing=False) -> IndexedItem:
         ...  # pragma: no cover
 
     @abstractmethod

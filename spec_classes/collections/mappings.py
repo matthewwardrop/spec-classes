@@ -1,5 +1,3 @@
-import functools
-
 from spec_classes.types import MISSING
 from spec_classes.utils.type_checking import check_type
 
@@ -7,26 +5,16 @@ from .base import ManagedCollection
 
 
 class MappingCollection(ManagedCollection):
-    def _extractor(self, value_or_index):
-        default = MISSING
-        if self.item_spec_type_is_keyed:
-            if isinstance(value_or_index, self.item_spec_type):
-                value_or_index = getattr(
-                    value_or_index, self.item_spec_type.__spec_class_key__
-                )
-            default = functools.partial(
-                self.item_spec_type,
-                **{self.item_spec_type.__spec_class_key__: value_or_index},
-            )
-        return value_or_index, self.collection.get(value_or_index, default)
+    def _extractor(self, value_or_index, raise_if_missing=False):
+        if raise_if_missing and value_or_index not in self.collection:
+            raise KeyError(f"Key `{repr(value_or_index)}` not in `{self.name}`.")
+        return value_or_index, self.collection.get(value_or_index, MISSING)
 
     def _inserter(self, index, item):
         if not check_type(item, self.item_type):
             raise ValueError(
                 f"Attempted to add an invalid item `{repr(item)}` to `{self.name}`. Expected item of type `{self.item_type}`."
             )
-        if self.item_spec_type_is_keyed:
-            index = getattr(item, self.item_spec_type.__spec_class_key__)
         self.collection[index] = item
 
     def get_item(
@@ -51,9 +39,13 @@ class MappingCollection(ManagedCollection):
     def add_item(
         self, key=None, value=None, *, attrs=None, replace=False
     ):  # pylint: disable=arguments-differ
-        if self.item_spec_type_is_keyed:
-            key = self._get_spec_key(self.item_spec_type, value, attrs)
-            value = value if check_type(value, self.item_spec_type) else MISSING
+        if (
+            self.item_spec_type_is_keyed
+            and value is not MISSING
+            and not check_type(value, self.item_type)
+            and check_type(value, self.item_spec_key_type)
+        ):
+            value = self.item_spec_type(value)
         return self._mutate_collection(
             value_or_index=key,
             extractor=self._extractor,
@@ -84,6 +76,7 @@ class MappingCollection(ManagedCollection):
             inserter=self._inserter,
             transform=transform,
             attr_transforms=attr_transforms,
+            require_pre_existent=True,
         )
 
     def remove_item(self, key):  # pylint: disable=arguments-differ
