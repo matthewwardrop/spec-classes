@@ -2,8 +2,10 @@
 
 import pytest
 
+from typing import Set
+
 from spec_classes import spec_class
-from spec_classes.types import KeyedList
+from spec_classes.types import KeyedList, KeyedSet
 
 
 class TestKeyedList:
@@ -164,3 +166,96 @@ class TestKeyedList:
         assert not KeyedList.__spec_class_check_type__(l, KeyedList[str, int])
         assert not KeyedList.__spec_class_check_type__(l, KeyedList[int, str])
         assert not KeyedList.__spec_class_check_type__(l, KeyedList[str, str])
+
+
+class TestKeyedSet:
+    def test_constructor(self):
+        s = KeyedSet()
+        assert set(s) == set()
+        assert s._dict == {}
+
+        s2 = KeyedSet({1, 2, 3}, key=str)
+        assert s2._dict == {"1": 1, "2": 2, "3": 3}
+
+    def test_contains(self):
+        s = KeyedSet({1, 2, 3}, key=str)
+        assert 1 in s
+        assert "1" in s
+        assert 4 not in s
+        assert "4" not in s
+
+    def test_iter(self):
+        s = KeyedSet({1, 2, 3}, key=str)
+        assert set(iter(s)) == {1, 2, 3}
+
+    def test_len(self):
+        assert len(KeyedSet({1, 2, 3}, key=str)) == 3
+
+    def test_add(self):
+        s = KeyedSet({1, 2, 3}, key=str)
+        s.add(4)
+        assert 4 in s
+
+    def test_discard(self):
+        s = KeyedSet({1, 2, 3}, key=str)
+
+        s.discard(4)
+        assert len(s) == 3
+
+        s.discard(2)
+        assert set(s) == {1, 3}
+
+        s.discard("1")
+        assert set(s) == {3}
+
+    def test_equality(self):
+        s = KeyedSet({1, 2, 3}, key=str)
+        assert s == {1, 2, 3}
+        assert s != KeyedSet({1, 2}, key=str)
+        assert s == KeyedSet({1, 2, 3}, key=str)
+        assert s != "hi"
+
+    def test_repr(self):
+        s = KeyedSet({1, 2, 3}, key=str)
+        assert repr(s) == "KeyedSet({1, 2, 3})"
+
+        s2 = KeyedSet[int, str]({1, 2, 3}, key=str)
+        assert repr(s2) == "KeyedSet[int, str]({1, 2, 3})"
+
+    def test_dict_feature(self):
+        s = KeyedSet({1, 2, 3}, key=str)
+
+        assert s["1"] == 1
+        assert s.get("4") is None
+        assert list(s.items()) == [("1", 1), ("2", 2), ("3", 3)]
+
+    def test_item_equivalence(self):
+        @spec_class(key="key")
+        class Item:
+            key: str
+            name: str
+
+        s = KeyedSet[Item, str](
+            [Item("a"), Item("b"), Item("c")], enforce_item_equivalence=True
+        )
+
+        assert Item("a") in s
+        assert Item("a", name="blah") not in s
+
+        s.add(Item("a"))
+        with pytest.raises(
+            ValueError,
+            match=r"Item for `'a'` already exists, and is not equal to the incoming item.",
+        ):
+            s.add(Item("a", name="blah"))
+
+    def test_edge_cases(self):
+        s = KeyedSet[Set[int], int]([{1}, {1, 2}, {1, 2, 3}], key=len)
+        assert {1} in s
+        assert 10 not in s
+        assert s != {1, 2, 3}
+
+        s.discard({1})
+        assert sorted(s, key=len) == [{1, 2}, {1, 2, 3}]
+        s.discard(10)
+        assert sorted(s, key=len) == [{1, 2}, {1, 2, 3}]

@@ -1,5 +1,5 @@
 from .attr_proxy import AttrProxy
-from .keyed_list import KeyedList
+from .keyed import KeyedList, KeyedSet
 from .missing import MISSING
 from .spec_property import spec_property
 from .validated import ValidatedType, bounded, validated
@@ -7,6 +7,7 @@ from .validated import ValidatedType, bounded, validated
 __all__ = (
     "AttrProxy",
     "KeyedList",
+    "KeyedSet",
     "MISSING",
     "ValidatedType",
     "bounded",
