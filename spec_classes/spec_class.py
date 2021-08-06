@@ -73,7 +73,7 @@ class spec_class:
     directly modify nested structure. For example, if an attribute `foos` has
     type `List[Foo]`, and `Foo` is a class decorated by `spec_class`, then the
     method `with_foo` method will have signature:
-    `with_foo(<spec>, *, index=MISSING, insert=False, replace=False, <all attributes of foo>=MISSING)`
+    `with_foo(<spec>, *, _index=MISSING, _insert=False, <all attributes of foo>=MISSING)`
 
     If the attribute type (or type stored by a collection) is annoted by
     `spec_cls` and a key attribute has been specified, then in collections the
@@ -858,9 +858,7 @@ class spec_class:
         attr_spec_type = get_spec_class_for_type(attr_type)
         attr_prepare_method = f"_prepare_{attr_name}"
 
-        def with_attr(
-            self, _new_value=MISSING, *, _replace=False, _inplace=False, **attrs
-        ):
+        def with_attr(self, _new_value=MISSING, *, _inplace=False, **attrs):
             try:
                 _new_value = getattr(self, attr_prepare_method)(_new_value, **attrs)
             except AttributeError:
@@ -872,11 +870,10 @@ class spec_class:
                 )
             else:
                 _new_value = mutate_value(
-                    old_value=Proxy(lambda: cls._get_attr(self, attr_name)),
+                    old_value=MISSING,
                     new_value=_new_value,
                     constructor=attr_type,
                     attrs=attrs,
-                    replace=_replace,
                 )
 
             return mutate_attr(
@@ -916,14 +913,6 @@ class spec_class:
                     f"The new value for `{attr_name}`.",
                     default=MISSING,
                     annotation=attr_type,
-                )
-                .with_arg(
-                    "_replace",
-                    f"If True, build a new {type_label(attr_type)} from scratch. Otherwise, modify the old value.",
-                    only_if=attr_spec_type,
-                    default=False,
-                    keyword_only=True,
-                    annotation=bool,
                 )
                 .with_arg(
                     "_inplace",
@@ -1080,7 +1069,7 @@ class spec_class:
             f"with_{singular_name}": (
                 MethodBuilder(
                     f"with_{singular_name}",
-                    lambda self, _item=MISSING, *, _index=MISSING, _insert=False, _replace=False, _inplace=False, **attrs: (
+                    lambda self, _item=MISSING, *, _index=MISSING, _insert=False, _inplace=False, **attrs: (
                         mutate_attr(
                             obj=self,
                             attr=attr_name,
@@ -1095,7 +1084,6 @@ class spec_class:
                                     attrs=attrs,
                                     index=_index,
                                     insert=_insert,
-                                    replace=_replace,
                                 )
                                 .collection
                             ),
@@ -1123,14 +1111,6 @@ class spec_class:
                 .with_arg(
                     "_insert",
                     f"Insert item before {attr_name}[index], otherwise replace this index.",
-                    default=False,
-                    keyword_only=True,
-                    annotation=bool,
-                )
-                .with_arg(
-                    "_replace",
-                    f"If True, and if replacing an old item, build a new {type_label(item_type)} from scratch. Otherwise, apply changes on top of the old value.",
-                    only_if=item_spec_type,
                     default=False,
                     keyword_only=True,
                     annotation=bool,
@@ -1312,7 +1292,7 @@ class spec_class:
             f"with_{singular_name}": (
                 MethodBuilder(
                     f"with_{singular_name}",
-                    lambda self, _key=None, _value=None, _replace=False, _inplace=False, **attrs: (
+                    lambda self, _key=None, _value=None, _inplace=False, **attrs: (
                         mutate_attr(
                             obj=self,
                             attr=attr_name,
@@ -1326,7 +1306,6 @@ class spec_class:
                                     )(
                                         _key, _value, **attrs
                                     ),  # Tuple of key, value
-                                    replace=_replace,
                                     attrs=attrs,
                                 )
                                 .collection
@@ -1350,14 +1329,6 @@ class spec_class:
                     f"A new `{type_label(item_type)}` instance for {attr_name}.",
                     default=MISSING if item_spec_type else Parameter.empty,
                     annotation=fn_value_type,
-                )
-                .with_arg(
-                    "_replace",
-                    f"If True, and if replacing an old item, build a new {type_label(item_type)} from scratch. Otherwise, apply changes on top of the old value.",
-                    only_if=item_spec_type,
-                    default=False,
-                    keyword_only=True,
-                    annotation=bool,
                 )
                 .with_arg(
                     "_inplace",
@@ -1497,7 +1468,7 @@ class spec_class:
             f"with_{singular_name}": (
                 MethodBuilder(
                     f"with_{singular_name}",
-                    lambda self, _item, *, _replace=False, _inplace=False, **attrs: (
+                    lambda self, _item, *, _inplace=False, **attrs: (
                         mutate_attr(
                             obj=self,
                             attr=attr_name,
@@ -1509,7 +1480,6 @@ class spec_class:
                                         f"_prepare_{singular_name}",
                                         lambda x, **attrs: x,
                                     )(_item, **attrs),
-                                    replace=_replace,
                                 )
                                 .collection
                             ),
@@ -1526,14 +1496,6 @@ class spec_class:
                     f"A new `{type_label(item_type)}` instance for {attr_name}.",
                     default=MISSING if item_spec_type else Parameter.empty,
                     annotation=item_type,
-                )
-                .with_arg(
-                    "_replace",
-                    f"If True, and if replacing an old item, build a new {type_label(item_type)} from scratch. Otherwise, apply changes on top of the old value.",
-                    only_if=item_spec_type,
-                    default=False,
-                    keyword_only=True,
-                    annotation=bool,
                 )
                 .with_arg(
                     "_inplace",

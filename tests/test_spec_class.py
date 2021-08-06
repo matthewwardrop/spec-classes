@@ -813,7 +813,6 @@ class TestSpecAttribute:
         spec = spec_cls()
         assert set(inspect.Signature.from_callable(spec.with_spec).parameters) == {
             "_new_value",
-            "_replace",
             "_inplace",
             "nested_scalar",
             "nested_scalar2",
@@ -840,9 +839,7 @@ class TestSpecAttribute:
             == "overridden"
         )
         assert (
-            spec.with_spec(nested_scalar2="overridden")
-            .with_spec(_replace=True)
-            .spec.nested_scalar2
+            spec.with_spec(nested_scalar2="overridden").with_spec().spec.nested_scalar2
             == "original value"
         )
 
@@ -872,6 +869,10 @@ class TestSpecAttribute:
         # Inplace operation
         assert spec.transform_spec(nested_scalar=lambda x: 3, _inplace=True) is spec
         assert spec.transform_spec(nested_scalar=lambda x: 3).spec.nested_scalar == 3
+
+    def test_reset(self, spec_cls):
+        spec = spec_cls()
+        assert not hasattr(spec.with_spec().reset_spec(), "spec")
 
     def test_illegal_nested_update(self, spec_cls):
         base = spec_cls()
@@ -1011,7 +1012,6 @@ class TestSpecListAttribute:
             "_item",
             "_index",
             "_insert",
-            "_replace",
             "_inplace",
             "nested_scalar",
             "nested_scalar2",
@@ -1223,7 +1223,6 @@ class TestSpecDictAttribute:
         ) == {
             "_key",
             "_value",
-            "_replace",
             "_inplace",
             "nested_scalar",
             "nested_scalar2",
