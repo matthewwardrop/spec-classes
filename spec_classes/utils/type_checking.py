@@ -1,7 +1,9 @@
+from collections.abc import Sequence as SequenceCollection, Set as SetCollection
 from typing import (
     Any,
     Mapping,
     Sequence,
+    Set,
     Type,
     TypeVar,
     Union,
@@ -69,7 +71,7 @@ def get_collection_item_type(container_type: Type) -> Type:
     item_type = Any
     if type_match(container_type, Mapping) and len(container_type.__args__) == 2:
         item_type = container_type.__args__[1]
-    elif type_match(container_type, Sequence) or len(container_type.__args__) == 1:
+    elif type_match(container_type, (Sequence, Set, SequenceCollection, SetCollection)) or len(container_type.__args__) == 1:
         item_type = container_type.__args__[0]
     if isinstance(item_type, TypeVar):
         item_type = Any

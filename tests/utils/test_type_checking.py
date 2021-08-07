@@ -1,6 +1,7 @@
 from typing import Any, Callable, Dict, List, Union, Set
 
 from spec_classes import spec_class
+from spec_classes.types import KeyedList, KeyedSet
 from spec_classes.utils.type_checking import (
     check_type,
     get_collection_item_type,
@@ -17,6 +18,10 @@ class Spec:
 @spec_class
 class Spec2:
     pass
+
+@spec_class(key='key')
+class KeyedSpec:
+    key: str
 
 
 class TestTypeChecking:
@@ -51,6 +56,8 @@ class TestTypeChecking:
         assert get_collection_item_type(List[str]) is str
         assert get_collection_item_type(Dict[str, int]) is int
         assert get_collection_item_type(Set[str]) is str
+        assert get_collection_item_type(KeyedList[KeyedSpec, str]) is KeyedSpec
+        assert get_collection_item_type(KeyedSet[KeyedSpec, str]) is KeyedSpec
 
     def test_get_spec_class_for_type(self):
         assert get_spec_class_for_type(Spec) is Spec
@@ -70,3 +77,5 @@ class TestTypeChecking:
         assert type_label(object) == "object"
         assert type_label(Spec) == "Spec"
         assert type_label(List[str]) == "list[str]"
+        assert type_label(KeyedList[KeyedSpec, str]) == "KeyedList[KeyedSpec, str]"
+        assert type_label(KeyedSet[KeyedSpec, str]) == "KeyedSet[KeyedSpec, str]"
