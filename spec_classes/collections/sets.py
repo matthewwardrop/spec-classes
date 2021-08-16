@@ -41,8 +41,15 @@ class SetCollection(ManagedCollection):
         )
 
     def add_item(
-        self, item, *, replace=False, attrs=None
+        self, item, *, replace=True, attrs=None
     ):  # pylint: disable=arguments-differ
+        if (
+            self.item_spec_type_is_keyed
+            and item is not MISSING
+            and not check_type(item, self.item_type)
+            and check_type(item, self.item_spec_key_type)
+        ):
+            item = self.item_spec_type(item)
         return self._mutate_collection(
             value_or_index=item,
             extractor=self._extractor,

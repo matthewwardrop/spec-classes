@@ -37,7 +37,7 @@ class MappingCollection(ManagedCollection):
         )
 
     def add_item(
-        self, key=None, value=None, *, attrs=None, replace=False
+        self, key=None, value=None, *, attrs=None, replace=True
     ):  # pylint: disable=arguments-differ
         if (
             self.item_spec_type_is_keyed

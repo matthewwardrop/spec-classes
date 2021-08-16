@@ -1260,9 +1260,6 @@ class spec_class:
         singular_name = cls._get_singular_form(attr_name)
         item_type = get_collection_item_type(attr_type)
         item_spec_type = get_spec_class_for_type(item_type)
-        item_spec_type_is_keyed = (
-            item_spec_type and item_spec_type.__spec_class_key__ is not None
-        )
 
         def get_collection(self, inplace=True):
             return MappingCollection(
@@ -1272,21 +1269,13 @@ class spec_class:
                 inplace=inplace,
             )
 
-        # types for function signatures
-        if item_spec_type_is_keyed:
-            fn_key_type = fn_value_type = Union[
-                item_spec_type.__spec_class_annotations__[
-                    item_spec_type.__spec_class_key__
-                ],
-                item_type,
-            ]
-        else:
-            fn_key_type = Any
-            if hasattr(attr_type, "__args__") and not isinstance(
-                attr_type.__args__[0], typing.TypeVar
-            ):
-                fn_key_type = attr_type.__args__[0]
-            fn_value_type = item_type
+        # detect key type for helper methods
+        fn_key_type = (
+            attr_type.__args__[0]
+            if hasattr(attr_type, "__args__")
+            and not isinstance(attr_type.__args__[0], typing.TypeVar)
+            else Any
+        )
 
         return {
             f"with_{singular_name}": (
@@ -1322,13 +1311,12 @@ class spec_class:
                     "_key",
                     "The key for the item to be inserted or updated.",
                     annotation=fn_key_type,
-                    only_if=not item_spec_type_is_keyed,
                 )
                 .with_arg(
                     "_value",
                     f"A new `{type_label(item_type)}` instance for {attr_name}.",
                     default=MISSING if item_spec_type else Parameter.empty,
-                    annotation=fn_value_type,
+                    annotation=item_type,
                 )
                 .with_arg(
                     "_inplace",
@@ -1480,6 +1468,7 @@ class spec_class:
                                         f"_prepare_{singular_name}",
                                         lambda x, **attrs: x,
                                     )(_item, **attrs),
+                                    attrs=attrs,
                                 )
                                 .collection
                             ),

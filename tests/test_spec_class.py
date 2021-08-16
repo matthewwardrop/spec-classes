@@ -1244,6 +1244,17 @@ class TestSpecDictAttribute:
             "a", nested_scalar=3
         ).spec_dict_items == {"a": UnkeyedSpec(nested_scalar=3)}
 
+        # Test keyed spec classes
+        assert spec.with_keyed_spec_dict_item("a", "a").keyed_spec_dict_items == {
+            "a": KeyedSpec("a")
+        }
+        assert spec.with_keyed_spec_dict_item(
+            "a", "a", nested_scalar=10
+        ).keyed_spec_dict_items == {"a": KeyedSpec("a", nested_scalar=10)}
+        assert spec.with_keyed_spec_dict_item("a").keyed_spec_dict_items == {
+            "a": KeyedSpec()
+        }
+
     def test_transform(self, spec_cls):
 
         spec = spec_cls(

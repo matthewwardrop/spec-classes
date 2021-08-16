@@ -70,7 +70,7 @@ class SequenceCollection(ManagedCollection):
         )
 
     def add_item(
-        self, item=MISSING, *, attrs=None, index=MISSING, insert=False, replace=False
+        self, item=MISSING, *, attrs=None, index=MISSING, insert=False, replace=True
     ):  # pylint: disable=arguments-differ
         if (
             self.item_spec_type_is_keyed

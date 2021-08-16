@@ -19,7 +19,8 @@ class Spec:
 class Spec2:
     pass
 
-@spec_class(key='key')
+
+@spec_class(key="key")
 class KeyedSpec:
     key: str
 

@@ -146,12 +146,18 @@ class TestKeyedList:
         @spec_class(key="key")
         class KeyedSpec:
             key: str
+            value: int
 
-        class UnkeyedSpec:
-            pass
+        @spec_class
+        class Spec:
+            keyed_items: KeyedList[KeyedSpec, str]
 
-        l = KeyedList[KeyedSpec, str]([KeyedSpec("a"), KeyedSpec("b")])
-        assert l["a"] == KeyedSpec("a")
+        assert Spec(keyed_items=[KeyedSpec("a")]).keyed_items == [KeyedSpec("a")]
+
+        s = Spec()
+        assert s.with_keyed_item(KeyedSpec("a")).keyed_items == [KeyedSpec("a")]
+        assert s.with_keyed_item("a").keyed_items == [KeyedSpec("a")]
+        assert s.with_keyed_item("a", value=3).keyed_items == [KeyedSpec("a", value=3)]
 
     def test_edge_cases(self):
         with pytest.raises(TypeError, match=r"Key extractor for .*"):
@@ -259,3 +265,22 @@ class TestKeyedSet:
         assert sorted(s, key=len) == [{1, 2}, {1, 2, 3}]
         s.discard(10)
         assert sorted(s, key=len) == [{1, 2}, {1, 2, 3}]
+
+    def test_spec_class(self):
+        @spec_class(key="key")
+        class KeyedSpec:
+            key: str
+            value: int
+
+        @spec_class
+        class Spec:
+            keyed_items: KeyedList[KeyedSpec, str]
+
+        assert list(Spec(keyed_items=[KeyedSpec("a")]).keyed_items) == [KeyedSpec("a")]
+
+        s = Spec()
+        assert list(s.with_keyed_item(KeyedSpec("a")).keyed_items) == [KeyedSpec("a")]
+        assert list(s.with_keyed_item("a").keyed_items) == [KeyedSpec("a")]
+        assert list(s.with_keyed_item("a", value=3).keyed_items) == [
+            KeyedSpec("a", value=3)
+        ]

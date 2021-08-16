@@ -73,24 +73,53 @@ def mutate_value(
     old_value: Any,
     *,
     new_value: Any = MISSING,
-    constructor: Union[Type, Callable] = None,
-    transform: Callable = None,
-    attrs: Dict[str, Any] = None,
-    attr_transforms: Dict[str, Callable] = None,
     replace: bool = False,
+    constructor: Union[Type, Callable] = None,
+    attrs: Dict[str, Any] = None,
+    transform: Callable = None,
+    attr_transforms: Dict[str, Callable] = None,
 ) -> Any:
     """
-    General strategy for generating an updated value from an old value, and
-    either a new value or a combination of new attribute values and/or
-    transforms.
+    Mutates an existing value according to the following procedure:
+
+    1) If `new_value` is provided, set as current value; otherwise if `patch` is
+        `True`, use the old value; otherwise construct a new value via the
+        `constructor`.
+    2) Update the attributes of the current value with the provided attributes.
+    3) Transform the value under `transform`, if provided.
+    4) Transform the attributes of the current value with the transforms
+        provided in `attr_transforms`.
+    5) Return whatever value results from the above steps.
+
+    Note: `old_value` is never mutated in place, and will be copied if necessary
+    to prevent such mutation.
+
+    Args:
+        old_value: The existing value (pass `MISSING` to start from scratch).
+        new_value: The new value to use (if present).
+        replace: If `new_value` is not provided, whether to attempt to update the
+            existing value (False) or start from scratch using the constructor
+            (True).
+        constructor: A constructor for building a new object if needed.
+        attrs: A mapping of attribute names to target values.
+        transform: A transform to apply to the value before returning it.
+        attr_transforms: A mapping of attribute names to transforms to apply
+            to the attributes of the value before returning it (applied after
+            `transform` above).
+
+    Returns:
+        The mutated object.
     """
     mutate_safe = False
 
-    # If `new_value` is not `MISSING`, use it, otherwise use `old_value`.
+    # If `new_value` is not `MISSING`, use it; otherwise use `old_value` if not
+    # `replace`; otherwise use MISSING.
     if new_value is not MISSING:
         value = new_value
-    else:
+    elif not replace:
         value = old_value
+    else:
+        value = MISSING
 
     if isinstance(value, Proxy):
         value = value.__wrapped__
@@ -102,7 +131,7 @@ def mutate_value(
     # If `value` is `MISSING`, or `replace` is True, and we have a
     # constructor, create a new instance with existing attrs. Any attrs not
     # found in the constructor will be assigned later.
-    if (value is MISSING or replace) and constructor is not None:
+    if value is MISSING and constructor is not None:
         mutate_safe = True
         while hasattr(constructor, "__origin__"):
             constructor = constructor.__origin__
@@ -174,7 +203,9 @@ def mutate_value(
 
 
 def _get_function_args(function, attrs):
-    if function is getattr(builtins, function.__name__, None):
+    if hasattr(function, "__name__") and function is getattr(
+        builtins, function.__name__, None
+    ):
         return set()
     if getattr(function, "__spec_class_init_overflow_attr__", None):
         return set(attrs)
