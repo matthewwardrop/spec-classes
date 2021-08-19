@@ -590,7 +590,6 @@ class spec_class:
 
                 if indent:
                     if isinstance(obj, MutableSequence):
-                        print(obj)
                         if not obj:
                             return "[]"
                         items_repr = textwrap.indent(
