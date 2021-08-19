@@ -95,6 +95,7 @@ class TestKeyedList:
     def test_dict_behaviors(self):
         l = KeyedList([1, 2, 3], key=str)
 
+        assert list(l.keys()) == ["1", "2", "3"]
         assert list(l.items()) == [("1", 1), ("2", 2), ("3", 3)]
         assert "1" in l
         assert {} not in l
@@ -231,6 +232,7 @@ class TestKeyedSet:
     def test_dict_feature(self):
         s = KeyedSet({1, 2, 3}, key=str)
 
+        assert list(s.keys()) == ["1", "2", "3"]
         assert s["1"] == 1
         assert s.get("4") is None
         assert list(s.items()) == [("1", 1), ("2", 2), ("3", 3)]

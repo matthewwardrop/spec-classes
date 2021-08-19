@@ -177,6 +177,9 @@ class KeyedList(
 
     # Implement dict-like lookups by key
 
+    def keys(self):
+        return self._dict.keys()
+
     def items(self):
         return self._dict.items()
 
@@ -338,6 +341,9 @@ class KeyedSet(
         return f"{type_label(self._type)}({{{', '.join(repr(value) for value in self._dict.values())}}})"
 
     # Dict-like features
+
+    def keys(self):
+        return self._dict.keys()
 
     def items(self):
         return self._dict.items()
