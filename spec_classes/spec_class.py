@@ -857,7 +857,9 @@ class spec_class:
         attr_spec_type = get_spec_class_for_type(attr_type)
         attr_prepare_method = f"_prepare_{attr_name}"
 
-        def with_attr(self, _new_value=MISSING, *, _inplace=False, **attrs):
+        def with_attr(self, _new_value=MISSING, *, _inplace=False, _if=True, **attrs):
+            if not _if:
+                return self
             try:
                 _new_value = getattr(self, attr_prepare_method)(_new_value, **attrs)
             except AttributeError:
@@ -882,7 +884,11 @@ class spec_class:
                 inplace=_inplace,
             )
 
-        def transform_attr(self, _transform=None, *, _inplace=False, **attr_transforms):
+        def transform_attr(
+            self, _transform=None, *, _inplace=False, _if=True, **attr_transforms
+        ):
+            if not _if:
+                return self
             return with_attr(
                 self,
                 _new_value=mutate_value(
@@ -894,7 +900,9 @@ class spec_class:
                 _inplace=_inplace,
             )
 
-        def reset_attr(self, _inplace=False):
+        def reset_attr(self, _inplace=False, _if=True):
+            if not _if:
+                return self
             if not _inplace:
                 self = copy.deepcopy(self)
             self.__delattr__(attr_name)
@@ -917,6 +925,13 @@ class spec_class:
                     "_inplace",
                     "Whether to perform change without first copying.",
                     default=False,
+                    keyword_only=True,
+                    annotation=bool,
+                )
+                .with_arg(
+                    "_if",
+                    "This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
+                    default=True,
                     keyword_only=True,
                     annotation=bool,
                 )
@@ -946,6 +961,13 @@ class spec_class:
                     keyword_only=True,
                     annotation=bool,
                 )
+                .with_arg(
+                    "_if",
+                    "This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
+                    default=True,
+                    keyword_only=True,
+                    annotation=bool,
+                )
                 .with_spec_attrs_for(
                     attr_type, template=f"An optional transformer for {attr_name}.{{}}."
                 )
@@ -963,6 +985,13 @@ class spec_class:
                     "_inplace",
                     "Whether to perform change without first copying.",
                     default=False,
+                    keyword_only=True,
+                    annotation=bool,
+                )
+                .with_arg(
+                    "_if",
+                    "This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
+                    default=True,
                     keyword_only=True,
                     annotation=bool,
                 )
@@ -1068,7 +1097,7 @@ class spec_class:
             f"with_{singular_name}": (
                 MethodBuilder(
                     f"with_{singular_name}",
-                    lambda self, _item=MISSING, *, _index=MISSING, _insert=False, _inplace=False, **attrs: (
+                    lambda self, _item=MISSING, *, _index=MISSING, _insert=False, _inplace=False, _if=True, **attrs: (
                         mutate_attr(
                             obj=self,
                             attr=attr_name,
@@ -1089,6 +1118,8 @@ class spec_class:
                             inplace=_inplace,
                             type_check=False,
                         )
+                        if _if
+                        else self
                     ),
                 )
                 .with_preamble(
@@ -1121,6 +1152,13 @@ class spec_class:
                     keyword_only=True,
                     annotation=bool,
                 )
+                .with_arg(
+                    "_if",
+                    "This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
+                    default=True,
+                    keyword_only=True,
+                    annotation=bool,
+                )
                 .with_spec_attrs_for(
                     item_spec_type,
                     template=f"An optional new value for `{singular_name}.{{}}`.",
@@ -1133,7 +1171,7 @@ class spec_class:
             f"transform_{singular_name}": (
                 MethodBuilder(
                     f"transform_{singular_name}",
-                    lambda self, _value_or_index, _transform, *, _by_index=MISSING, _inplace=False, **attr_transforms: (
+                    lambda self, _value_or_index, _transform, *, _by_index=MISSING, _inplace=False, _if=True, **attr_transforms: (
                         mutate_attr(
                             obj=self,
                             attr=attr_name,
@@ -1150,6 +1188,8 @@ class spec_class:
                             inplace=_inplace,
                             type_check=False,
                         )
+                        if _if
+                        else self
                     ),
                 )
                 .with_preamble(
@@ -1180,6 +1220,13 @@ class spec_class:
                     keyword_only=True,
                     annotation=bool,
                 )
+                .with_arg(
+                    "_if",
+                    "This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
+                    default=True,
+                    keyword_only=True,
+                    annotation=bool,
+                )
                 .with_spec_attrs_for(
                     item_spec_type,
                     template=f"An optional transformer for `{singular_name}.{{}}`.",
@@ -1192,7 +1239,7 @@ class spec_class:
             f"without_{singular_name}": (
                 MethodBuilder(
                     f"without_{singular_name}",
-                    lambda self, _value_or_index, *, _by_index=MISSING, _inplace=False: (
+                    lambda self, _value_or_index, *, _by_index=MISSING, _inplace=False, _if=True: (
                         mutate_attr(
                             obj=self,
                             attr=attr_name,
@@ -1207,6 +1254,8 @@ class spec_class:
                             inplace=_inplace,
                             type_check=False,
                         )
+                        if _if
+                        else self
                     ),
                 )
                 .with_preamble(
@@ -1228,6 +1277,13 @@ class spec_class:
                     "_inplace",
                     "Whether to perform change without first copying.",
                     default=False,
+                    keyword_only=True,
+                    annotation=bool,
+                )
+                .with_arg(
+                    "_if",
+                    "This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
+                    default=True,
                     keyword_only=True,
                     annotation=bool,
                 )
@@ -1280,7 +1336,7 @@ class spec_class:
             f"with_{singular_name}": (
                 MethodBuilder(
                     f"with_{singular_name}",
-                    lambda self, _key=None, _value=None, _inplace=False, **attrs: (
+                    lambda self, _key=None, _value=None, _inplace=False, _if=True, **attrs: (
                         mutate_attr(
                             obj=self,
                             attr=attr_name,
@@ -1301,6 +1357,8 @@ class spec_class:
                             inplace=_inplace,
                             type_check=False,
                         )
+                        if _if
+                        else self
                     ),
                 )
                 .with_preamble(
@@ -1324,6 +1382,13 @@ class spec_class:
                     keyword_only=True,
                     annotation=bool,
                 )
+                .with_arg(
+                    "_if",
+                    "This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
+                    default=True,
+                    keyword_only=True,
+                    annotation=bool,
+                )
                 .with_spec_attrs_for(
                     item_spec_type,
                     template=f"An optional new value for `{singular_name}.{{}}`.",
@@ -1336,7 +1401,7 @@ class spec_class:
             f"transform_{singular_name}": (
                 MethodBuilder(
                     f"transform_{singular_name}",
-                    lambda self, _key, _transform, *, _inplace=False, **attr_transforms: (
+                    lambda self, _key, _transform, *, _inplace=False, _if=True, **attr_transforms: (
                         mutate_attr(
                             obj=self,
                             attr=attr_name,
@@ -1352,6 +1417,8 @@ class spec_class:
                             inplace=_inplace,
                             type_check=False,
                         )
+                        if _if
+                        else self
                     ),
                 )
                 .with_preamble(
@@ -1375,6 +1442,13 @@ class spec_class:
                     keyword_only=True,
                     annotation=bool,
                 )
+                .with_arg(
+                    "_if",
+                    "This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
+                    default=True,
+                    keyword_only=True,
+                    annotation=bool,
+                )
                 .with_spec_attrs_for(
                     item_spec_type,
                     template=f"An optional transformer for `{singular_name}.{{}}`.",
@@ -1387,7 +1461,7 @@ class spec_class:
             f"without_{singular_name}": (
                 MethodBuilder(
                     f"without_{singular_name}",
-                    lambda self, _key, *, _inplace=False: (
+                    lambda self, _key, *, _inplace=False, _if=True: (
                         mutate_attr(
                             obj=self,
                             attr=attr_name,
@@ -1399,6 +1473,8 @@ class spec_class:
                             inplace=_inplace,
                             type_check=False,
                         )
+                        if _if
+                        else self
                     ),
                 )
                 .with_preamble(
@@ -1411,6 +1487,13 @@ class spec_class:
                     "_inplace",
                     "Whether to perform change without first copying.",
                     default=False,
+                    keyword_only=True,
+                    annotation=bool,
+                )
+                .with_arg(
+                    "_if",
+                    "This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
+                    default=True,
                     keyword_only=True,
                     annotation=bool,
                 )
@@ -1455,7 +1538,7 @@ class spec_class:
             f"with_{singular_name}": (
                 MethodBuilder(
                     f"with_{singular_name}",
-                    lambda self, _item, *, _inplace=False, **attrs: (
+                    lambda self, _item, *, _inplace=False, _if=True, **attrs: (
                         mutate_attr(
                             obj=self,
                             attr=attr_name,
@@ -1474,6 +1557,8 @@ class spec_class:
                             inplace=_inplace,
                             type_check=False,
                         )
+                        if _if
+                        else self
                     ),
                 )
                 .with_preamble(
@@ -1492,6 +1577,13 @@ class spec_class:
                     keyword_only=True,
                     annotation=bool,
                 )
+                .with_arg(
+                    "_if",
+                    "This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
+                    default=True,
+                    keyword_only=True,
+                    annotation=bool,
+                )
                 .with_spec_attrs_for(
                     item_spec_type,
                     template=f"An optional new value for `{singular_name}.{{}}`.",
@@ -1504,7 +1596,7 @@ class spec_class:
             f"transform_{singular_name}": (
                 MethodBuilder(
                     f"transform_{singular_name}",
-                    lambda self, _item, _transform, *, _inplace=False, **attr_transforms: (
+                    lambda self, _item, _transform, *, _inplace=False, _if=True, **attr_transforms: (
                         mutate_attr(
                             obj=self,
                             attr=attr_name,
@@ -1520,6 +1612,8 @@ class spec_class:
                             inplace=_inplace,
                             type_check=False,
                         )
+                        if _if
+                        else self
                     ),
                 )
                 .with_preamble(
@@ -1539,6 +1633,13 @@ class spec_class:
                     keyword_only=True,
                     annotation=bool,
                 )
+                .with_arg(
+                    "_if",
+                    "This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
+                    default=True,
+                    keyword_only=True,
+                    annotation=bool,
+                )
                 .with_spec_attrs_for(
                     item_spec_type,
                     template=f"An optional transformer for `{singular_name}.{{}}`.",
@@ -1551,7 +1652,7 @@ class spec_class:
             f"without_{singular_name}": (
                 MethodBuilder(
                     f"without_{singular_name}",
-                    lambda self, _item, _inplace=False: (
+                    lambda self, _item, _inplace=False, _if=True: (
                         mutate_attr(
                             obj=self,
                             attr=attr_name,
@@ -1563,6 +1664,8 @@ class spec_class:
                             inplace=_inplace,
                             type_check=False,
                         )
+                        if _if
+                        else self
                     ),
                 )
                 .with_preamble(
@@ -1573,6 +1676,13 @@ class spec_class:
                     "_inplace",
                     "Whether to perform change without first copying.",
                     default=False,
+                    keyword_only=True,
+                    annotation=bool,
+                )
+                .with_arg(
+                    "_if",
+                    "This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
+                    default=True,
                     keyword_only=True,
                     annotation=bool,
                 )

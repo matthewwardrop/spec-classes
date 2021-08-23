@@ -770,9 +770,11 @@ class TestScalarAttribute:
         assert set(inspect.Signature.from_callable(spec.with_scalar).parameters) == {
             "_new_value",
             "_inplace",
+            "_if",
         }
         assert spec.with_scalar(4) is not spec
         assert spec.with_scalar(4).scalar == 4
+        assert spec.with_scalar(4, _if=False).scalar == 3
 
         assert spec.with_scalar(4, _inplace=True) is spec
         assert spec.scalar == 4
@@ -781,15 +783,18 @@ class TestScalarAttribute:
         spec = spec_cls(scalar=3)
         assert set(
             inspect.Signature.from_callable(spec.transform_scalar).parameters
-        ) == {"_transform", "_inplace"}
+        ) == {"_transform", "_inplace", "_if"}
         assert spec.transform_scalar(lambda x: x * 2) is not spec
         assert spec.transform_scalar(lambda x: x * 2).scalar == 6
+        assert spec.transform_scalar(lambda x: x * 2, _if=False).scalar == 3
 
         assert spec.transform_scalar(lambda x: x * 2, _inplace=True) is spec
         assert spec.scalar == 6
 
     def test_reset(self, spec_cls):
         spec = spec_cls(scalar=3)
+
+        assert spec.reset_scalar(_if=False).scalar == 3
 
         with pytest.raises(
             AttributeError, match=r"`Spec\.scalar` has not yet been assigned a value\."
@@ -814,6 +819,7 @@ class TestSpecAttribute:
         assert set(inspect.Signature.from_callable(spec.with_spec).parameters) == {
             "_new_value",
             "_inplace",
+            "_if",
             "nested_scalar",
             "nested_scalar2",
         }
@@ -851,6 +857,7 @@ class TestSpecAttribute:
         assert set(inspect.Signature.from_callable(spec.transform_spec).parameters) == {
             "_transform",
             "_inplace",
+            "_if",
             "nested_scalar",
             "nested_scalar2",
         }
@@ -903,6 +910,7 @@ class TestListAttribute:
             "_index",
             "_insert",
             "_inplace",
+            "_if",
         }
 
         # Constructors
@@ -910,6 +918,7 @@ class TestListAttribute:
         assert spec.with_list_values().list_values == []
         assert spec.with_list_value().list_values == [0]
         assert spec.with_list_value(1).list_values == [1]
+        assert spec.with_list_value(1).with_list_value(2, _if=False).list_values == [1]
 
         # Pass through values
         assert spec.with_list_values([2, 3]).list_values == [2, 3]
@@ -946,6 +955,7 @@ class TestListAttribute:
             "_transform",
             "_by_index",
             "_inplace",
+            "_if",
         }
 
         # scalar form
@@ -953,6 +963,9 @@ class TestListAttribute:
 
         # by value
         assert spec.transform_list_value(1, lambda x: x * 2).list_values == [2]
+        assert spec.transform_list_value(1, lambda x: x * 2, _if=False).list_values == [
+            1
+        ]
         assert spec.transform_list_str_value("a", lambda x: x * 2).list_str_values == [
             "aa"
         ]
@@ -989,10 +1002,12 @@ class TestListAttribute:
             "_value_or_index",
             "_by_index",
             "_inplace",
+            "_if",
         }
 
         assert list_spec.without_list_value(1).list_values == [2, 3]
         assert list_spec.without_list_value(1, _by_index=True).list_values == [1, 3]
+        assert list_spec.without_list_value(1, _if=False).list_values == [1, 2, 3]
 
         assert list_spec.without_list_str_value("a").list_str_values == ["b", "c"]
         assert list_spec.without_list_str_value(1).list_str_values == ["a", "c"]
@@ -1013,6 +1028,7 @@ class TestSpecListAttribute:
             "_index",
             "_insert",
             "_inplace",
+            "_if",
             "nested_scalar",
             "nested_scalar2",
         }
@@ -1082,6 +1098,7 @@ class TestSpecListAttribute:
             "_transform",
             "_by_index",
             "_inplace",
+            "_if",
             "nested_scalar",
             "nested_scalar2",
         }
@@ -1131,6 +1148,7 @@ class TestSpecListAttribute:
             "_value_or_index",
             "_by_index",
             "_inplace",
+            "_if",
         }
 
         assert spec.without_spec_list_item(
@@ -1154,12 +1172,17 @@ class TestDictAttribute:
             "_key",
             "_value",
             "_inplace",
+            "_if",
         }
 
         # constructors
         assert "dict_values" not in spec.__dict__
         assert spec.with_dict_values({}).dict_values == {}
         assert spec.with_dict_value("a", 1).dict_values == {"a": 1}
+        assert (
+            spec.with_dict_values({}).with_dict_value("a", 1, _if=False).dict_values
+            == {}
+        )
 
         # update dictionary
         assert spec.with_dict_values({"a": 1, "b": 2}) is not spec
@@ -1197,10 +1220,14 @@ class TestDictAttribute:
             "_key",
             "_transform",
             "_inplace",
+            "_if",
         }
 
         assert spec.transform_dict_values(lambda x: {"a": 2}).dict_values == {"a": 2}
         assert spec.transform_dict_value("a", lambda x: x + 1).dict_values == {"a": 2}
+        assert spec.transform_dict_value(
+            "a", lambda x: x + 1, _if=False
+        ).dict_values == {"a": 1}
 
     def test_without(self, spec_cls):
         spec = spec_cls(dict_values={"a": 1})
@@ -1209,9 +1236,11 @@ class TestDictAttribute:
         ) == {
             "_key",
             "_inplace",
+            "_if",
         }
 
         assert spec.without_dict_value("a").dict_values == {}
+        assert spec.without_dict_value("a", _if=False).dict_values == {"a": 1}
 
 
 class TestSpecDictAttribute:
@@ -1224,6 +1253,7 @@ class TestSpecDictAttribute:
             "_key",
             "_value",
             "_inplace",
+            "_if",
             "nested_scalar",
             "nested_scalar2",
         }
@@ -1265,7 +1295,14 @@ class TestSpecDictAttribute:
         )
         assert set(
             inspect.Signature.from_callable(spec.transform_spec_dict_item).parameters
-        ) == {"_key", "_transform", "_inplace", "nested_scalar", "nested_scalar2"}
+        ) == {
+            "_key",
+            "_transform",
+            "_inplace",
+            "nested_scalar",
+            "nested_scalar2",
+            "_if",
+        }
 
         # scalar form
         assert spec.transform_spec_dict_items(lambda x: {}).spec_dict_items == {}
@@ -1301,6 +1338,7 @@ class TestSpecDictAttribute:
         ) == {
             "_key",
             "_inplace",
+            "_if",
         }
 
         assert spec.without_spec_dict_item("a").spec_dict_items == {
@@ -1315,12 +1353,14 @@ class TestSetAttribute:
         assert set(inspect.Signature.from_callable(spec.with_set_value).parameters) == {
             "_item",
             "_inplace",
+            "_if",
         }
 
         # constructors
         assert "set_values" not in spec.__dict__
         assert spec.with_set_values().set_values == set()
         assert spec.with_set_value("a").set_values == {"a"}
+        assert spec.with_set_values().with_set_value("a", _if=False).set_values == set()
 
         # update set
         assert spec.with_set_values({"a", "b"}) is not spec
@@ -1358,6 +1398,7 @@ class TestSetAttribute:
             "_item",
             "_transform",
             "_inplace",
+            "_if",
         }
 
         assert spec.transform_set_values(lambda x: x | {"c"}).set_values == {
@@ -1366,6 +1407,10 @@ class TestSetAttribute:
             "c",
         }
         assert spec.transform_set_value("a", lambda x: "c").set_values == {"b", "c"}
+        assert spec.transform_set_value("a", lambda x: "c", _if=False).set_values == {
+            "a",
+            "b",
+        }
 
         with pytest.raises(ValueError):
             assert spec.transform_set_value("c", lambda x: "c")
@@ -1377,6 +1422,8 @@ class TestSetAttribute:
         ) == {
             "_item",
             "_inplace",
+            "_if",
         }
 
         assert spec.without_set_value("a").set_values == {"b"}
+        assert spec.without_set_value("a", _if=False).set_values == {"a", "b"}
