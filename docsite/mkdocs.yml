@@ -1,0 +1,33 @@
+site_name: Spec Classes
+pages:
+  - Introduction: index.md
+  - Usage:
+    - Overview: usage/index.md
+    - Basic Usage: usage/basic.md
+    - Scalar Methods: usage/scalars.md
+    - Collection Methods: usage/collections.md
+    - Special Types: usage/special_types.md
+    - Advanced Usage: usage/advanced.md
+  - Implementation Details:
+    - How it works: implementation/how_it_works.md
+    - Architecture: implementation/architecture.md
+    - Performance: implementation/performance.md
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.top
+    - navigation.tracking
+    - toc.integrate
+  logo: assets/images/logo.svg
+extra_css:
+  - assets/stylesheets/colors.css
+extra:
+  version:
+    provider: mike
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
