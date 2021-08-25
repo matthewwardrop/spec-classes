@@ -62,7 +62,7 @@ of base Python classes where functionality overlaps, and should always be
 intuitive otherwise (e.g. when type-checking is violated).
 
 **Performance is important.** Although performance is not the primary goal of 
-`spec_classes`, given the targeted feature-set, the overhead introduced should 
+`spec_classes`, given the targeted feature-set the overhead introduced should 
 be a small as possible. In the future, we may also add the option of disabling
 certain run-time validation for execution in trusted environments where
 performance is more critical.
