@@ -4,9 +4,11 @@ from spec_classes.types import MISSING
 from spec_classes.utils.type_checking import check_type
 
 from .base import ManagedCollection
+from spec_classes.methods.collections import SET_METHODS
 
 
 class SetCollection(ManagedCollection):
+    HELPER_METHODS = SET_METHODS
     def _extractor(self, value_or_index, raise_if_missing=False):
         if raise_if_missing and value_or_index not in self.collection:
             raise ValueError(f"Value `{repr(value_or_index)}` not in `{self.name}`.")
@@ -23,6 +25,20 @@ class SetCollection(ManagedCollection):
         if replace:
             self.collection.discard(index)
         self.collection.add(item)
+
+    def prepare(self, item_preparer):  # lambda x: ...
+        if self.collection is MISSING:
+            self.collection = self._create_collection()
+        if not check_type(self.collection, self.collection_type):
+            items = self.collection or set()
+            self.collection = self._create_collection()
+            self.add_items(items, item_preparer)
+            return self
+        if not self.collection or not item_preparer:
+            return self
+        for value in self.collection:
+            self.transform_item(value, item_preparer)
+        return self
 
     def get_item(
         self,

@@ -3,7 +3,7 @@ from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from typing import Any, Callable, Dict, Type, Union
 
-from spec_classes.types import MISSING
+from spec_classes.types.missing import MISSING
 from spec_classes.utils.mutation import mutate_value
 from spec_classes.utils.type_checking import (
     check_type,
@@ -16,6 +16,9 @@ IndexedItem = namedtuple("IndexedItem", ("index", "item"))
 
 
 class ManagedCollection(metaclass=ABCMeta):
+
+    HELPER_METHODS = []
+
     def __init__(
         self,
         collection_type: Union[Type, Callable],
@@ -30,11 +33,11 @@ class ManagedCollection(metaclass=ABCMeta):
         self.item_type = get_collection_item_type(collection_type)
         self.item_spec_type = get_spec_class_for_type(self.item_type)
         self.item_spec_type_is_keyed = (
-            self.item_spec_type and self.item_spec_type.__spec_class_key__ is not None
+            self.item_spec_type and self.item_spec_type.__spec_class__.key is not None
         )
         self.item_spec_key_type = (
-            self.item_spec_type.__spec_class_annotations__[
-                self.item_spec_type.__spec_class_key__
+            self.item_spec_type.__spec_class__.annotations[
+                self.item_spec_type.__spec_class__.key
             ]
             if self.item_spec_type_is_keyed
             else None
@@ -150,16 +153,16 @@ class ManagedCollection(metaclass=ABCMeta):
         """
         Get the key associated with a spec class isntance or from attrs.
         """
-        assert hasattr(
-            spec_cls, "__spec_class_key__"
+        assert (
+            spec_cls.__spec_class__.key
         ), f"`{spec_cls}` is not a keyed spec class instance."
         if isinstance(item, spec_cls):
-            return getattr(item, spec_cls.__spec_class_key__, MISSING)
+            return getattr(item, spec_cls.__spec_class__.key, MISSING)
         if check_type(
-            item, spec_cls.__spec_class_annotations__[spec_cls.__spec_class_key__]
+            item, spec_cls.__spec_class__.annotations[spec_cls.__spec_class__.key]
         ):
             return item
-        return (attrs or {}).get(spec_cls.__spec_class_key__, MISSING)
+        return (attrs or {}).get(spec_cls.__spec_class__.key, MISSING)
 
     def _create_collection(self):
         if hasattr(self.collection_type, "__origin__"):
@@ -189,3 +192,7 @@ class ManagedCollection(metaclass=ABCMeta):
     @abstractmethod
     def remove_item(self, value_or_index):
         ...  # pragma: no cover
+
+    @abstractmethod
+    def prepare(self, item_preparer):
+        ...

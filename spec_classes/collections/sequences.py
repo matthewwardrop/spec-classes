@@ -4,9 +4,12 @@ from spec_classes.types import MISSING
 from spec_classes.utils.type_checking import check_type
 
 from .base import IndexedItem, ManagedCollection
+from spec_classes.methods.collections import SEQUENCE_METHODS
 
 
 class SequenceCollection(ManagedCollection):
+    HELPER_METHODS = SEQUENCE_METHODS
+
     def _extractor(  # pylint: disable=arguments-differ
         self,
         value_or_index,
@@ -51,6 +54,20 @@ class SequenceCollection(ManagedCollection):
             self.collection.insert(index, item)
         else:
             self.collection[index] = item
+
+    def prepare(self, item_preparer):  # lambda x: ...
+        if self.collection is MISSING:
+            self.collection = self._create_collection()
+        if not check_type(self.collection, self.collection_type):
+            items = self.collection or ()
+            self.collection = self._create_collection()
+            self.add_items(items, item_preparer)
+            return self
+        if not self.collection or not item_preparer:
+            return self
+        for index in range(len(self.collection)):
+            self.transform_item(index, item_preparer, by_index=True)
+        return self
 
     def get_item(
         self,

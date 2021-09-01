@@ -72,7 +72,7 @@ class MethodBuilder:  # pragma: no cover; This is an internal helper class only;
         only_if: bool = True,
     ):
         """
-        Add **attrs to signature, and record valid keywords as specified in `args`.
+        Add multiple arguments to signature, and record valid keywords as specified in `args`.
         """
         if not only_if:
             return self
@@ -90,23 +90,24 @@ class MethodBuilder:  # pragma: no cover; This is an internal helper class only;
         self.args.extend(
             ["{}: {}".format(name, template.format(name)) for name in list(args)]
         )
-        if not self.parameters_sig_only:
-            self.parameters.append(Parameter("attrs", kind=Parameter.VAR_KEYWORD))
+        # if not self.parameters_sig_only:
+        #    self.parameters.append(Parameter("attrs", kind=Parameter.VAR_KEYWORD))
         defaults = defaults or {}
-        self.parameters_sig_only.extend(
+        self.parameters.extend(
             [
                 Parameter(
                     name,
                     Parameter.KEYWORD_ONLY,
                     annotation=arg_type,
-                    default=defaults.get(name),
+                    default=defaults.get(name, MISSING),
                 )
                 for name, arg_type in args.items()
                 if name != var_kwarg
             ]
         )
         if var_kwarg:
-            self.parameters_sig_only.append(Parameter(var_kwarg, Parameter.VAR_KEYWORD))
+            self.parameters.append(Parameter(name=var_kwarg, kind=Parameter.VAR_KEYWORD))
+            #self.parameters_sig_only.append(Parameter(var_kwarg, Parameter.VAR_KEYWORD))
             self.check_attrs_match_sig = False
         return self
 
@@ -116,7 +117,7 @@ class MethodBuilder:  # pragma: no cover; This is an internal helper class only;
         """
         Add **attrs based on the attributes of a spec_class.
         """
-        if not only_if or not getattr(spec_cls, "__is_spec_class__", False):
+        if not only_if or not hasattr(spec_cls, "__spec_class__"):
             return self
         if defaults is True:
             defaults = {
@@ -126,11 +127,11 @@ class MethodBuilder:  # pragma: no cover; This is an internal helper class only;
                     and not inspect.isdatadescriptor(getattr(spec_cls, attr, None))
                     else MISSING
                 )
-                for attr in spec_cls.__spec_class_annotations__
+                for attr in spec_cls.__spec_class__.annotations
             }
         return self.with_attrs(
-            spec_cls.__spec_class_annotations__,
-            var_kwarg=spec_cls.__spec_class_init_overflow_attr__,
+            spec_cls.__spec_class__.annotations,
+            var_kwarg=spec_cls.__spec_class__.init_overflow_attr,
             template=template,
             defaults=defaults,
         )

@@ -2,9 +2,13 @@ from spec_classes.types import MISSING
 from spec_classes.utils.type_checking import check_type
 
 from .base import ManagedCollection
+from spec_classes.methods.collections import MAPPING_METHODS
 
 
 class MappingCollection(ManagedCollection):
+
+    HELPER_METHODS = MAPPING_METHODS
+
     def _extractor(self, value_or_index, raise_if_missing=False):
         if raise_if_missing and value_or_index not in self.collection:
             raise KeyError(f"Key `{repr(value_or_index)}` not in `{self.name}`.")
@@ -16,6 +20,19 @@ class MappingCollection(ManagedCollection):
                 f"Attempted to add an invalid item `{repr(item)}` to `{self.name}`. Expected item of type `{self.item_type}`."
             )
         self.collection[index] = item
+
+    def prepare(self, item_preparer):  # preparer = preparer or (lambda k, v: (k, v))
+        if self.collection is MISSING:
+            self.collection = self._create_collection()
+        if not check_type(self.collection, self.collection_type):
+            items = (self.collection or {}).items()
+            self.collection = self._create_collection()
+            self.add_items(items, item_preparer)
+            return self
+        if not self.collection or not item_preparer:
+            return self
+        self.add_items(self.collection, preparer=item_preparer)
+        return self
 
     def get_item(
         self,
@@ -81,7 +98,7 @@ class MappingCollection(ManagedCollection):
 
     def remove_item(self, key):  # pylint: disable=arguments-differ
         if self.item_spec_type_is_keyed and isinstance(key, self.item_spec_type):
-            key = getattr(key, self.item_spec_type.__spec_class_key__)
+            key = getattr(key, self.item_spec_type.__spec_class__.key)
         if key in self.collection:
             del self.collection[key]
         return self

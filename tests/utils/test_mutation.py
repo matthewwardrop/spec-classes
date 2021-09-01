@@ -1,4 +1,5 @@
 from typing import List
+import re
 
 import pytest
 from lazy_object_proxy import Proxy
@@ -102,7 +103,7 @@ def test_mutate_value():
         Spec(key="key", scalar=10), constructor=Spec, attrs={"list_values": [20]}
     ).list_values == [20]
     with pytest.raises(
-        TypeError, match="Invalid attribute `invalid_attr` for spec class"
+        TypeError, match=re.escape("__init__() got an unexpected keyword argument 'invalid_attr'")
     ):
         assert mutate_value(MISSING, constructor=Spec, attrs={"invalid_attr": "value"})
     assert (

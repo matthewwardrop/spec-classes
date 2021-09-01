@@ -35,8 +35,8 @@ class KeyedBase:
         """
         Default implementation of `KeyedList.key`.
         """
-        if getattr(item, "__is_spec_class__", False):
-            key = getattr(item, "__spec_class_key__")
+        if getattr(item, "__spec_class__", None):
+            key = item.__spec_class__.key
             if key:
                 return getattr(item, key)
         try:

@@ -1,0 +1,200 @@
+# pylint: disable=bad-staticmethod-argument
+
+import copy
+import functools
+from inspect import Parameter
+from typing import Callable
+from lazy_object_proxy import Proxy
+
+from cached_property import cached_property
+
+from spec_classes.types import MISSING
+from spec_classes.utils.method_builder import MethodBuilder
+from spec_classes.utils.mutation import mutate_attr, mutate_value
+
+from .base import AttrMethodDescriptor
+
+
+class WithAttrMethod(AttrMethodDescriptor):
+    @cached_property
+    def name(self):
+        return f"with_{self.attr_spec.name}"
+
+    @staticmethod
+    def with_attr(
+        attr_spec, self, _new_value=MISSING, *, _inplace=False, _if=True, **attrs
+    ):
+        if not _if:
+            return self
+
+        if attr_spec.is_collection:
+            _new_value = attr_spec.collection_manager(
+                attr_spec.type, collection=_new_value, name=attr_spec.name
+            ).prepare(item_preparer=functools.partial(attr_spec.prepare_item, self)).collection
+        else:
+            _new_value = mutate_value(
+                old_value=MISSING,
+                new_value=_new_value,
+                constructor=attr_spec.type,
+                attrs=attrs,
+            )
+
+        return mutate_attr(
+            obj=self,
+            attr=attr_spec.name,
+            value=_new_value,
+            inplace=_inplace,
+        )
+
+    def build_method(self):
+        attr_spec_type = self.attr_spec.spec_type
+        or_its_attributes = " or its attributes" if attr_spec_type else ""
+        return (
+            MethodBuilder(self.name, functools.partial(self.with_attr, self.attr_spec))
+            .with_preamble(
+                f"Return a `{self.spec_cls.__name__}` instance identical to this one except with `{self.attr_spec.name}`{or_its_attributes} mutated."
+            )
+            .with_arg(
+                "_new_value",
+                f"The new value for `{self.attr_spec.name}`.",
+                default=MISSING,
+                annotation=self.attr_spec.type,
+            )
+            .with_arg(
+                "_inplace",
+                "Whether to perform change without first copying.",
+                default=False,
+                keyword_only=True,
+                annotation=bool,
+            )
+            .with_arg(
+                "_if",
+                "This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
+                default=True,
+                keyword_only=True,
+                annotation=bool,
+            )
+            .with_spec_attrs_for(
+                self.attr_spec.type,
+                template=f"An optional new value for {self.attr_spec.name}.{{}}.",
+            )
+            .with_returns(
+                f"A reference to the mutated `{self.spec_cls.__name__}` instance.",
+                annotation=self.spec_cls,
+            )
+            .build()
+        )
+
+
+class TransformAttrMethod(AttrMethodDescriptor):
+    @cached_property
+    def name(self):
+        return f"transform_{self.attr_spec.name}"
+
+    @staticmethod
+    def transform_attr(
+        attr_spec, self, _transform=None, *, _inplace=False, _if=True, **attr_transforms
+    ):
+        if not _if:
+            return self
+        return WithAttrMethod.with_attr(
+            attr_spec,
+            self,
+            _new_value=mutate_value(
+                old_value=Proxy(lambda: getattr(self, attr_spec.name)),
+                transform=_transform,
+                constructor=attr_spec.type,
+                attr_transforms=attr_transforms,
+            ),
+            _inplace=_inplace,
+        )
+
+    def build_method(self):
+        self.attr_spec.name = self.attr_spec.name
+        self.attr_spec.type = self.attr_spec.type
+        attr_spec_type = self.attr_spec.spec_type
+        or_its_attributes = " or its attributes" if attr_spec_type else ""
+        return (
+            MethodBuilder(self.name, functools.partial(self.transform_attr, self.attr_spec))
+            .with_preamble(
+                f"Return a `{self.spec_cls.__name__}` instance identical to this one except with `{self.attr_spec.name}`{or_its_attributes} transformed."
+            )
+            .with_arg(
+                "_transform",
+                f"A function that takes the old value for {self.attr_spec.name} as input, and returns the new value.",
+                default=MISSING if attr_spec_type else Parameter.empty,
+                annotation=Callable,
+            )
+            .with_arg(
+                "_inplace",
+                "Whether to perform change without first copying.",
+                default=False,
+                keyword_only=True,
+                annotation=bool,
+            )
+            .with_arg(
+                "_if",
+                "This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
+                default=True,
+                keyword_only=True,
+                annotation=bool,
+            )
+            .with_spec_attrs_for(
+                self.attr_spec.type,
+                template=f"An optional transformer for {self.attr_spec.name}.{{}}.",
+            )
+            .with_returns(
+                f"A reference to the mutated `{self.spec_cls.__name__}` instance.",
+                annotation=self.spec_cls,
+            )
+            .build()
+        )
+
+
+class ResetAttrMethod(AttrMethodDescriptor):
+    @cached_property
+    def name(self):
+        return f"reset_{self.attr_spec.name}"
+
+    @staticmethod
+    def reset_attr(attr_spec, self, _inplace=False, _if=True):
+        if not _if:
+            return self
+        if not _inplace:
+            self = copy.deepcopy(self)
+        self.__delattr__(attr_spec.name)
+        return self
+
+    def build_method(self):
+        return (
+            MethodBuilder(self.name, functools.partial(self.reset_attr, self.attr_spec))
+            .with_preamble(
+                f"Return a `{self.spec_cls.__name__}` instance identical to this one except with `{self.attr_spec.name}` reset to its default value."
+            )
+            .with_arg(
+                "_inplace",
+                "Whether to perform change without first copying.",
+                default=False,
+                keyword_only=True,
+                annotation=bool,
+            )
+            .with_arg(
+                "_if",
+                "This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
+                default=True,
+                keyword_only=True,
+                annotation=bool,
+            )
+            .with_returns(
+                f"A reference to the mutated `{self.spec_cls.__name__}` instance.",
+                annotation=self.spec_cls,
+            )
+            .build()
+        )
+
+
+SCALAR_METHODS = [
+    WithAttrMethod,
+    TransformAttrMethod,
+    ResetAttrMethod,
+]
