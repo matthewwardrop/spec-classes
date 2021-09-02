@@ -11,7 +11,6 @@ from lazy_object_proxy import Proxy
 from spec_classes.types import Attr, MISSING
 from spec_classes.utils.method_builder import MethodBuilder
 from spec_classes.utils.mutation import mutate_attr, mutate_value
-from spec_classes.utils.type_checking import type_label
 
 from .base import AttrMethodDescriptor
 
@@ -52,16 +51,7 @@ class WithAttrMethod(AttrMethodDescriptor):
             _new_value = attr_spec.prepare(self, _new_value)
         if attr_spec.is_collection:
             _new_value = (
-                attr_spec
-                # .get_collection(self, inplace=_inplace)
-                .collection_manager(
-                    collection_type=attr_spec.type,
-                    collection=_new_value,
-                    item_preparer=functools.partial(attr_spec.prepare_item, self)
-                    if attr_spec.prepare_item
-                    else None,
-                    name=f"{type_label(type(self))}.{attr_spec.name}",
-                )
+                attr_spec.get_collection_mutator(instance=self, collection=_new_value)
                 .prepare()
                 .collection
             )

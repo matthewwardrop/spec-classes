@@ -12,13 +12,14 @@ from spec_classes.utils.naming import get_singular_form
 from spec_classes.utils.type_checking import (
     get_collection_item_type,
     get_spec_class_for_type,
+    type_label,
     type_match,
 )
 
 from .missing import MISSING
 
 if TYPE_CHECKING:
-    from spec_classes.collections.base import ManagedCollection
+    from spec_classes.collections.base import CollectionAttrMutator
     from spec_classes.methods.base import AttrMethodDescriptor
 
 
@@ -81,11 +82,14 @@ class Attr:
                 casting happens before type-checking.
 
         Derived attributes (cached):
+            qualified_name: The name of the attribute to use in error logs,
+                of form: "<spec-class>.<attr-name>". If `owner` is not set, this
+                will just be "<attr-name>".
             spec_type: The spec-class associated with `type`, if we can resolve
                 one, otherwise `None`.
             is_collection: Whether this attribute is a collection based on its
                 `type`.
-            collection_manager: The `ManagedCollection` subclass to use for this
+            collection_manager: The `CollectionAttrMutator` subclass to use for this
                 attribute (derived from `type`).
             item_name: The singular name of this attribute (derived from
                 `name`).
@@ -93,6 +97,8 @@ class Attr:
                 is a collection).
             item_spec_type: The spec-class associated with `item_type`, if we
                 can resolve one, otherwise `None`.
+            item_spec_key_type: The type of the key if the item type is a spec
+                class and it has a key, or `None` otherwise.
     """
 
     @classmethod
@@ -170,6 +176,12 @@ class Attr:
     # Derived attributes
 
     @cached_property
+    def qualified_name(self) -> str:
+        if self.owner:
+            return f"{type_label(self.owner)}.{self.name}"
+        return self.name
+
+    @cached_property
     def spec_type(self) -> Optional[Type]:
         return get_spec_class_for_type(self.type)
 
@@ -177,36 +189,27 @@ class Attr:
 
     @cached_property
     def is_collection(self) -> bool:
-        return self.collection_manager is not None
+        return self.collection_mutator_type is not None
 
     @cached_property
-    def collection_manager(self) -> Optional[Type["ManagedCollection"]]:
+    def collection_mutator_type(self) -> Optional[Type[CollectionAttrMutator]]:
         from spec_classes.collections import (
-            MappingCollection,
-            SequenceCollection,
-            SetCollection,
+            MappingMutator,
+            SequenceMutator,
+            SetMutator,
         )
 
         if type_match(self.type, MutableSequence):
-            return SequenceCollection
+            return SequenceMutator
         if type_match(self.type, MutableMapping):
-            return MappingCollection
+            return MappingMutator
         if type_match(self.type, MutableSet):
-            return SetCollection
+            return SetMutator
         return None
 
-    def get_collection(
-        self, instance: Any, inplace: bool = False
-    ) -> "ManagedCollection":
-        return self.collection_manager(
-            collection_type=self.type,
-            collection=getattr(instance, self.name, MISSING),
-            item_preparer=functools.partial(self.prepare_item, instance)
-            if self.prepare_item
-            else None,
-            name=f"{instance.__class__.__name__}.{self.name}",
-            inplace=inplace,
-        )
+    @cached_property
+    def get_collection_mutator(self) -> Optional[Callable[..., CollectionAttrMutator]]:
+        return functools.partial(self.collection_mutator_type, self)
 
     @cached_property
     def item_name(self) -> str:
@@ -219,6 +222,14 @@ class Attr:
     @cached_property
     def item_spec_type(self) -> Optional[Type]:
         return get_spec_class_for_type(self.item_type)
+
+    @cached_property
+    def item_spec_key_type(self) -> Optional[Type]:
+        if self.item_spec_type and self.item_spec_type.__spec_class__.key:
+            return self.item_spec_type.__spec_class__.annotations[
+                self.item_spec_type.__spec_class__.key
+            ]
+        return None
 
     # Decorators
 

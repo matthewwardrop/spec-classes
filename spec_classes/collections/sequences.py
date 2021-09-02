@@ -1,19 +1,25 @@
 import functools
-from typing import Iterable
+from typing import Iterable, MutableSequence
 
 from spec_classes.methods.collections import SEQUENCE_METHODS
 from spec_classes.types import MISSING
 from spec_classes.utils.type_checking import check_type
 
-from .base import IndexedItem, ManagedCollection
+from .base import IndexedItem, CollectionAttrMutator
 
 
-class SequenceCollection(ManagedCollection):
+class SequenceMutator(CollectionAttrMutator):
+    """
+    The mutator subclass for mutable sequences. See `CollectionAttrMutator` for
+    API details.
+    """
+
+    COLLECTION_FAMILY = MutableSequence
     HELPER_METHODS = SEQUENCE_METHODS
 
     def _prepare_items(self):
         for index in range(len(self.collection)):
-            self.transform_item(index, self.item_preparer, by_index=True)
+            self.transform_item(index, self.prepare_item, by_index=True)
 
     def _extractor(  # pylint: disable=arguments-differ
         self,
@@ -25,7 +31,7 @@ class SequenceCollection(ManagedCollection):
             return None, MISSING
 
         if by_index is MISSING:
-            by_index = not check_type(value_or_index, self.item_type)
+            by_index = not check_type(value_or_index, self.attr_spec.item_type)
 
         if by_index:
             try:
@@ -33,7 +39,7 @@ class SequenceCollection(ManagedCollection):
             except IndexError:
                 if raise_if_missing:
                     raise IndexError(
-                        f"Index `{repr(value_or_index)}` not found in collection `{self.name}`."
+                        f"Index `{repr(value_or_index)}` not found in collection `{self.attr_spec.qualified_name}`."
                     ) from None
                 return (value_or_index, MISSING)
 
@@ -44,14 +50,14 @@ class SequenceCollection(ManagedCollection):
 
         if raise_if_missing and value_index is None:
             raise ValueError(
-                f"Item `{repr(value_or_index)}` not found in collection `{self.name}`."
+                f"Item `{repr(value_or_index)}` not found in collection `{self.attr_spec.qualified_name}`."
             )
         return (value_index, value_or_index)
 
     def _inserter(self, index, item, insert=False):  # pylint: disable=arguments-differ
-        if not check_type(item, self.item_type):
+        if not check_type(item, self.attr_spec.item_type):
             raise ValueError(
-                f"Attempted to add an invalid item `{repr(item)}` to `{self.name}`. Expected item of type `{self.item_type}`."
+                f"Attempted to add an invalid item `{repr(item)}` to `{self.attr_spec.qualified_name}`. Expected item of type `{self.attr_spec.item_type}`."
             )
         if index is None:
             self.collection.append(item)
@@ -81,12 +87,12 @@ class SequenceCollection(ManagedCollection):
         self, item=MISSING, *, attrs=None, index=MISSING, insert=False, replace=True
     ):  # pylint: disable=arguments-differ
         if (
-            self.item_spec_type_is_keyed
+            self.attr_spec.item_spec_key_type
             and item is not MISSING
-            and not check_type(item, self.item_type)
-            and check_type(item, self.item_spec_key_type)
+            and not check_type(item, self.attr_spec.item_type)
+            and check_type(item, self.attr_spec.item_spec_key_type)
         ):
-            item = self.item_spec_type(item)
+            item = self.attr_spec.item_spec_type(item)
         return self._mutate_collection(
             value_or_index=index,
             extractor=functools.partial(self._extractor, by_index=True),
@@ -98,7 +104,9 @@ class SequenceCollection(ManagedCollection):
 
     def add_items(self, items: Iterable):
         if not check_type(items, Iterable):
-            ValueError(f"Incoming collection for `{self.name}` is not iterable.")
+            ValueError(
+                f"Incoming collection for `{self.attr_spec.qualified_name}` is not iterable."
+            )
         for item in items:
             self.add_item(item)
         return self

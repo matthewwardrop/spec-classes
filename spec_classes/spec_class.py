@@ -583,7 +583,7 @@ class spec_class:
         """
         methods = [*SCALAR_METHODS]
         if attr_spec.is_collection:
-            methods.extend(attr_spec.collection_manager.HELPER_METHODS)
+            methods.extend(attr_spec.collection_mutator_type.HELPER_METHODS)
         return methods
 
     @classmethod

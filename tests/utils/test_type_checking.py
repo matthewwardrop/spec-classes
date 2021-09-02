@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Set, Union
+from typing import Any, Callable, Dict, List, Set, TypeVar, Union
 
 from spec_classes import spec_class
 from spec_classes.types import KeyedList, KeyedSet
@@ -6,6 +6,7 @@ from spec_classes.utils.type_checking import (
     check_type,
     get_collection_item_type,
     get_spec_class_for_type,
+    type_instantiate,
     type_label,
 )
 
@@ -59,6 +60,8 @@ class TestTypeChecking:
         assert get_collection_item_type(Set[str]) is str
         assert get_collection_item_type(KeyedList[KeyedSpec, str]) is KeyedSpec
         assert get_collection_item_type(KeyedSet[KeyedSpec, str]) is KeyedSpec
+        assert get_collection_item_type(TypeVar("typed_var")) is Any
+        assert get_collection_item_type(List[TypeVar("typed_var")]) is Any
 
     def test_get_spec_class_for_type(self):
         assert get_spec_class_for_type(Spec) is Spec
@@ -77,6 +80,16 @@ class TestTypeChecking:
         assert type_label(str) == "str"
         assert type_label(object) == "object"
         assert type_label(Spec) == "Spec"
+        assert type_label(List) == "list"
         assert type_label(List[str]) == "list[str]"
         assert type_label(KeyedList[KeyedSpec, str]) == "KeyedList[KeyedSpec, str]"
         assert type_label(KeyedSet[KeyedSpec, str]) == "KeyedSet[KeyedSpec, str]"
+        assert type_label("") == "str"
+        assert type_label(KeyedList[KeyedSpec, str]()) == "KeyedList[KeyedSpec, str]"
+
+    def test_type_instantiate(self):
+        assert type_instantiate(str) == ""
+        assert type_instantiate(list) == []
+        assert type_instantiate(List[str]) == []
+        assert type_instantiate(dict, a=1) == {"a": 1}
+        assert type_instantiate(Dict[str, int], a=1) == {"a": 1}

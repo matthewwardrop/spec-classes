@@ -42,7 +42,7 @@ class WithMappingItemMethod(AttrMethodDescriptor):
             obj=self,
             attr=attr_spec.name,
             value=(
-                attr_spec.get_collection(self, inplace=_inplace)
+                attr_spec.get_collection_mutator(self, inplace=_inplace)
                 .add_item(
                     _key,
                     _value,
@@ -139,7 +139,7 @@ class TransformMappingItemMethod(AttrMethodDescriptor):
             obj=self,
             attr=attr_spec.name,
             value=(
-                attr_spec.get_collection(self, inplace=_inplace)
+                attr_spec.get_collection_mutator(self, inplace=_inplace)
                 .transform_item(
                     key=_key,
                     transform=_transform,
@@ -228,7 +228,7 @@ class WithoutMappingItemMethod(AttrMethodDescriptor):
             obj=self,
             attr=attr_spec.name,
             value=(
-                attr_spec.get_collection(self, inplace=_inplace)
+                attr_spec.get_collection_mutator(self, inplace=_inplace)
                 .remove_item(key=_key)
                 .collection
             ),

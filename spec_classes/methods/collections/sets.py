@@ -41,7 +41,7 @@ class WithSetItemMethod(AttrMethodDescriptor):
             obj=self,
             attr=attr_spec.name,
             value=(
-                attr_spec.get_collection(self, inplace=_inplace)
+                attr_spec.get_collection_mutator(self, inplace=_inplace)
                 .add_item(
                     item=_item,
                     attrs=attrs,
@@ -126,7 +126,7 @@ class TransformSetItemMethod(AttrMethodDescriptor):
             obj=self,
             attr=attr_spec.name,
             value=(
-                attr_spec.get_collection(self, inplace=_inplace)
+                attr_spec.get_collection_mutator(self, inplace=_inplace)
                 .transform_item(
                     item=_item,
                     transform=_transform,
@@ -207,7 +207,7 @@ class WithoutSetItemMethod(AttrMethodDescriptor):
             obj=self,
             attr=attr_spec.name,
             value=(
-                attr_spec.get_collection(self, inplace=_inplace)
+                attr_spec.get_collection_mutator(self, inplace=_inplace)
                 .remove_item(_item)
                 .collection
             ),

@@ -43,7 +43,7 @@ class WithSequenceItemMethod(AttrMethodDescriptor):
             obj=self,
             attr=attr_spec.name,
             value=(
-                attr_spec.get_collection(self, inplace=_inplace)
+                attr_spec.get_collection_mutator(self, inplace=_inplace)
                 .add_item(
                     item=_item,
                     attrs=attrs,
@@ -154,7 +154,7 @@ class TransformSequenceItemMethod(AttrMethodDescriptor):
             obj=self,
             attr=attr_spec.name,
             value=(
-                attr_spec.get_collection(self, inplace=_inplace)
+                attr_spec.get_collection_mutator(self, inplace=_inplace)
                 .transform_item(
                     value_or_index=_value_or_index,
                     transform=_transform,
@@ -260,7 +260,7 @@ class WithoutSequenceItemMethod(AttrMethodDescriptor):
             obj=self,
             attr=attr_spec.name,
             value=(
-                attr_spec.get_collection(self, inplace=_inplace)
+                attr_spec.get_collection_mutator(self, inplace=_inplace)
                 .remove_item(
                     value_or_index=_value_or_index,
                     by_index=_by_index,

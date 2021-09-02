@@ -1,14 +1,19 @@
-from typing import Mapping
+from typing import Mapping, MutableMapping
 
 from spec_classes.methods.collections import MAPPING_METHODS
 from spec_classes.types import MISSING
 from spec_classes.utils.type_checking import check_type
 
-from .base import ManagedCollection
+from .base import CollectionAttrMutator
 
 
-class MappingCollection(ManagedCollection):
+class MappingMutator(CollectionAttrMutator):
+    """
+    The mutator subclass for mutable mappings. See `CollectionAttrMutator` for
+    API details.
+    """
 
+    COLLECTION_FAMILY = MutableMapping
     HELPER_METHODS = MAPPING_METHODS
 
     def _prepare_items(self):
@@ -16,13 +21,15 @@ class MappingCollection(ManagedCollection):
 
     def _extractor(self, value_or_index, raise_if_missing=False):
         if raise_if_missing and value_or_index not in self.collection:
-            raise KeyError(f"Key `{repr(value_or_index)}` not in `{self.name}`.")
+            raise KeyError(
+                f"Key `{repr(value_or_index)}` not in `{self.attr_spec.qualified_name}`."
+            )
         return value_or_index, self.collection.get(value_or_index, MISSING)
 
     def _inserter(self, index, item):
-        if not check_type(item, self.item_type):
+        if not check_type(item, self.attr_spec.item_type):
             raise ValueError(
-                f"Attempted to add an invalid item `{repr(item)}` to `{self.name}`. Expected item of type `{self.item_type}`."
+                f"Attempted to add an invalid item `{repr(item)}` to `{self.attr_spec.qualified_name}`. Expected item of type `{self.attr_spec.item_type}`."
             )
         self.collection[index] = item
 
@@ -49,12 +56,12 @@ class MappingCollection(ManagedCollection):
         self, key=None, value=None, *, attrs=None, replace=True
     ):  # pylint: disable=arguments-differ
         if (
-            self.item_spec_type_is_keyed
+            self.attr_spec.item_spec_key_type
             and value is not MISSING
-            and not check_type(value, self.item_type)
-            and check_type(value, self.item_spec_key_type)
+            and not check_type(value, self.attr_spec.item_type)
+            and check_type(value, self.attr_spec.item_spec_key_type)
         ):
-            value = self.item_spec_type(value)
+            value = self.attr_spec.item_spec_type(value)
         return self._mutate_collection(
             value_or_index=key,
             extractor=self._extractor,
@@ -66,7 +73,9 @@ class MappingCollection(ManagedCollection):
 
     def add_items(self, items: Mapping):
         if not check_type(items, Mapping):
-            ValueError(f"Incoming collection for `{self.name}` is not a mapping.")
+            ValueError(
+                f"Incoming collection for `{self.attr_spec.qualified_name}` is not a mapping."
+            )
         for k, v in items.items():
             self.add_item(k, v)
         return self
@@ -84,8 +93,10 @@ class MappingCollection(ManagedCollection):
         )
 
     def remove_item(self, key):  # pylint: disable=arguments-differ
-        if self.item_spec_type_is_keyed and isinstance(key, self.item_spec_type):
-            key = getattr(key, self.item_spec_type.__spec_class__.key)
+        if self.attr_spec.item_spec_key_type and isinstance(
+            key, self.attr_spec.item_spec_type
+        ):
+            key = getattr(key, self.attr_spec.item_spec_type.__spec_class__.key)
         if key in self.collection:
             del self.collection[key]
         return self
