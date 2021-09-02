@@ -1,5 +1,7 @@
 import functools
+from typing import Iterable
 
+from spec_classes.methods.collections import SET_METHODS
 from spec_classes.types import MISSING
 from spec_classes.utils.type_checking import check_type
 
@@ -7,6 +9,12 @@ from .base import ManagedCollection
 
 
 class SetCollection(ManagedCollection):
+    HELPER_METHODS = SET_METHODS
+
+    def _prepare_items(self):
+        for value in self.collection:
+            self.transform_item(value, self.item_preparer)
+
     def _extractor(self, value_or_index, raise_if_missing=False):
         if raise_if_missing and value_or_index not in self.collection:
             raise ValueError(f"Value `{repr(value_or_index)}` not in `{self.name}`.")
@@ -59,10 +67,11 @@ class SetCollection(ManagedCollection):
             replace=replace,
         )
 
-    def add_items(self, items, preparer=None):
-        preparer = preparer or (lambda item: item)
+    def add_items(self, items: Iterable):
+        if not check_type(items, Iterable):
+            ValueError(f"Incoming collection for `{self.name}` is not iterable.")
         for item in items:
-            self.add_item(preparer(item))
+            self.add_item(item)
         return self
 
     def transform_item(

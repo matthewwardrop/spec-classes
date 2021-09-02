@@ -1,5 +1,7 @@
 import functools
+from typing import Iterable
 
+from spec_classes.methods.collections import SEQUENCE_METHODS
 from spec_classes.types import MISSING
 from spec_classes.utils.type_checking import check_type
 
@@ -7,6 +9,12 @@ from .base import IndexedItem, ManagedCollection
 
 
 class SequenceCollection(ManagedCollection):
+    HELPER_METHODS = SEQUENCE_METHODS
+
+    def _prepare_items(self):
+        for index in range(len(self.collection)):
+            self.transform_item(index, self.item_preparer, by_index=True)
+
     def _extractor(  # pylint: disable=arguments-differ
         self,
         value_or_index,
@@ -88,10 +96,11 @@ class SequenceCollection(ManagedCollection):
             replace=replace,
         )
 
-    def add_items(self, items, preparer=None):
-        preparer = preparer or (lambda x: x)
+    def add_items(self, items: Iterable):
+        if not check_type(items, Iterable):
+            ValueError(f"Incoming collection for `{self.name}` is not iterable.")
         for item in items:
-            self.add_item(preparer(item))
+            self.add_item(item)
         return self
 
     def transform_item(

@@ -1,9 +1,9 @@
 import copy
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
-from typing import Any, Callable, Dict, Type, Union
+from typing import Any, Callable, Dict, Optional, Type, Union
 
-from spec_classes.types import MISSING
+from spec_classes.types.missing import MISSING
 from spec_classes.utils.mutation import mutate_value
 from spec_classes.utils.type_checking import (
     check_type,
@@ -11,15 +11,18 @@ from spec_classes.utils.type_checking import (
     get_spec_class_for_type,
 )
 
-
 IndexedItem = namedtuple("IndexedItem", ("index", "item"))
 
 
 class ManagedCollection(metaclass=ABCMeta):
+
+    HELPER_METHODS = []
+
     def __init__(
         self,
         collection_type: Union[Type, Callable],
         collection: Any = MISSING,
+        item_preparer: Optional[Callable[[Any], Any]] = MISSING,
         name=None,
         inplace=True,
     ):
@@ -27,14 +30,15 @@ class ManagedCollection(metaclass=ABCMeta):
         self.collection = collection if inplace else copy.deepcopy(collection)
         self.name = name or "collection"
 
+        self.item_preparer = item_preparer
         self.item_type = get_collection_item_type(collection_type)
         self.item_spec_type = get_spec_class_for_type(self.item_type)
         self.item_spec_type_is_keyed = (
-            self.item_spec_type and self.item_spec_type.__spec_class_key__ is not None
+            self.item_spec_type and self.item_spec_type.__spec_class__.key is not None
         )
         self.item_spec_key_type = (
-            self.item_spec_type.__spec_class_annotations__[
-                self.item_spec_type.__spec_class_key__
+            self.item_spec_type.__spec_class__.annotations[
+                self.item_spec_type.__spec_class__.key
             ]
             if self.item_spec_type_is_keyed
             else None
@@ -81,6 +85,8 @@ class ManagedCollection(metaclass=ABCMeta):
             attr_transforms=attr_transforms,
             replace=replace,
         )
+        if self.item_preparer:
+            new_item = self.item_preparer(new_item)
         inserter(index, new_item)
         return self
 
@@ -150,21 +156,37 @@ class ManagedCollection(metaclass=ABCMeta):
         """
         Get the key associated with a spec class isntance or from attrs.
         """
-        assert hasattr(
-            spec_cls, "__spec_class_key__"
+        assert (
+            spec_cls.__spec_class__.key
         ), f"`{spec_cls}` is not a keyed spec class instance."
         if isinstance(item, spec_cls):
-            return getattr(item, spec_cls.__spec_class_key__, MISSING)
+            return getattr(item, spec_cls.__spec_class__.key, MISSING)
         if check_type(
-            item, spec_cls.__spec_class_annotations__[spec_cls.__spec_class_key__]
+            item, spec_cls.__spec_class__.annotations[spec_cls.__spec_class__.key]
         ):
             return item
-        return (attrs or {}).get(spec_cls.__spec_class_key__, MISSING)
+        return (attrs or {}).get(spec_cls.__spec_class__.key, MISSING)
 
     def _create_collection(self):
         if hasattr(self.collection_type, "__origin__"):
             return self.collection_type.__origin__()
         return self.collection_type()
+
+    def prepare(self):
+        if self.collection in (MISSING, None):
+            self.collection = self._create_collection()
+        if not check_type(self.collection, self.collection_type):
+            items = self.collection
+            self.collection = self._create_collection()
+            self.add_items(items)
+            return self
+        if self.collection and self.item_preparer:
+            self._prepare_items()
+        return self
+
+    @abstractmethod
+    def _prepare_items(self):
+        ...
 
     @abstractmethod
     def _extractor(self, value_or_index, raise_if_missing=False) -> IndexedItem:
