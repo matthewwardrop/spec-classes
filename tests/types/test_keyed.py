@@ -1,8 +1,8 @@
 # flake8: noqa: E741; Short names are fine here in the tests.
 
-import pytest
-
 from typing import Set
+
+import pytest
 
 from spec_classes import spec_class
 from spec_classes.types import KeyedList, KeyedSet

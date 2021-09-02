@@ -2,7 +2,7 @@ from typing import Union
 
 import pytest
 
-from spec_classes.types import ValidatedType, validated, bounded
+from spec_classes.types import ValidatedType, bounded, validated
 
 
 class TestValidatedType:

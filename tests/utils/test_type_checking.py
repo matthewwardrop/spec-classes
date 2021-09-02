@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Union, Set
+from typing import Any, Callable, Dict, List, Set, Union
 
 from spec_classes import spec_class
 from spec_classes.types import KeyedList, KeyedSet

@@ -1,6 +1,6 @@
 import copy
 
-from spec_classes.types.missing import MISSING, _MissingType
+from spec_classes.types.missing import _MissingType, MISSING
 
 
 def test_missing():

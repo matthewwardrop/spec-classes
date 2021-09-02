@@ -1,5 +1,6 @@
-import pytest
 import re
+
+import pytest
 
 from spec_classes import spec_class, spec_property
 
