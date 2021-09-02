@@ -1,4 +1,5 @@
-from collections.abc import Sequence as SequenceCollection, Set as SetCollection
+from collections.abc import Sequence as SequenceCollection
+from collections.abc import Set as SetCollection
 from typing import (
     Any,
     Mapping,
@@ -91,19 +92,18 @@ def get_spec_class_for_type(
     polymorphic type. If there is not exactly one spec class type, `None` is
     returned.
     """
-    if getattr(attr_type, "__is_spec_class__", False):
+    if hasattr(attr_type, "__spec_class_bootstrap__"):
         attr_type.__spec_class_bootstrap__()
+    if hasattr(attr_type, "__spec_class__"):
         return attr_type
     if allow_polymorphic and getattr(attr_type, "__origin__", None) is Union:
-        spec_classes = [
-            typ
-            for typ in attr_type.__args__
-            if getattr(typ, "__is_spec_class__", False)
-        ]
+        spec_classes = []
+        for typ in attr_type.__args__:
+            spec_typ = get_spec_class_for_type(typ)
+            if spec_typ is not None:
+                spec_classes.append(spec_typ)
         if len(spec_classes) == 1:
-            spec_class = spec_classes[0]
-            spec_class.__spec_class_bootstrap__()
-            return spec_class
+            return spec_classes[0]
     return None
 
 

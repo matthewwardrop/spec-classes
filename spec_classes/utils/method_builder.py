@@ -1,7 +1,7 @@
 import inspect
 import textwrap
-from inspect import cleandoc, Signature, Parameter
-from typing import Any, Callable, Dict, Optional, Type, Tuple
+from inspect import Parameter, Signature, cleandoc
+from typing import Any, Callable, Dict, Optional, Tuple, Type
 
 from spec_classes.types import MISSING
 from spec_classes.utils.type_checking import type_label
@@ -37,7 +37,8 @@ class MethodBuilder:  # pragma: no cover; This is an internal helper class only;
         name: str,
         desc: str,
         default: Any = Parameter.empty,
-        keyword_only: bool = False,
+        kind: inspect._ParameterKind = Parameter.POSITIONAL_OR_KEYWORD,
+        virtual: bool = False,
         annotation: Type = Parameter.empty,
         only_if: bool = True,
     ):
@@ -47,15 +48,29 @@ class MethodBuilder:  # pragma: no cover; This is an internal helper class only;
         if not only_if:
             return self
 
+        if isinstance(kind, str):
+            kind = inspect._ParameterKind[kind.upper()]
+        # TODO: CHECK virtual parameters too
+        if virtual and kind not in (Parameter.VAR_KEYWORD, Parameter.KEYWORD_ONLY):
+            raise RuntimeError(
+                "Only `keyword_only` or `var_keyword` arguments can be virtual."
+            )
+        if not virtual and self.parameters[-1].kind is Parameter.VAR_KEYWORD:
+            raise RuntimeError(
+                "Only virtual arguments can be added after variable kwargs argument."
+            )
+
         self.args.append(
             "\n".join(textwrap.wrap(f"{name}: {desc}", subsequent_indent="    "))
         )
-        self.parameters.append(
+
+        if virtual and not self.parameters_sig_only:
+            self.parameters.append(Parameter("attrs", kind=Parameter.VAR_KEYWORD))
+
+        (self.parameters_sig_only if virtual else self.parameters).append(
             Parameter(
                 name,
-                kind=Parameter.KEYWORD_ONLY
-                if keyword_only
-                else Parameter.POSITIONAL_OR_KEYWORD,
+                kind=kind,
                 default=default,
                 annotation=annotation,
             )
@@ -66,13 +81,14 @@ class MethodBuilder:  # pragma: no cover; This is an internal helper class only;
     def with_attrs(
         self,
         args: Dict[str, Type],
+        virtual: bool = False,
         var_kwarg: Optional[str] = None,
         template: str = "",
         defaults: Dict[str, Any] = None,
         only_if: bool = True,
     ):
         """
-        Add **attrs to signature, and record valid keywords as specified in `args`.
+        Add multiple arguments to signature, and record valid keywords as specified in `args`.
         """
         if not only_if:
             return self
@@ -90,49 +106,63 @@ class MethodBuilder:  # pragma: no cover; This is an internal helper class only;
         self.args.extend(
             ["{}: {}".format(name, template.format(name)) for name in list(args)]
         )
-        if not self.parameters_sig_only:
-            self.parameters.append(Parameter("attrs", kind=Parameter.VAR_KEYWORD))
         defaults = defaults or {}
-        self.parameters_sig_only.extend(
-            [
-                Parameter(
-                    name,
-                    Parameter.KEYWORD_ONLY,
-                    annotation=arg_type,
-                    default=defaults.get(name),
-                )
-                for name, arg_type in args.items()
-                if name != var_kwarg
-            ]
-        )
+        for name, arg_type in args.items():
+            if name == var_kwarg:
+                continue
+            self.with_arg(
+                name,
+                desc="{}: {}".format(name, template.format(name)),
+                default=defaults.get(name, MISSING),
+                virtual=virtual,
+                kind=Parameter.KEYWORD_ONLY,
+                annotation=arg_type,
+            )
+
         if var_kwarg:
-            self.parameters_sig_only.append(Parameter(var_kwarg, Parameter.VAR_KEYWORD))
+            self.with_arg(
+                name=var_kwarg,
+                desc="",  # TODO
+                kind=Parameter.VAR_KEYWORD,
+                virtual=virtual,
+            )
             self.check_attrs_match_sig = False
         return self
 
     def with_spec_attrs_for(
-        self, spec_cls: type, template: str = "", defaults=None, only_if: bool = True
+        self,
+        spec_cls: type,
+        template: str = "",
+        defaults=None,
+        virtual=True,
+        only_if: bool = True,
     ):
         """
         Add **attrs based on the attributes of a spec_class.
         """
-        if not only_if or not getattr(spec_cls, "__is_spec_class__", False):
+        if not only_if or not hasattr(spec_cls, "__spec_class__"):
             return self
         if defaults is True:
             defaults = {
                 attr: (
-                    getattr(spec_cls, attr, MISSING)
-                    if not inspect.isfunction(getattr(spec_cls, attr, None))
-                    and not inspect.isdatadescriptor(getattr(spec_cls, attr, None))
+                    attr_spec.default
+                    if not inspect.isfunction(attr_spec.default)
+                    and not inspect.isdatadescriptor(attr_spec.default)
                     else MISSING
                 )
-                for attr in spec_cls.__spec_class_annotations__
+                for attr, attr_spec in spec_cls.__spec_class__.attrs
+                if attr_spec.init
             }
         return self.with_attrs(
-            spec_cls.__spec_class_annotations__,
-            var_kwarg=spec_cls.__spec_class_init_overflow_attr__,
+            {
+                attr: attr_spec.type
+                for attr, attr_spec in spec_cls.__spec_class__.attrs.items()
+                if attr_spec.init
+            },
+            var_kwarg=spec_cls.__spec_class__.init_overflow_attr,
             template=template,
             defaults=defaults,
+            virtual=virtual,
         )
 
     def with_returns(

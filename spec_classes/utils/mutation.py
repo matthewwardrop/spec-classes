@@ -27,37 +27,50 @@ def mutate_attr(
     """
     if value is MISSING:
         return obj
-    if not force and inplace and getattr(obj, "__spec_class_frozen__", False):
-        raise FrozenInstanceError(
-            f"Cannot mutate attribute `{attr}` of frozen spec class `{obj.__class__.__name__}`."
-        )
-    if type_check:
-        attr_type = obj.__spec_class_annotations__[attr]
-        if not check_type(value, attr_type):
-            raise TypeError(
-                f"Attempt to set `{obj.__class__.__name__}.{attr}` with an invalid type [got `{repr(value)}`; expecting `{type_label(attr_type)}`]."
+
+    metadata = getattr(obj, "__spec_class__", None)
+
+    if metadata:
+
+        # Abort if class is frozen.
+        if not force and inplace and metadata.frozen:
+            raise FrozenInstanceError(
+                f"Cannot mutate attribute `{attr}` of frozen spec class `{obj.__class__.__name__}`."
             )
-    if not inplace:
+
+        # If attribute is managed by spec classes, prepare it and check the type
+        attr_spec = metadata.attrs.get(attr)
+        if attr_spec and type_check and not check_type(value, attr_spec.type):
+            raise TypeError(
+                f"Attempt to set `{obj.__class__.__name__}.{attr}` with an invalid type [got `{repr(value)}`; expecting `{type_label(attr_spec.type)}`]."
+            )
+
+    # If not inplace, copy before writing new value for attribute
+    if not (inplace or metadata and metadata.do_not_copy):
         obj = copy.deepcopy(obj)
+
+    # Perform actual mutation
     try:
-        if hasattr(obj.__setattr__, "__raw__"):
-            obj.__setattr__.__raw__(obj, attr, value)
-        else:
-            setattr(obj, attr, value)  # pragma: no cover
+        getattr(obj.__setattr__, "__raw__", setattr)(obj, attr, value)
     except AttributeError as e:
-        raise AttributeError(
-            f"Cannot set `{obj.__class__.__name__}.{attr}` to `{value}`. Is this a property without a setter?"
-        ) from e
-    invalidate_attrs(obj, attr)
+        if e.args == ("can't set attribute",):  # Let's make this error less obtuse.
+            raise AttributeError(
+                f"Cannot set `{obj.__class__.__name__}.{attr}` to `{value}`. Is this a property without a setter?"
+            ) from e
+        raise
+
+    # Invalidate any caches depending on this attribute
+    if metadata and metadata.invalidation_map and not metadata.frozen:
+        invalidate_attrs(obj, attr, metadata.invalidation_map)
+
     return obj
 
 
 def invalidate_attrs(obj: Any, attr: str, invalidation_map: Dict[str, Set[str]] = None):
-    if getattr(obj, "__spec_class_frozen__", False):
-        return
-
     if invalidation_map is None:
-        invalidation_map = getattr(obj, "__spec_class_invalidation_map__", {})
+        invalidation_map = obj.__spec_class__.invalidation_map
+    if not invalidation_map:
+        return
 
     # Handle invalidation
     for invalidatee in invalidation_map.get(attr, set()) | invalidation_map.get(
@@ -128,6 +141,11 @@ def mutate_value(
     if isinstance(value, functools.partial):
         value = value()
 
+    # Clean up attrs
+    attrs = {
+        attr: value for attr, value in (attrs or {}).items() if value is not MISSING
+    }
+
     # If `value` is `MISSING`, or `replace` is True, and we have a
     # constructor, create a new instance with existing attrs. Any attrs not
     # found in the constructor will be assigned later.
@@ -143,11 +161,6 @@ def mutate_value(
                 if attr in constructor_args
             }
         )
-        attrs = {
-            attr: value
-            for attr, value in (attrs or {}).items()
-            if attr not in constructor_args
-        }
 
     # If there are any attributes to apply to our value, we do so here,
     # special casing any spec classes.
@@ -155,9 +168,9 @@ def mutate_value(
         if not mutate_safe:
             value = copy.deepcopy(value)
             mutate_safe = True
-        if getattr(value, "__is_spec_class__", False):
+        if hasattr(value, "__spec_class__"):
             for attr, attr_value in attrs.items():
-                if attr not in value.__spec_class_annotations__:
+                if attr not in value.__spec_class__.annotations:
                     raise TypeError(
                         f"Invalid attribute `{attr}` for spec class `{value.__class__.__name__}`."
                     )
@@ -182,9 +195,9 @@ def mutate_value(
     if attr_transforms:
         if not mutate_safe:
             value = copy.deepcopy(value)
-        if getattr(value, "__is_spec_class__", False):
+        if hasattr(value, "__spec_class__"):
             for attr, attr_transform in attr_transforms.items():
-                if attr not in value.__spec_class_annotations__:
+                if attr not in value.__spec_class__.annotations:
                     raise TypeError(
                         f"Invalid attribute `{attr}` for spec class `{value.__class__.__name__}`."
                     )
@@ -207,11 +220,11 @@ def _get_function_args(function, attrs):
         builtins, function.__name__, None
     ):
         return set()
-    if getattr(function, "__spec_class_init_overflow_attr__", None):
+    if getattr(function, "__spec_class__.init_overflow_attr", None):
         return set(attrs)
     if not hasattr(function, "__spec_class_args__"):
         # If this "function" is a spec-class, look up its __init__ method for arguments.
-        if getattr(function, "__is_spec_class__", False):
+        if hasattr(function, "__spec_class_bootstrap__"):
             function.__spec_class_bootstrap__()
             function = function.__init__
         parameters = inspect.Signature.from_callable(function).parameters
@@ -219,6 +232,6 @@ def _get_function_args(function, attrs):
             parameters
             and list(parameters.values())[-1].kind is inspect.Parameter.VAR_KEYWORD
         ):
-            return set(attrs)
+            return set(attrs or {})
         function.__spec_class_args__ = set(parameters)
     return function.__spec_class_args__
