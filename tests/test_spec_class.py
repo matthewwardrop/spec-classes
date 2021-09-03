@@ -9,7 +9,7 @@ from typing import Any, Callable, Dict, List, Set
 import pytest
 
 from spec_classes import AttrProxy, FrozenInstanceError, MISSING, spec_class
-from spec_classes.spec_class import SpecClassMetadata
+from spec_classes.spec_class import SpecClassMetadata, SpecClassMetadataPlaceholder
 
 
 @spec_class
@@ -56,14 +56,13 @@ class TestFramework:
         class MyClass2:
             a: int
 
-        assert MyClass.__spec_class__ is MISSING
-        assert hasattr(MyClass, "__spec_class_bootstrap__")
+        assert isinstance(
+            MyClass.__dict__["__spec_class__"], SpecClassMetadataPlaceholder
+        )
         assert MyClass(a=1).a == 1
-        assert MyClass.__spec_class__ is not MISSING
-        assert not hasattr(MyClass, "__spec_class_bootstrap__")
+        assert isinstance(MyClass.__dict__["__spec_class__"], SpecClassMetadata)
 
-        assert MyClass2.__spec_class__ is not MISSING
-        assert not hasattr(MyClass2, "__spec_class_bootstrap__")
+        assert isinstance(MyClass.__dict__["__spec_class__"], SpecClassMetadata)
         assert MyClass2(a=1).a == 1
 
     def test_key(self, spec_cls):

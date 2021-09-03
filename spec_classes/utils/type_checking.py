@@ -93,8 +93,6 @@ def get_spec_class_for_type(
     polymorphic type. If there is not exactly one spec class type, `None` is
     returned.
     """
-    if hasattr(attr_type, "__spec_class_bootstrap__"):
-        attr_type.__spec_class_bootstrap__()
     if hasattr(attr_type, "__spec_class__"):
         return attr_type
     if allow_polymorphic and getattr(attr_type, "__origin__", None) is Union:

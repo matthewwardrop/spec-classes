@@ -17,9 +17,9 @@ from .utils.method_builder import MethodBuilder
 @dataclasses.dataclass
 class SpecClassMetadata:
     @classmethod
-    def from_class(cls, spec_cls):
+    def for_class(cls, spec_cls):
         metadata = MISSING
-        for klass in spec_cls.mro():
+        for klass in spec_cls.mro()[1:]:
             if klass.__dict__.get("__spec_class__", MISSING) is not MISSING:
                 metadata = klass.__spec_class__
                 break
@@ -48,6 +48,7 @@ class SpecClassMetadata:
     frozen: bool = False
     do_not_copy: bool = False
     attrs: Dict[str, Attr] = dataclasses.field(default_factory=dict)
+    deferred_bootstrap: Optional[Callable] = None
 
     @spec_property(cache=True, overridable=False)
     def annotations(self):
@@ -60,6 +61,17 @@ class SpecClassMetadata:
             for invalidator in attr_spec.invalidated_by or ():
                 invalidation_map[invalidator].add(attr)
         return invalidation_map
+
+
+@dataclasses.dataclass
+class SpecClassMetadataPlaceholder:
+
+    bootstrapper: Callable
+
+    def __get__(self, instance, owner):
+        if self.bootstrapper:
+            self.bootstrapper()
+        return owner.__spec_class__
 
 
 class spec_class:
@@ -298,14 +310,17 @@ class spec_class:
         if self.bootstrap_immediately:
             self.bootstrap(spec_cls)
         else:
-            spec_cls.__spec_class__ = MISSING
-            spec_cls.__spec_class_bootstrap__ = lambda: self.bootstrap(spec_cls)
+            spec_cls.__spec_class__ = SpecClassMetadataPlaceholder(
+                lambda: self.bootstrap(spec_cls)
+            )
             orig_new = spec_cls.__new__ if "__new__" in spec_cls.__dict__ else None
 
             def __new__(cls, *args, **kwargs):
-                # Bootstrap spec class
-                if hasattr(spec_cls, "__spec_class_bootstrap__"):
-                    spec_cls.__spec_class_bootstrap__()
+                # Bootstrap spec class (looking at the __spec_class__ does this automatically)
+                if not isinstance(cls.__spec_class__, SpecClassMetadata):
+                    raise RuntimeError(
+                        "Something has gone wrong! Please report this."
+                    )  # pragma: no cover; We should never see this.
 
                 # Chain out to original __new__ implementation if defined on this
                 # spec class, and remove this __new__ wrapper.
@@ -334,19 +349,22 @@ class spec_class:
             spec_cls: The decorated class.
         """
         # Check if this class is already bootstrapped.
-        if spec_cls.__dict__.get("__spec_class__", MISSING) is not MISSING:
+        if isinstance(
+            spec_cls.__dict__.get("__spec_class__", MISSING), SpecClassMetadata
+        ):
             return
 
         # Bootstrap any parents of this class first (we can abort without
         # recursing since each parent will bootstrap its own parents, and so
         # on).
         for parent in spec_cls.__bases__:
-            if hasattr(parent, "__spec_class_bootstrap__"):
-                parent.__spec_class_bootstrap__()
+            hasattr(
+                parent, "__spec_class__"
+            )  # Just looking at this will ensure we are bootstrapped
 
         # Begin assembling all metadata, inheriting any base class configuration
         # and the overriding where necesary.
-        metadata = SpecClassMetadata.from_class(spec_cls)
+        metadata = SpecClassMetadata.for_class(spec_cls)
         if self.key is not MISSING:
             metadata.key = self.key
         if self.frozen is not MISSING:
@@ -446,8 +464,6 @@ class spec_class:
 
         # Finalize metadata and remove bootstrapper from class.
         spec_cls.__spec_class__ = metadata
-        if "__spec_class_bootstrap__" in spec_cls.__dict__:
-            del spec_cls.__spec_class_bootstrap__
 
         # Register class-level methods and validate constructor/etc.
         methods = self.get_methods_for_spec_class(

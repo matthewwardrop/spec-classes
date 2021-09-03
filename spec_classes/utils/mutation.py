@@ -220,13 +220,13 @@ def _get_function_args(function, attrs):
         builtins, function.__name__, None
     ):
         return set()
-    if getattr(function, "__spec_class__.init_overflow_attr", None):
+    if (
+        getattr(function, "__spec_class__", None)
+        and function.__spec_class__.init_overflow_attr
+    ):
         return set(attrs)
     if not hasattr(function, "__spec_class_args__"):
-        # If this "function" is a spec-class, look up its __init__ method for arguments.
-        if hasattr(function, "__spec_class_bootstrap__"):
-            function.__spec_class_bootstrap__()
-            function = function.__init__
+        # spec-classes are already initialized by the check of `__spec_class__` above
         parameters = inspect.Signature.from_callable(function).parameters
         if (
             parameters
