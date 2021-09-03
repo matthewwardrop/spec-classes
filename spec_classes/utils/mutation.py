@@ -1,6 +1,5 @@
 import builtins
 import copy
-import functools
 import inspect
 from typing import Any, Callable, Dict, Set, Type, Union
 
@@ -137,10 +136,6 @@ def mutate_value(
     if isinstance(value, Proxy):
         value = value.__wrapped__
 
-    # If value is a partially executed constructor, hydrate it.
-    if isinstance(value, functools.partial):
-        value = value()
-
     # Clean up attrs
     attrs = {
         attr: value for attr, value in (attrs or {}).items() if value is not MISSING
@@ -168,22 +163,8 @@ def mutate_value(
         if not mutate_safe:
             value = copy.deepcopy(value)
             mutate_safe = True
-        if hasattr(value, "__spec_class__"):
-            for attr, attr_value in attrs.items():
-                if attr not in value.__spec_class__.annotations:
-                    raise TypeError(
-                        f"Invalid attribute `{attr}` for spec class `{value.__class__.__name__}`."
-                    )
-                setter = getattr(value, f"with_{attr}", None)
-                if setter is None:
-                    setattr(
-                        value, attr, attr_value
-                    )  # pragma: no cover; This should never happen, but it is here just in case!
-                else:
-                    value = setter(attr_value, _inplace=True)
-        else:
-            for attr, attr_value in attrs.items():
-                setattr(value, attr, attr_value)
+        for attr, attr_value in attrs.items():
+            setattr(value, attr, attr_value)
     elif attrs:
         raise ValueError("Cannot use attrs on a missing value without a constructor.")
 
@@ -195,43 +176,36 @@ def mutate_value(
     if attr_transforms:
         if not mutate_safe:
             value = copy.deepcopy(value)
-        if hasattr(value, "__spec_class__"):
-            for attr, attr_transform in attr_transforms.items():
-                if attr not in value.__spec_class__.annotations:
-                    raise TypeError(
-                        f"Invalid attribute `{attr}` for spec class `{value.__class__.__name__}`."
-                    )
-                transformer = getattr(value, f"transform_{attr}", None)
-                if (
-                    transformer is None
-                ):  # pragma: no cover; This should never happen, but it is here just in case!
-                    setattr(value, attr, attr_transform(getattr(value, attr)))
-                else:
-                    value = transformer(attr_transform, _inplace=True)
-        else:
-            for attr, attr_transform in attr_transforms.items():
-                setattr(value, attr, attr_transform(getattr(value, attr)))
+        for attr, attr_transform in attr_transforms.items():
+            setattr(value, attr, attr_transform(getattr(value, attr)))
 
     return value
 
 
 def _get_function_args(function, attrs):
+    # If this is a built-in type, no attrs should be passed to the constructor.
     if hasattr(function, "__name__") and function is getattr(
         builtins, function.__name__, None
     ):
         return set()
-    if (
-        getattr(function, "__spec_class__", None)
-        and function.__spec_class__.init_overflow_attr
-    ):
-        return set(attrs)
+    # If this is a spec-class, handle it separately
+    if getattr(function, "__spec_class__", None):
+        if function.__spec_class__.init_overflow_attr:
+            return set(attrs)
+        return set(attrs).intersection(function.__spec_class__.attrs)
+    # Otherwise, lookup signature and annotate function with args.
     if not hasattr(function, "__spec_class_args__"):
-        # spec-classes are already initialized by the check of `__spec_class__` above
-        parameters = inspect.Signature.from_callable(function).parameters
+        try:
+            parameters = inspect.signature(function).parameters
+        except ValueError:  # pragma: no cover; Python 3.7 and newer raise a ValueError for C functions
+            parameters = {}
         if (
             parameters
             and list(parameters.values())[-1].kind is inspect.Parameter.VAR_KEYWORD
         ):
             return set(attrs or {})
-        function.__spec_class_args__ = set(parameters)
+        try:
+            function.__spec_class_args__ = set(parameters)
+        except AttributeError:
+            return set(parameters)
     return function.__spec_class_args__

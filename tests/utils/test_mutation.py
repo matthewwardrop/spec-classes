@@ -1,11 +1,11 @@
-import re
+import sys
 from typing import List
 
 import pytest
 from lazy_object_proxy import Proxy
 
 from spec_classes import MISSING, spec_class
-from spec_classes.utils.mutation import mutate_attr, mutate_value
+from spec_classes.utils.mutation import _get_function_args, mutate_attr, mutate_value
 
 
 @spec_class(key="key")
@@ -13,6 +13,11 @@ class Spec:
     key: str = "key"
     scalar: int
     list_values: List[int]
+
+
+@spec_class(init_overflow_attr="kwargs")
+class OverflowSpec:
+    pass
 
 
 def test_mutate_attr():
@@ -47,6 +52,10 @@ def test_mutate_value():
     # Via constructor
     assert mutate_value(MISSING, constructor=str) == ""
     assert mutate_value(MISSING, constructor=list) == []
+
+    # Via proxy
+    obj = object()
+    assert mutate_value(Proxy(lambda: obj)) is obj
 
     # Via transform
     assert (
@@ -102,13 +111,12 @@ def test_mutate_value():
     assert mutate_value(
         Spec(key="key", scalar=10), constructor=Spec, attrs={"list_values": [20]}
     ).list_values == [20]
-    with pytest.raises(
-        TypeError,
-        match=re.escape(
-            "__init__() got unexpected keyword arguments: {'invalid_attr'}."
-        ),
-    ):
-        assert mutate_value(MISSING, constructor=Spec, attrs={"invalid_attr": "value"})
+    assert (
+        mutate_value(
+            MISSING, constructor=Spec, attrs={"extra_attr": "value"}
+        ).extra_attr
+        == "value"
+    )
     assert (
         mutate_value(
             MISSING, constructor=Spec, attr_transforms={"key": lambda x: "override"}
@@ -116,7 +124,7 @@ def test_mutate_value():
         == "override"
     )
     with pytest.raises(
-        TypeError, match="Invalid attribute `invalid_attr` for spec class"
+        AttributeError, match="'Spec' object has no attribute 'invalid_attr'"
     ):
         assert mutate_value(
             MISSING, constructor=Spec, attr_transforms={"invalid_attr": "value"}
@@ -128,6 +136,12 @@ def test_mutate_value():
     ):
         assert mutate_value(MISSING, attrs={"invalid_attr": "value"})
 
-    # Test proxied values
-    obj = object()
-    assert mutate_value(Proxy(lambda: obj)) is obj
+
+def test__get_function_args():
+    attrs = {"key": "value", "extra": "value"}
+    _get_function_args(int, attrs) == set()
+    _get_function_args(lambda key, missing: 1, attrs) == {"key"}
+    _get_function_args(lambda **kwargs: 1, attrs) == {"key", "extra"}
+    _get_function_args(Spec, attrs) == {"key"}
+    _get_function_args(OverflowSpec, attrs) == {"key", "extra"}
+    _get_function_args(sys.exit, attrs) == set()
