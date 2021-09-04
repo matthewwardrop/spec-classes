@@ -5,18 +5,40 @@ from .missing import MISSING
 
 class AttrProxy:
     """
-    When instantiated using `AttrProxy('<attribute name>')`, and set as the
-    value of an attribute; that attribute will return the value of '<attribute name>'
-    instead. If some transform is required to satisfy (e.g.) types, then you
-    can also optionally specify a unary transform using
-    `AttrProxy('<attribute name>', transform=<function>)`. By default, proxied
-    attributes are locally mutable; that is, they store local overrides when
-    assigned new values. If you want mutations to be passed through to the
-    proxied attribute, then you need to specify `passthrough=True`.
+    Allows one attribute to act as a proxy for another.
+
+    This is especially useful if you have changed the name of an attribute and
+    need to provide backwards compatibility for an indefinite period; or if one
+    attribute is supposed to mirror another attribute unless overwritten (e.g.
+    the label of a class might be the "key" unless overwritten). This
+    functionality could obviously be implemented directly using property, which
+    may be advisable if readability is more important than concision.
+
+    When a class attribute is assigned a value of `AttrProxy('<attribute
+    name>')`, that attribute will proxy/mirror the value of '<attribute name>'
+    instead. If some transform is required to satisfy (e.g.) types, then you can
+    also optionally specify a unary transform using `AttrProxy('<attribute
+    name>', transform=<function>)`. By default, proxied attributes are locally
+    mutable; that is, they store local overrides when assigned new values. If
+    you want mutations to be passed through to the proxied attribute, then you
+    need to specify `passthrough=True`.
 
     A `fallback` can also be specified for whenever the host attribute has not
     been specified or results in an AttributeError when `AttrProxy` attempts to
     retrieve it.
+
+    Attributes:
+        attr: The name of the attribute to be proxied.
+        passthrough: Whether to pass through mutations of the `AttrProxy`
+            attribute through to the proxied attribute. (default: False)
+        transform: An optional unary transform to apply to the value of the
+            proxied attribute before returning it as the value of this
+            attribute.
+        fallback: An optional default value to return if the attribute being
+            proxied does not yet have a value (otherwise any errors retrieving
+            the underlying proxied attribute value are passed through).
+        host_attr (private): The name of the attribute to which this `AttrProxy`
+            instance has been assigned.
     """
 
     def __init__(
@@ -41,7 +63,7 @@ class AttrProxy:
         return (
             self.attr
             if self.passthrough
-            else f"__spec_class_attrproxy_{self.host_attr}_override"
+            else f"__spec_classes_attrproxy_{self.host_attr}_override"
         )
 
     def __get__(self, instance: Any, owner=None):
@@ -64,7 +86,9 @@ class AttrProxy:
 
     def __set__(self, instance, value):
         if not self.override_attr:
-            raise AttributeError
+            raise RuntimeError(
+                "Attempting to set the value of an `AttrProxy` instance that is not properly associated with a class."
+            )
         setattr(instance, self.override_attr, value)
 
     def __delete__(self, instance):

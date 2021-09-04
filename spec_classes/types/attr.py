@@ -18,7 +18,7 @@ from spec_classes.utils.type_checking import (
 
 from .missing import MISSING
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from spec_classes.collections.base import CollectionAttrMutator
     from spec_classes.methods.base import AttrMethodDescriptor
 
@@ -145,7 +145,9 @@ class Attr:
     ):
         # User-specified attributes
         if default is not MISSING and default_factory is not MISSING:
-            raise ValueError("cannot specify both default and default_factory")
+            raise ValueError(
+                "Only one of `default` and `default_factory` can be specified."
+            )
         self.default = default
         self.default_factory = default_factory
         self.init = init
