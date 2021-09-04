@@ -131,19 +131,19 @@ class MethodBuilder:
         if virtual:
             if kind not in (Parameter.VAR_KEYWORD, Parameter.KEYWORD_ONLY):
                 raise RuntimeError(
-                    f"Virtual arguments can only be `KEYWORD_ONLY` or `VAR_KEYWORD`, not `{kind}`."
+                    f"Virtual arguments can only be `KEYWORD_ONLY` or `VAR_KEYWORD`, not `{kind.name}`."
                 )
             if self.method_args_virtual and self.method_args_virtual[
                 -1
             ].kind.value > min(kind.value, Parameter.KEYWORD_ONLY.value):
                 raise RuntimeError(
-                    f"Virtual arguments of kind `{kind}` cannot be added after `{self.method_args_virtual[-1].kind}` arguments."
+                    f"Virtual arguments of kind `{kind.name}` cannot be added after `{self.method_args_virtual[-1].kind.name}` arguments."
                 )
         elif self.method_args and self.method_args[-1].kind.value > min(
             kind.value, Parameter.KEYWORD_ONLY.value
         ):
             raise RuntimeError(
-                f"Arguments of kind `{kind}` cannot be added after `{self.method_args[-1].kind}` arguments."
+                f"Arguments of kind `{kind.name}` cannot be added after `{self.method_args[-1].kind.name}` arguments."
             )
 
         self.doc_args.append(
