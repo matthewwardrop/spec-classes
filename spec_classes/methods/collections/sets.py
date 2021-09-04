@@ -63,27 +63,27 @@ class WithSetItemMethod(AttrMethodDescriptor):
             )
             .with_arg(
                 "_item",
-                f"A new `{type_label(self.attr_spec.item_type)}` instance for {self.attr_spec.name}.",
+                desc=f"A new `{type_label(self.attr_spec.item_type)}` instance for {self.attr_spec.name}.",
                 default=MISSING if self.attr_spec.item_spec_type else Parameter.empty,
                 annotation=self.attr_spec.item_type,
             )
             .with_arg(
                 "_inplace",
-                "Whether to perform change without first copying.",
+                desc="Whether to perform change without first copying.",
                 default=False,
                 kind="keyword_only",
                 annotation=bool,
             )
             .with_arg(
                 "_if",
-                "This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
+                desc="This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
                 default=True,
                 kind="keyword_only",
                 annotation=bool,
             )
             .with_spec_attrs_for(
                 self.attr_spec.item_spec_type,
-                template=f"An optional new value for `{self.attr_spec.item_name}.{{}}`.",
+                desc_template=f"An optional new value for `{self.attr_spec.item_name}.{{}}`.",
             )
             .with_returns(
                 f"A reference to the mutated `{self.spec_cls.__name__}` instance.",
@@ -148,31 +148,33 @@ class TransformSetItemMethod(AttrMethodDescriptor):
                 f"Return a `{self.spec_cls.__name__}` instance identical to this one except with an item transformed in `{self.attr_spec.name}`."
             )
             .with_arg(
-                "_item", "The value to transform.", annotation=self.attr_spec.item_type
+                "_item",
+                desc="The value to transform.",
+                annotation=self.attr_spec.item_type,
             )
             .with_arg(
                 "_transform",
-                "A function that takes the old item as input, and returns the new item.",
+                desc="A function that takes the old item as input, and returns the new item.",
                 default=MISSING if self.attr_spec.item_spec_type else Parameter.empty,
                 annotation=Callable,
             )
             .with_arg(
                 "_inplace",
-                "Whether to perform change without first copying.",
+                desc="Whether to perform change without first copying.",
                 default=False,
                 kind="keyword_only",
                 annotation=bool,
             )
             .with_arg(
                 "_if",
-                "This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
+                desc="This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
                 default=True,
                 kind="keyword_only",
                 annotation=bool,
             )
             .with_spec_attrs_for(
                 self.attr_spec.item_spec_type,
-                template=f"An optional transformer for `{self.attr_spec.item_name}.{{}}`.",
+                desc_template=f"An optional transformer for `{self.attr_spec.item_name}.{{}}`.",
             )
             .with_returns(
                 f"A reference to the mutated `{self.spec_cls.__name__}` instance.",
@@ -225,18 +227,20 @@ class WithoutSetItemMethod(AttrMethodDescriptor):
                 f"Return a `{self.spec_cls.__name__}` instance identical to this one except with an item removed from `{self.attr_spec.name}`."
             )
             .with_arg(
-                "_item", "The value to remove.", annotation=self.attr_spec.item_type
+                "_item",
+                desc="The value to remove.",
+                annotation=self.attr_spec.item_type,
             )
             .with_arg(
                 "_inplace",
-                "Whether to perform change without first copying.",
+                desc="Whether to perform change without first copying.",
                 default=False,
                 kind="keyword_only",
                 annotation=bool,
             )
             .with_arg(
                 "_if",
-                "This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
+                desc="This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
                 default=True,
                 kind="keyword_only",
                 annotation=bool,

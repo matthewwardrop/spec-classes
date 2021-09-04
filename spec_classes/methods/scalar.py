@@ -73,27 +73,27 @@ class WithAttrMethod(AttrMethodDescriptor):
             )
             .with_arg(
                 "_new_value",
-                f"The new value for `{self.attr_spec.name}`.",
+                desc=f"The new value for `{self.attr_spec.name}`.",
                 default=MISSING,
                 annotation=self.attr_spec.type,
             )
             .with_arg(
                 "_inplace",
-                "Whether to perform change without first copying.",
+                desc="Whether to perform change without first copying.",
                 default=False,
                 kind="keyword_only",
                 annotation=bool,
             )
             .with_arg(
                 "_if",
-                "This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
+                desc="This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
                 default=True,
                 kind="keyword_only",
                 annotation=bool,
             )
             .with_spec_attrs_for(
                 self.attr_spec.type,
-                template=f"An optional new value for {self.attr_spec.name}.{{}}.",
+                desc_template=f"An optional new value for {self.attr_spec.name}.{{}}.",
             )
             .with_returns(
                 f"A reference to the mutated `{self.spec_cls.__name__}` instance.",
@@ -154,27 +154,27 @@ class TransformAttrMethod(AttrMethodDescriptor):
             )
             .with_arg(
                 "_transform",
-                f"A function that takes the old value for {self.attr_spec.name} as input, and returns the new value.",
+                desc=f"A function that takes the old value for {self.attr_spec.name} as input, and returns the new value.",
                 default=MISSING if attr_spec_type else inspect.Parameter.empty,
                 annotation=Callable,
             )
             .with_arg(
                 "_inplace",
-                "Whether to perform change without first copying.",
+                desc="Whether to perform change without first copying.",
                 default=False,
                 kind="keyword_only",
                 annotation=bool,
             )
             .with_arg(
                 "_if",
-                "This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
+                desc="This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
                 default=True,
                 kind="keyword_only",
                 annotation=bool,
             )
             .with_spec_attrs_for(
                 self.attr_spec.type,
-                template=f"An optional transformer for {self.attr_spec.name}.{{}}.",
+                desc_template=f"An optional transformer for {self.attr_spec.name}.{{}}.",
             )
             .with_returns(
                 f"A reference to the mutated `{self.spec_cls.__name__}` instance.",
@@ -214,14 +214,14 @@ class ResetAttrMethod(AttrMethodDescriptor):
             )
             .with_arg(
                 "_inplace",
-                "Whether to perform change without first copying.",
+                desc="Whether to perform change without first copying.",
                 default=False,
                 kind="keyword_only",
                 annotation=bool,
             )
             .with_arg(
                 "_if",
-                "This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
+                desc="This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
                 default=True,
                 kind="keyword_only",
                 annotation=bool,

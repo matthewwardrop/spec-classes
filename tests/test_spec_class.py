@@ -318,8 +318,7 @@ class TestFramework:
             "g",
         }
         assert (
-            inspect.Signature.from_callable(Item.__init__).parameters["x"].default
-            is MISSING
+            inspect.Signature.from_callable(Item.__init__).parameters["x"].default == 1
         )
 
         assert repr(Item()) == "Item(x=1, f=<bound method f of self>, g=MISSING)"

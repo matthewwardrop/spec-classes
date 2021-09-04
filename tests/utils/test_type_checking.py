@@ -60,8 +60,8 @@ class TestTypeChecking:
         assert get_collection_item_type(Set[str]) is str
         assert get_collection_item_type(KeyedList[KeyedSpec, str]) is KeyedSpec
         assert get_collection_item_type(KeyedSet[KeyedSpec, str]) is KeyedSpec
-        assert get_collection_item_type(TypeVar("typed_var")) is Any
-        assert get_collection_item_type(List[TypeVar("typed_var")]) is Any
+        assert get_collection_item_type(TypeVar("typed_var")) is Any  # noqa: F821
+        assert get_collection_item_type(List[TypeVar("typed_var")]) is Any  # noqa: F821
 
     def test_get_spec_class_for_type(self):
         assert get_spec_class_for_type(Spec) is Spec

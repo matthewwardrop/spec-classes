@@ -69,8 +69,7 @@ class SpecClassMetadataPlaceholder:
     bootstrapper: Callable
 
     def __get__(self, instance, owner):
-        if self.bootstrapper:
-            self.bootstrapper()
+        self.bootstrapper()
         return owner.__spec_class__
 
 

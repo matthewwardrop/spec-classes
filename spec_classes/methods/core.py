@@ -142,12 +142,15 @@ class InitMethod(MethodDescriptor):
             .with_preamble(f"Initialise this `{self.spec_cls.__name__}` instance.")
             .with_arg(
                 spec_class_key,
-                f"The value to use for the `{spec_class_key}` key attribute.",
+                desc=f"The value to use for the `{spec_class_key}` key attribute.",
                 default=key_default,
                 annotation=self.spec_cls.__spec_class__.annotations.get(spec_class_key),
                 only_if=spec_class_key,
             )
-            .with_spec_attrs_for(self.spec_cls, defaults=False)
+            .with_spec_attrs_for(
+                self.spec_cls,
+                desc_template=f"Initial value for `{self.spec_cls.__name__}.{{}}`.",
+            )
             .build()
         )
 

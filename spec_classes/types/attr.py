@@ -59,6 +59,8 @@ class Attr:
                 by spec-classes.
 
         Spec-class specific attributes settable in constructor:
+            desc: A description for this attribute, which will appear in
+                auto-generated documentation.
             do_not_copy: Whether this attribute should not be copied when its
                 parent is copied, and instead share a reference between the old
                 and new parents.
@@ -137,6 +139,7 @@ class Attr:
         compare: bool = True,
         hash: Optional[bool] = None,  # pylint: disable=redefined-builtin
         metadata: Optional[Any] = None,
+        desc: Optional[str] = None,
         do_not_copy: bool = False,
         invalidated_by: Optional[Iterable[str]] = None,
     ):
@@ -152,8 +155,9 @@ class Attr:
         self.metadata = metadata
 
         # Extra attributes
-        self.do_not_copy: bool = do_not_copy
-        self.invalidated_by: Optional[Iterable[str]] = invalidated_by
+        self.desc = desc
+        self.do_not_copy = do_not_copy
+        self.invalidated_by = invalidated_by
 
         # Auto-populated attributes
         self.name: str = None

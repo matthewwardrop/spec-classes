@@ -76,41 +76,41 @@ class WithSequenceItemMethod(AttrMethodDescriptor):
             )
             .with_arg(
                 "_item",
-                f"A new `{type_label(self.attr_spec.item_type)}` instance for {self.attr_spec.name}.",
+                desc=f"A new `{type_label(self.attr_spec.item_type)}` instance for {self.attr_spec.name}.",
                 default=MISSING,
                 annotation=fn_item_type,
             )
             .with_arg(
                 "_index",
-                "Index for which to insert or replace, depending on `insert`; if not provided, append.",
+                desc="Index for which to insert or replace, depending on `insert`; if not provided, append.",
                 default=MISSING,
                 kind="keyword_only",
                 annotation=fn_index_type,
             )
             .with_arg(
                 "_insert",
-                f"Insert item before {self.attr_spec.name}[index], otherwise replace this index.",
+                desc=f"Insert item before {self.attr_spec.name}[index], otherwise replace this index.",
                 default=False,
                 kind="keyword_only",
                 annotation=bool,
             )
             .with_arg(
                 "_inplace",
-                "Whether to perform change without first copying.",
+                desc="Whether to perform change without first copying.",
                 default=False,
                 kind="keyword_only",
                 annotation=bool,
             )
             .with_arg(
                 "_if",
-                "This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
+                desc="This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
                 default=True,
                 kind="keyword_only",
                 annotation=bool,
             )
             .with_spec_attrs_for(
                 self.attr_spec.item_spec_type,
-                template=f"An optional new value for `{self.attr_spec.item_name}.{{}}`.",
+                desc_template=f"An optional new value for `{self.attr_spec.item_name}.{{}}`.",
             )
             .with_returns(
                 f"A reference to the mutated `{self.spec_cls.__name__}` instance.",
@@ -187,39 +187,39 @@ class TransformSequenceItemMethod(AttrMethodDescriptor):
             )
             .with_arg(
                 "_value_or_index",
-                "The value to transform, or (if `by_index=True`) its index.",
+                desc="The value to transform, or (if `by_index=True`) its index.",
                 annotation=Union[fn_item_type, fn_index_type],
             )
             .with_arg(
                 "_transform",
-                "A function that takes the old item as input, and returns the new item.",
+                desc="A function that takes the old item as input, and returns the new item.",
                 default=MISSING if self.attr_spec.item_spec_type else Parameter.empty,
                 annotation=Callable,
             )
             .with_arg(
                 "_by_index",
-                "If True, value_or_index is the index of the item to transform.",
+                desc="If True, value_or_index is the index of the item to transform.",
                 kind="keyword_only",
                 default=MISSING,
                 annotation=bool,
             )
             .with_arg(
                 "_inplace",
-                "Whether to perform change without first copying.",
+                desc="Whether to perform change without first copying.",
                 default=False,
                 kind="keyword_only",
                 annotation=bool,
             )
             .with_arg(
                 "_if",
-                "This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
+                desc="This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
                 default=True,
                 kind="keyword_only",
                 annotation=bool,
             )
             .with_spec_attrs_for(
                 self.attr_spec.item_spec_type,
-                template=f"An optional transformer for `{self.attr_spec.item_name}.{{}}`.",
+                desc_template=f"An optional transformer for `{self.attr_spec.item_name}.{{}}`.",
             )
             .with_returns(
                 f"A reference to the mutated `{self.spec_cls.__name__}` instance.",
@@ -291,26 +291,26 @@ class WithoutSequenceItemMethod(AttrMethodDescriptor):
             )
             .with_arg(
                 "_value_or_index",
-                "The value to remove, or (if `by_index=True`) its index.",
+                desc="The value to remove, or (if `by_index=True`) its index.",
                 annotation=Union[fn_item_type, fn_index_type],
             )
             .with_arg(
                 "_by_index",
-                "If True, value_or_index is the index of the item to remove.",
+                desc="If True, value_or_index is the index of the item to remove.",
                 default=MISSING,
                 kind="keyword_only",
                 annotation=bool,
             )
             .with_arg(
                 "_inplace",
-                "Whether to perform change without first copying.",
+                desc="Whether to perform change without first copying.",
                 default=False,
                 kind="keyword_only",
                 annotation=bool,
             )
             .with_arg(
                 "_if",
-                "This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
+                desc="This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
                 default=True,
                 kind="keyword_only",
                 annotation=bool,

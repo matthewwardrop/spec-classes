@@ -5,7 +5,7 @@ from spec_classes.methods.collections import SEQUENCE_METHODS
 from spec_classes.types import MISSING
 from spec_classes.utils.type_checking import check_type
 
-from .base import IndexedItem, CollectionAttrMutator
+from .base import CollectionAttrMutator, IndexedItem
 
 
 class SequenceMutator(CollectionAttrMutator):
