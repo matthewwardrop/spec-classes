@@ -1,44 +1,77 @@
 import copy
+import functools
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
-from typing import Any, Callable, Dict, Type, Union
+from typing import Any, Callable, Dict, List, Type
 
-from spec_classes.types import MISSING
+from spec_classes.methods.base import AttrMethodDescriptor
+from spec_classes.types import Attr, MISSING
 from spec_classes.utils.mutation import mutate_value
 from spec_classes.utils.type_checking import (
     check_type,
-    get_collection_item_type,
-    get_spec_class_for_type,
+    type_instantiate,
 )
 
-
+MISSING_COLLECTION = object()
 IndexedItem = namedtuple("IndexedItem", ("index", "item"))
 
 
-class ManagedCollection(metaclass=ABCMeta):
+class CollectionAttrMutator(metaclass=ABCMeta):
+    """
+    Provides a consistent API by which collections can be mutated by spec-class
+    helpers.
+
+    While the logic in these classes could be directly (and perhaps more simply)
+    encoded into the collection methods, this abstraction makes it easier to
+    keep collection mutations consistent with one another and with the mutation
+    logic used by scalar methods.
+
+    Class Attributes:
+        COLLECTION_FAMILY: The base type of collection managed by the
+            `CollectionAttrMutator` subclass (e.g. `Sequence` ).
+        HELPER_METHODS: The method descriptors from the `spec_classes.methods`
+            submodule that should be attached to spec-classes in order to manage
+            collections of this type.
+
+    Attributes:
+        Set via constructor:
+            attr_spec: The attribute specification for which the collection should
+                be managed.
+            instance: The instance for which the collection attribute is being
+                mutated.
+            collection: The collection object to be managed. If not provided
+                the collection will be lifted off of the `instance` attribute
+                associated with `attr_spec`.
+            inplace: Whether to mutate the existing collection object, or to
+                copy it before doing any mutations.
+
+        Derived attributes:
+            prepare_item: An (optional) callable that should be called on all
+                items as the are added to the collection. This is derived from
+                `attr_spec` and `instance`.
+    """
+
+    COLLECTION_FAMILY: Type = MISSING
+    HELPER_METHODS: List[AttrMethodDescriptor] = []
+
     def __init__(
         self,
-        collection_type: Union[Type, Callable],
-        collection: Any = MISSING,
-        name=None,
-        inplace=True,
+        attr_spec: Attr,
+        instance: Any,
+        *,
+        collection: Any = MISSING_COLLECTION,
+        inplace: bool = True,
     ):
-        self.collection_type = collection_type
-        self.collection = collection if inplace else copy.deepcopy(collection)
-        self.name = name or "collection"
+        self.attr_spec = attr_spec
+        self.prepare_item = self.attr_spec.prepare_item
+        if self.prepare_item:
+            self.prepare_item = functools.partial(self.prepare_item, instance)
 
-        self.item_type = get_collection_item_type(collection_type)
-        self.item_spec_type = get_spec_class_for_type(self.item_type)
-        self.item_spec_type_is_keyed = (
-            self.item_spec_type and self.item_spec_type.__spec_class_key__ is not None
-        )
-        self.item_spec_key_type = (
-            self.item_spec_type.__spec_class_annotations__[
-                self.item_spec_type.__spec_class_key__
-            ]
-            if self.item_spec_type_is_keyed
-            else None
-        )
+        if collection is MISSING_COLLECTION:
+            collection = getattr(instance, self.attr_spec.name, MISSING)
+        if collection is not MISSING and not inplace:
+            collection = copy.deepcopy(collection)
+        self.collection = collection
 
     def _mutate_collection(
         self,
@@ -75,12 +108,14 @@ class ManagedCollection(metaclass=ABCMeta):
         new_item = mutate_value(
             old_value=old_item,
             new_value=new_item,
-            constructor=self.item_type,
+            constructor=self.attr_spec.item_type,
             transform=transform,
             attrs=attrs,
             attr_transforms=attr_transforms,
             replace=replace,
         )
+        if self.prepare_item:
+            new_item = self.prepare_item(new_item)
         inserter(index, new_item)
         return self
 
@@ -113,7 +148,7 @@ class ManagedCollection(metaclass=ABCMeta):
                 item = MISSING
             if raise_if_missing and item is MISSING:
                 raise AttributeError(
-                    f"No item by key/index `{repr(value_or_index)}` found in `{self.name}`."
+                    f"No item by key/index `{repr(value_or_index)}` found in `{self.attr_spec.qualified_name}`."
                 )
             return item
 
@@ -136,7 +171,7 @@ class ManagedCollection(metaclass=ABCMeta):
             return filtered
         if not filtered and raise_if_missing:
             raise AttributeError(
-                f"No items with nominated attribute filters found in `{self.name}`."
+                f"No items with nominated attribute filters found in `{self.attr_spec.qualified_name}`."
             )
         if not filtered:
             return MISSING
@@ -150,21 +185,35 @@ class ManagedCollection(metaclass=ABCMeta):
         """
         Get the key associated with a spec class isntance or from attrs.
         """
-        assert hasattr(
-            spec_cls, "__spec_class_key__"
+        assert (
+            spec_cls.__spec_class__.key
         ), f"`{spec_cls}` is not a keyed spec class instance."
         if isinstance(item, spec_cls):
-            return getattr(item, spec_cls.__spec_class_key__, MISSING)
+            return getattr(item, spec_cls.__spec_class__.key, MISSING)
         if check_type(
-            item, spec_cls.__spec_class_annotations__[spec_cls.__spec_class_key__]
+            item, spec_cls.__spec_class__.annotations[spec_cls.__spec_class__.key]
         ):
             return item
-        return (attrs or {}).get(spec_cls.__spec_class_key__, MISSING)
+        return (attrs or {}).get(spec_cls.__spec_class__.key, MISSING)
 
     def _create_collection(self):
-        if hasattr(self.collection_type, "__origin__"):
-            return self.collection_type.__origin__()
-        return self.collection_type()
+        return type_instantiate(self.attr_spec.type)
+
+    def prepare(self):
+        if self.collection in (MISSING, None):
+            self.collection = self._create_collection()
+        if not check_type(self.collection, self.attr_spec.type):
+            items = self.collection
+            self.collection = self._create_collection()
+            self.add_items(items)
+            return self
+        if self.collection and self.prepare_item:
+            self._prepare_items()
+        return self
+
+    @abstractmethod
+    def _prepare_items(self):
+        ...
 
     @abstractmethod
     def _extractor(self, value_or_index, raise_if_missing=False) -> IndexedItem:

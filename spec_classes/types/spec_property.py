@@ -142,17 +142,18 @@ class spec_property:
         # If attribute is annotated with a `spec_class` type, apply any
         # transforms using `_prepare_foo()` methods, and then check that the
         # attribute type is correct.
-        spec_class_annotations = getattr(instance, "__spec_class_annotations__", {})
-        if self.attr_name in spec_class_annotations:
-            try:
-                value = getattr(instance, f"_prepare_{self.attr_name}")(value)
-            except AttributeError:
-                pass
-            attr_type = spec_class_annotations[self.attr_name]
-            if not check_type(value, attr_type):
-                raise ValueError(
-                    f"Property override for `{owner.__name__ if owner else ''}.{self.attr_name or ''}` returned an invalid type [got `{repr(value)}`; expecting `{type_label(attr_type)}`]."
-                )
+        if hasattr(instance, "__spec_class__"):
+            spec_class_annotations = instance.__spec_class__.annotations
+            if self.attr_name in spec_class_annotations:
+                try:
+                    value = getattr(instance, f"_prepare_{self.attr_name}")(value)
+                except AttributeError:
+                    pass
+                attr_type = spec_class_annotations[self.attr_name]
+                if not check_type(value, attr_type):
+                    raise ValueError(
+                        f"Property override for `{owner.__name__ if owner else ''}.{self.attr_name or ''}` returned an invalid type [got `{repr(value)}`; expecting `{type_label(attr_type)}`]."
+                    )
 
         # Store value in cache is cache is enabled
         if self.cache:

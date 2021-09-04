@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import copy
 import inspect
+import re
 import textwrap
 from typing import Any, Callable, Dict, List, Set
 
 import pytest
 
-from spec_classes import MISSING, spec_class, AttrProxy, FrozenInstanceError
+from spec_classes import AttrProxy, FrozenInstanceError, MISSING, spec_class
+from spec_classes.spec_class import SpecClassMetadata, SpecClassMetadataPlaceholder
 
 
 @spec_class
@@ -40,7 +42,7 @@ class Spec:
 
 @pytest.fixture
 def spec_cls():
-    assert Spec.__spec_class_bootstrapped__ is True
+    assert isinstance(Spec.__spec_class__, SpecClassMetadata)
     return Spec
 
 
@@ -54,15 +56,17 @@ class TestFramework:
         class MyClass2:
             a: int
 
-        assert MyClass.__spec_class_bootstrapped__ is False
+        assert isinstance(
+            MyClass.__dict__["__spec_class__"], SpecClassMetadataPlaceholder
+        )
         assert MyClass(a=1).a == 1
-        assert MyClass.__spec_class_bootstrapped__ is True
+        assert isinstance(MyClass.__dict__["__spec_class__"], SpecClassMetadata)
 
-        assert MyClass2.__spec_class_bootstrapped__ is True
+        assert isinstance(MyClass.__dict__["__spec_class__"], SpecClassMetadata)
         assert MyClass2(a=1).a == 1
 
     def test_key(self, spec_cls):
-        assert spec_cls.__spec_class_key__ == "key"
+        assert spec_cls.__spec_class__.key == "key"
 
     def test_annotations(self, spec_cls):
         assert set(spec_cls.__annotations__) == {
@@ -84,32 +88,28 @@ class TestFramework:
         class Item:
             value: int
 
-        @spec_class
+        @spec_class(bootstrap=True)
         class ItemSub(Item):
             value2: int = 1
 
-        ItemSub.__spec_class_bootstrap__()
-        assert set(ItemSub.__spec_class_annotations__) == {"value", "value2"}
-        assert ItemSub.__spec_class_key__ == "value"
+        assert set(ItemSub.__spec_class__.annotations) == {"value", "value2"}
+        assert ItemSub.__spec_class__.key == "value"
 
-        @spec_class(key=None)
+        @spec_class(key=None, bootstrap=True)
         class ItemSubSub(ItemSub):
             value3: int = 1
 
-        ItemSubSub.__spec_class_bootstrap__()
-        assert set(ItemSubSub.__spec_class_annotations__) == {
+        assert set(ItemSubSub.__spec_class__.annotations) == {
             "value",
             "value2",
             "value3",
         }
-        assert ItemSubSub.__spec_class_key__ is None
+        assert ItemSubSub.__spec_class__.key is None
 
     def test_spec_arguments(self):
-        @spec_class(attrs={"value"}, attrs_typed={"items": List[str]})
+        @spec_class(attrs={"value"}, attrs_typed={"items": List[str]}, bootstrap=True)
         class Item:
             pass
-
-        Item.__spec_class_bootstrap__()
 
         assert hasattr(Item, "with_value")
         assert hasattr(Item, "transform_value")
@@ -118,11 +118,9 @@ class TestFramework:
         assert hasattr(Item, "without_item")
         assert hasattr(Item, "transform_item")
 
-        @spec_class(key="key", attrs_typed={"key": str})
+        @spec_class(key="key", attrs_typed={"key": str}, bootstrap=True)
         class Item:
             pass
-
-        Item.__spec_class_bootstrap__()
 
         assert Item.__annotations__ == {"key": str}
 
@@ -136,13 +134,12 @@ class TestFramework:
                 pass
 
     def test_annotation_overrides(self):
-        @spec_class(attrs_typed={"x": int})
+        @spec_class(attrs_typed={"x": int}, bootstrap=True)
         class Item:
             x: str
 
-        Item.__spec_class_bootstrap__()
         assert Item.__annotations__ == {"x": "str"}
-        assert Item.__spec_class_annotations__ == {"x": int}
+        assert Item.__spec_class__.annotations == {"x": int}
 
         with pytest.raises(TypeError):
             Item().x = "invalid type"
@@ -301,7 +298,7 @@ class TestFramework:
         assert Spec(key="key") != Spec(key="notkey")
 
         # Test passing around of callable values with default implementations, and classes
-        @spec_class
+        @spec_class(bootstrap=True)
         class Item:
             x: int = 1
             f: Callable
@@ -309,8 +306,6 @@ class TestFramework:
 
             def f(self):
                 pass
-
-        Item.__spec_class_bootstrap__()
 
         assert hasattr(Item, "__init__")
         assert hasattr(Item, "__repr__")
@@ -338,13 +333,11 @@ class TestFramework:
         assert Item().with_f(f) != Item()
 
         # Test that key default properly unset when it is a method or property
-        @spec_class(key="key")
+        @spec_class(key="key", bootstrap=True)
         class Item:
             @property
             def key(self):
                 return "key"
-
-        Item.__spec_class_bootstrap__()
 
         assert set(inspect.Signature.from_callable(Item.__init__).parameters) == {
             "self",
@@ -374,12 +367,15 @@ class TestFramework:
             def _prepare_prepared_str(self, prepared_str):
                 return "c"
 
+            def _prepare_prepared_items(self, prepared_items):
+                return ["a", "b", "c"]
+
             def _prepare_prepared_item(self, prepared_item):
                 return "c"
 
-        assert MyClass().prepared_str == "c"
-        assert MyClass(prepared_str="a").prepared_str == "c"
-        assert MyClass(prepared_items=[1, 2, 3]).prepared_items == ["c", "c", "c"]
+        assert MyClass().prepared_items == ["c", "c", "c"]
+        assert MyClass(prepared_items="a").prepared_items == ["c", "c", "c"]
+        assert MyClass().with_prepared_item("a").prepared_items == ["c", "c", "c", "c"]
 
     def test_deepcopy_with_instance_method_values(self):
         @spec_class
@@ -396,16 +392,16 @@ class TestFramework:
             MyClass()
         )  # If the instance method value causes recursion, we'd catch it here.
 
-    def test_shallowcopy(self):
-        @spec_class(shallowcopy=["shallow_list"])
+    def test_do_not_copy(self):
+        @spec_class(do_not_copy=["shallow_list"], bootstrap=True)
         class Item:
             value: str
             deep_list: list
             shallow_list: object
 
-        Item.__spec_class_bootstrap__()
-
-        assert Item.__spec_class_shallowcopy__ == {"shallow_list"}
+        assert Item.__spec_class__.attrs["value"].do_not_copy is False
+        assert Item.__spec_class__.attrs["deep_list"].do_not_copy is False
+        assert Item.__spec_class__.attrs["shallow_list"].do_not_copy is True
 
         list_obj = []
         assert (
@@ -425,19 +421,15 @@ class TestFramework:
             is list_obj
         )
 
-        @spec_class(shallowcopy=True)
+        @spec_class(do_not_copy=True, bootstrap=True)
         class ShallowItem:
             value: str
             deep_list: list
             shallow_list: object
 
-        ShallowItem.__spec_class_bootstrap__()
-
-        assert ShallowItem.__spec_class_shallowcopy__ == {
-            "value",
-            "deep_list",
-            "shallow_list",
-        }
+        assert ShallowItem.__spec_class__.attrs["value"].do_not_copy is True
+        assert ShallowItem.__spec_class__.attrs["deep_list"].do_not_copy is True
+        assert ShallowItem.__spec_class__.attrs["shallow_list"].do_not_copy is True
 
     def test_overriding_methods(self):
         class Item:
@@ -449,7 +441,7 @@ class TestFramework:
         assert spec_class(Item).__init__ is Item.__init__
 
     def test_spec_properties(self):
-        @spec_class
+        @spec_class(bootstrap=True)
         class Item:
             x: int
 
@@ -457,15 +449,13 @@ class TestFramework:
             def x(self):
                 return 1
 
-        Item.__spec_class_bootstrap__()
-
         assert set(inspect.Signature.from_callable(Item.__init__).parameters) == {
             "self",
             "x",
         }
         assert isinstance(Item(), Item)
 
-        @spec_class
+        @spec_class(bootstrap=True)
         class Item2:
             x: int
 
@@ -476,8 +466,6 @@ class TestFramework:
             @x.setter
             def x(self, x):
                 self._x = x
-
-        Item2.__spec_class_bootstrap__()
 
         assert set(inspect.Signature.from_callable(Item2.__init__).parameters) == {
             "self",
@@ -490,15 +478,13 @@ class TestFramework:
         assert Item2().x == 1
         assert Item2(x=10).x == 10
 
-        @spec_class(attrs={"x"})
+        @spec_class(attrs={"x"}, bootstrap=True)
         class Item3:
             x: int
 
             @property
             def x(self):
                 return 1
-
-        Item3.__spec_class_bootstrap__()
 
         assert set(inspect.Signature.from_callable(Item3.__init__).parameters) == {
             "self",
@@ -521,22 +507,17 @@ class TestFramework:
             ValueError, match="is missing required arguments to populate attributes"
         ):
 
-            @spec_class(init=False)
+            @spec_class(init=False, bootstrap=True)
             class Item:
                 x: int = 1
 
-            Item.__spec_class_bootstrap__()
-
-    def test_singularisation(self):
-        assert spec_class._get_singular_form("values") == "value"
-        assert spec_class._get_singular_form("classes") == "class"
-        assert spec_class._get_singular_form("collection") == "collection_item"
-
     def test_frozen(self):
-        @spec_class(frozen=True)
+        @spec_class(frozen=True, bootstrap=True)
         class Item:
             x: int = 1
 
+        assert Item.__spec_class__.owner is Item
+        assert Item.__spec_class__.frozen is True
         assert Item().x == 1
         assert Item(x=10).with_x(20).x == 20
 
@@ -588,6 +569,26 @@ class TestFramework:
             MySubClass()
 
     def test_subclassing(self):
+        @spec_class(key="key")
+        class A:
+            key: str
+            field: int
+            overridden: float = 1.0
+
+        @spec_class
+        class B(A):
+            value: str
+
+            @property
+            def overridden(self):
+                return 2.0
+
+        assert B("foo").key == "foo"
+        assert B(key="foo").key == "foo"
+        assert B("foo", field=10).field == 10
+        assert B("foo", value="bar").value == "bar"
+
+    def test_respect_super_init(self):
         @spec_class
         class A:
             a: int
@@ -613,7 +614,7 @@ class TestFramework:
             c: int
 
         assert A().a_overridden == 100
-        assert list(C().__spec_class_annotations__) == [
+        assert list(C().__spec_class__.annotations) == [
             "b",
             "a",
             "a_overridden",
@@ -689,7 +690,7 @@ class TestFramework:
 
         item = Item()
         del item.__dict__["a"]
-        item.a is Item.a
+        assert item.a is Item.a
 
         assert item.with_a().a == []
         assert item.with_a().a is not Item.a
@@ -740,17 +741,16 @@ class TestFramework:
         assert MySpec(a=2) == "hi"
 
     def test_annotation_types(self):
-        @spec_class
+        @spec_class(bootstrap=True)
         class MySpec:
 
             ANNOTATION_TYPES = {"my_str": str}
 
             a: my_str  # noqa: F821; type defined by ANNOTATION_TYPES
 
-        MySpec.__spec_class_bootstrap__()
-        assert MySpec.__spec_class_annotations__["a"] is str
+        assert MySpec.__spec_class__.annotations["a"] is str
 
-        @spec_class
+        @spec_class(bootstrap=True)
         class MySpec2:
             @classmethod
             def ANNOTATION_TYPES(cls):
@@ -760,8 +760,20 @@ class TestFramework:
 
             a: my_str  # noqa: F821; type defined by ANNOTATION_TYPES
 
-        MySpec2.__spec_class_bootstrap__()
-        assert MySpec2.__spec_class_annotations__["a"] is str
+        assert MySpec2.__spec_class__.annotations["a"] is str
+
+    def test_inherited_defaults(self):
+        @spec_class
+        class Spec:
+            attr: str = "Hello"
+
+        @spec_class
+        class SubSpec(Spec):
+            @property
+            def attr(self):
+                return "World"
+
+        assert SubSpec().attr == "World"
 
 
 class TestScalarAttribute:
@@ -827,7 +839,11 @@ class TestSpecAttribute:
         # Constructors
         assert "spec" not in spec.__dict__
         assert isinstance(spec.with_spec().spec, UnkeyedSpec)
-        assert isinstance(spec.transform_spec(lambda x: x).spec, UnkeyedSpec)
+        with pytest.raises(
+            AttributeError,
+            match=re.escape("`Spec.spec` has not yet been assigned a value."),
+        ):
+            spec.transform_spec(lambda x: x)
         with pytest.raises(
             TypeError, match=r"Attempt to set `Spec\.spec` with an invalid type"
         ):
@@ -853,7 +869,7 @@ class TestSpecAttribute:
         assert spec.spec.nested_scalar == 2
 
     def test_transform(self, spec_cls):
-        spec = spec_cls()
+        spec = spec_cls().with_spec()
         assert set(inspect.Signature.from_callable(spec.transform_spec).parameters) == {
             "_transform",
             "_inplace",
@@ -885,7 +901,9 @@ class TestSpecAttribute:
         base = spec_cls()
         with pytest.raises(
             TypeError,
-            match=r"with_spec\(\) got unexpected keyword arguments: {'invalid'}.",
+            match=re.escape(
+                "with_spec() got unexpected keyword arguments: {'invalid'}."
+            ),
         ):
             base.with_spec(invalid=10)
 

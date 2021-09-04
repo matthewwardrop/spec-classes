@@ -1,6 +1,6 @@
 import numbers
 from abc import ABCMeta, abstractclassmethod
-from typing import Any, Type, Callable
+from typing import Any, Callable, Type
 
 from spec_classes.utils.type_checking import check_type, type_label
 

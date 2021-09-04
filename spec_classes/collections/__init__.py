@@ -1,11 +1,11 @@
-from .base import ManagedCollection
-from .mappings import MappingCollection
-from .sequences import SequenceCollection
-from .sets import SetCollection
+from .base import CollectionAttrMutator
+from .mappings import MappingMutator
+from .sequences import SequenceMutator
+from .sets import SetMutator
 
 __all__ = (
-    "ManagedCollection",
-    "MappingCollection",
-    "SequenceCollection",
-    "SetCollection",
+    "CollectionAttrMutator",
+    "MappingMutator",
+    "SequenceMutator",
+    "SetMutator",
 )

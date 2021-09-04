@@ -1,4 +1,6 @@
-from collections.abc import Sequence as SequenceCollection, Set as SetCollection
+import inspect
+from collections.abc import Sequence as SequenceMutator
+from collections.abc import Set as SetMutator
 from typing import (
     Any,
     Mapping,
@@ -72,7 +74,7 @@ def get_collection_item_type(container_type: Type) -> Type:
     if type_match(container_type, Mapping) and len(container_type.__args__) == 2:
         item_type = container_type.__args__[1]
     elif (
-        type_match(container_type, (Sequence, Set, SequenceCollection, SetCollection))
+        type_match(container_type, (Sequence, Set, SequenceMutator, SetMutator))
         or len(container_type.__args__) == 1
     ):
         item_type = container_type.__args__[0]
@@ -91,19 +93,16 @@ def get_spec_class_for_type(
     polymorphic type. If there is not exactly one spec class type, `None` is
     returned.
     """
-    if getattr(attr_type, "__is_spec_class__", False):
-        attr_type.__spec_class_bootstrap__()
+    if hasattr(attr_type, "__spec_class__"):
         return attr_type
     if allow_polymorphic and getattr(attr_type, "__origin__", None) is Union:
-        spec_classes = [
-            typ
-            for typ in attr_type.__args__
-            if getattr(typ, "__is_spec_class__", False)
-        ]
+        spec_classes = []
+        for typ in attr_type.__args__:
+            spec_typ = get_spec_class_for_type(typ)
+            if spec_typ is not None:
+                spec_classes.append(spec_typ)
         if len(spec_classes) == 1:
-            spec_class = spec_classes[0]
-            spec_class.__spec_class_bootstrap__()
-            return spec_class
+            return spec_classes[0]
     return None
 
 
@@ -116,11 +115,24 @@ def type_label(attr_type: Type) -> str:
     """
     if hasattr(attr_type, "__origin__"):  # Generics
         label = type_label(attr_type.__origin__)
-        if hasattr(attr_type, "__args__"):
+        if hasattr(attr_type, "__args__") and not any(
+            isinstance(arg, TypeVar) for arg in attr_type.__args__
+        ):
             return (
                 f"{label}[{', '.join(type_label(arg) for arg in attr_type.__args__)}]"
             )
         return label
-    if hasattr(attr_type, "__name__"):
-        return attr_type.__name__
-    return repr(attr_type)
+    if not inspect.isclass(attr_type):
+        if hasattr(attr_type, "__orig_class__"):
+            return type_label(attr_type.__orig_class__)
+        return type_label(type(attr_type))
+    return attr_type.__name__
+
+
+def type_instantiate(attr_type: Type, **kwargs) -> Any:
+    """
+    Instantiate a nominated type.
+    """
+    while hasattr(attr_type, "__origin__"):
+        attr_type = attr_type.__origin__
+    return attr_type(**kwargs)

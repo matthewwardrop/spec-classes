@@ -1,24 +1,40 @@
 import functools
+from typing import Iterable, MutableSet
 
+from spec_classes.methods.collections import SET_METHODS
 from spec_classes.types import MISSING
 from spec_classes.utils.type_checking import check_type
 
-from .base import ManagedCollection
+from .base import CollectionAttrMutator
 
 
-class SetCollection(ManagedCollection):
+class SetMutator(CollectionAttrMutator):
+    """
+    The mutator subclass for mutable sets. See `CollectionAttrMutator` for
+    API details.
+    """
+
+    COLLECTION_FAMILY = MutableSet
+    HELPER_METHODS = SET_METHODS
+
+    def _prepare_items(self):
+        for value in self.collection:
+            self.transform_item(value, self.prepare_item)
+
     def _extractor(self, value_or_index, raise_if_missing=False):
         if raise_if_missing and value_or_index not in self.collection:
-            raise ValueError(f"Value `{repr(value_or_index)}` not in `{self.name}`.")
+            raise ValueError(
+                f"Value `{repr(value_or_index)}` not in `{self.attr_spec.qualified_name}`."
+            )
         return (
             value_or_index,
             value_or_index if value_or_index in self.collection else MISSING,
         )
 
     def _inserter(self, index, item, replace=False):  # pylint: disable=arguments-differ
-        if not check_type(item, self.item_type):
+        if not check_type(item, self.attr_spec.item_type):
             raise ValueError(
-                f"Attempted to add an invalid item `{repr(item)}` to `{self.name}`. Expected item of type `{self.item_type}`."
+                f"Attempted to add an invalid item `{repr(item)}` to `{self.attr_spec.qualified_name}`. Expected item of type `{self.attr_spec.item_type}`."
             )
         if replace:
             self.collection.discard(index)
@@ -44,12 +60,12 @@ class SetCollection(ManagedCollection):
         self, item, *, replace=True, attrs=None
     ):  # pylint: disable=arguments-differ
         if (
-            self.item_spec_type_is_keyed
+            self.attr_spec.item_spec_key_type
             and item is not MISSING
-            and not check_type(item, self.item_type)
-            and check_type(item, self.item_spec_key_type)
+            and not check_type(item, self.attr_spec.item_type)
+            and check_type(item, self.attr_spec.item_spec_key_type)
         ):
-            item = self.item_spec_type(item)
+            item = self.attr_spec.item_spec_type(item)
         return self._mutate_collection(
             value_or_index=item,
             extractor=self._extractor,
@@ -59,10 +75,13 @@ class SetCollection(ManagedCollection):
             replace=replace,
         )
 
-    def add_items(self, items, preparer=None):
-        preparer = preparer or (lambda item: item)
+    def add_items(self, items: Iterable):
+        if not check_type(items, Iterable):
+            ValueError(
+                f"Incoming collection for `{self.attr_spec.qualified_name}` is not iterable."
+            )
         for item in items:
-            self.add_item(preparer(item))
+            self.add_item(item)
         return self
 
     def transform_item(
