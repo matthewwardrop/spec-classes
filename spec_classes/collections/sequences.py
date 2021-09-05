@@ -3,7 +3,7 @@ from typing import Iterable, MutableSequence
 
 from spec_classes.methods.collections import SEQUENCE_METHODS
 from spec_classes.types import MISSING
-from spec_classes.utils.type_checking import check_type
+from spec_classes.utils.type_checking import check_type, type_label
 
 from .base import CollectionAttrMutator, IndexedItem
 
@@ -57,7 +57,7 @@ class SequenceMutator(CollectionAttrMutator):
     def _inserter(self, index, item, insert=False):  # pylint: disable=arguments-differ
         if not check_type(item, self.attr_spec.item_type):
             raise ValueError(
-                f"Attempted to add an invalid item `{repr(item)}` to `{self.attr_spec.qualified_name}`. Expected item of type `{self.attr_spec.item_type}`."
+                f"Attempted to add an invalid item `{repr(item)}` to `{self.attr_spec.qualified_name}`. Expected item of type `{type_label(self.attr_spec.item_type)}`."
             )
         if index is None:
             self.collection.append(item)
@@ -87,7 +87,7 @@ class SequenceMutator(CollectionAttrMutator):
 
     def add_items(self, items: Iterable):
         if not check_type(items, Iterable):
-            ValueError(
+            raise TypeError(
                 f"Incoming collection for `{self.attr_spec.qualified_name}` is not iterable."
             )
         for item in items:
@@ -109,7 +109,9 @@ class SequenceMutator(CollectionAttrMutator):
     def remove_item(
         self, value_or_index, *, by_index=MISSING
     ):  # pylint: disable=arguments-differ
-        index, _ = self._extractor(value_or_index, by_index=by_index)
+        index, _ = self._extractor(
+            value_or_index, by_index=by_index, raise_if_missing=True
+        )
         if index is not None:
             del self.collection[index]
         return self

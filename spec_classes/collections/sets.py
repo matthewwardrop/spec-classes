@@ -3,7 +3,7 @@ from typing import Iterable, MutableSet
 
 from spec_classes.methods.collections import SET_METHODS
 from spec_classes.types import MISSING
-from spec_classes.utils.type_checking import check_type
+from spec_classes.utils.type_checking import check_type, type_label
 
 from .base import CollectionAttrMutator
 
@@ -24,7 +24,7 @@ class SetMutator(CollectionAttrMutator):
     def _extractor(self, value_or_index, raise_if_missing=False):
         if raise_if_missing and value_or_index not in self.collection:
             raise ValueError(
-                f"Value `{repr(value_or_index)}` not in `{self.attr_spec.qualified_name}`."
+                f"Value `{repr(value_or_index)}` not found in collection `{self.attr_spec.qualified_name}`."
             )
         return (
             value_or_index,
@@ -34,7 +34,7 @@ class SetMutator(CollectionAttrMutator):
     def _inserter(self, index, item, replace=False):  # pylint: disable=arguments-differ
         if not check_type(item, self.attr_spec.item_type):
             raise ValueError(
-                f"Attempted to add an invalid item `{repr(item)}` to `{self.attr_spec.qualified_name}`. Expected item of type `{self.attr_spec.item_type}`."
+                f"Attempted to add an invalid item `{repr(item)}` to `{self.attr_spec.qualified_name}`. Expected item of type `{type_label(self.attr_spec.item_type)}`."
             )
         if replace:
             self.collection.discard(index)
@@ -61,7 +61,7 @@ class SetMutator(CollectionAttrMutator):
 
     def add_items(self, items: Iterable):
         if not check_type(items, Iterable):
-            ValueError(
+            raise TypeError(
                 f"Incoming collection for `{self.attr_spec.qualified_name}` is not iterable."
             )
         for item in items:
@@ -81,6 +81,6 @@ class SetMutator(CollectionAttrMutator):
         )
 
     def remove_item(self, item):  # pylint: disable=arguments-differ
-        if item in self.collection:
-            self.collection.discard(item)
+        key, _ = self._extractor(item, raise_if_missing=True)
+        self.collection.remove(key)
         return self

@@ -1352,7 +1352,7 @@ class TestSetAttribute:
         # check for invalid types
         with pytest.raises(
             ValueError,
-            match="Attempted to add an invalid item `1` to `Spec.set_values`. Expected item of type `<class 'str'>`",
+            match="Attempted to add an invalid item `1` to `Spec.set_values`. Expected item of type `str`.",
         ):
             spec.with_set_value(1)
 
