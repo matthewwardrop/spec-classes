@@ -347,12 +347,6 @@ class spec_class:
         Args:
             spec_cls: The decorated class.
         """
-        # Check if this class is already bootstrapped.
-        if isinstance(
-            spec_cls.__dict__.get("__spec_class__", MISSING), SpecClassMetadata
-        ):
-            return
-
         # Bootstrap any parents of this class first (we can abort without
         # recursing since each parent will bootstrap its own parents, and so
         # on).
