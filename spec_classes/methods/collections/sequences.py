@@ -59,11 +59,9 @@ class WithSequenceItemMethod(AttrMethodDescriptor):
     def build_method(self) -> Callable:
         fn_item_type = self.attr_spec.item_type
         fn_index_type = Union[int, Any]
-        if self.attr_spec.spec_type:
+        if self.attr_spec.item_spec_key_type:
             fn_item_type = Union[
-                self.attr_spec.item_spec_type.__spec_class__.annotations[
-                    self.attr_spec.item_spec_type.__spec_class__.key
-                ],
+                self.attr_spec.item_spec_key_type,
                 fn_item_type,
             ]
         return (
@@ -170,11 +168,9 @@ class TransformSequenceItemMethod(AttrMethodDescriptor):
     def build_method(self) -> Callable:
         fn_item_type = self.attr_spec.item_type
         fn_index_type = Union[int, Any]
-        if self.attr_spec.spec_type:
+        if self.attr_spec.item_spec_key_type:
             fn_item_type = Union[
-                self.attr_spec.item_spec_type.__spec_class__.annotations[
-                    self.attr_spec.item_spec_type.__spec_class__.key
-                ],
+                self.attr_spec.item_spec_key_type,
                 fn_item_type,
             ]
         return (
@@ -274,11 +270,9 @@ class WithoutSequenceItemMethod(AttrMethodDescriptor):
     def build_method(self) -> Callable:
         fn_item_type = self.attr_spec.item_type
         fn_index_type = Union[int, Any]
-        if self.attr_spec.spec_type:
+        if self.attr_spec.item_spec_key_type:
             fn_item_type = Union[
-                self.attr_spec.item_spec_type.__spec_class__.annotations[
-                    self.attr_spec.item_spec_type.__spec_class__.key
-                ],
+                self.attr_spec.item_spec_key_type,
                 fn_item_type,
             ]
         return (

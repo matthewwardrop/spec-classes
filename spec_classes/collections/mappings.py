@@ -33,25 +33,6 @@ class MappingMutator(CollectionAttrMutator):
             )
         self.collection[index] = item
 
-    def get_item(
-        self,
-        key=MISSING,
-        *,
-        all_matches=False,
-        raise_if_missing=True,
-        attr_filters=None,
-    ):  # pylint: disable=arguments-differ
-        return self._get_items_from_collection(
-            extractor=lambda value_or_index: (
-                value_or_index,
-                self.collection.get(value_or_index, MISSING),
-            ),
-            value_or_index=key,
-            attr_filters=attr_filters,
-            all_matches=all_matches,
-            raise_if_missing=raise_if_missing,
-        )
-
     def add_item(
         self, key=None, value=None, *, attrs=None, replace=True
     ):  # pylint: disable=arguments-differ
@@ -93,10 +74,6 @@ class MappingMutator(CollectionAttrMutator):
         )
 
     def remove_item(self, key):  # pylint: disable=arguments-differ
-        if self.attr_spec.item_spec_key_type and isinstance(
-            key, self.attr_spec.item_spec_type
-        ):
-            key = getattr(key, self.attr_spec.item_spec_type.__spec_class__.key)
         if key in self.collection:
             del self.collection[key]
         return self

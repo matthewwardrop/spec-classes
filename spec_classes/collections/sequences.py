@@ -66,23 +66,6 @@ class SequenceMutator(CollectionAttrMutator):
         else:
             self.collection[index] = item
 
-    def get_item(
-        self,
-        value_or_index=MISSING,
-        *,
-        attr_filters=None,
-        by_index=False,
-        all_matches=False,
-        raise_if_missing=True,
-    ):  # pylint: disable=arguments-differ
-        return self._get_items_from_collection(
-            extractor=functools.partial(self._extractor, by_index=by_index),
-            value_or_index=value_or_index,
-            attr_filters=attr_filters,
-            all_matches=all_matches,
-            raise_if_missing=raise_if_missing,
-        )
-
     def add_item(
         self, item=MISSING, *, attrs=None, index=MISSING, insert=False, replace=True
     ):  # pylint: disable=arguments-differ

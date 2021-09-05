@@ -40,22 +40,6 @@ class SetMutator(CollectionAttrMutator):
             self.collection.discard(index)
         self.collection.add(item)
 
-    def get_item(
-        self,
-        item=MISSING,
-        *,
-        all_matches=False,
-        raise_if_missing=True,
-        attr_filters=None,
-    ):  # pylint: disable=arguments-differ
-        return self._get_items_from_collection(
-            extractor=self._extractor,
-            value_or_index=item,
-            attr_filters=attr_filters,
-            all_matches=all_matches,
-            raise_if_missing=raise_if_missing,
-        )
-
     def add_item(
         self, item, *, replace=True, attrs=None
     ):  # pylint: disable=arguments-differ
