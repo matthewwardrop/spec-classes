@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import dataclasses
-import inspect
 import typing
 from collections import defaultdict
 from inspect import Signature
@@ -11,7 +10,6 @@ from spec_classes.methods import core as core_methods
 from spec_classes.methods.scalar import SCALAR_METHODS
 
 from .types import Attr, MISSING, spec_property
-from .utils.method_builder import MethodBuilder
 
 
 @dataclasses.dataclass

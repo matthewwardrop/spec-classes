@@ -301,6 +301,31 @@ class TestFramework:
             ).strip()
         )
 
+        # Test recursive representations
+        s = Spec()
+        s.with_recursive(s, _inplace=True)
+        assert (
+            s.__repr__(indent=True)
+            == textwrap.dedent(
+                """
+            Spec(
+                key='key',
+                scalar=MISSING,
+                list_values=MISSING,
+                dict_values=MISSING,
+                set_values=MISSING,
+                spec=MISSING,
+                spec_list_items=MISSING,
+                spec_dict_items=MISSING,
+                keyed_spec_list_items=MISSING,
+                keyed_spec_dict_items=MISSING,
+                keyed_spec_set_items=MISSING,
+                recursive=<self>
+            )
+        """
+            ).strip()
+        )
+
         assert Spec(key="key") != "key"
         assert Spec(key="key") == Spec(key="key")
         assert Spec(key="key") != Spec(key="notkey")
@@ -355,6 +380,27 @@ class TestFramework:
             inspect.Signature.from_callable(Item.__init__).parameters["key"].default
             is MISSING
         )
+
+        # Test that key is succesfully handled in super() constructors
+        @spec_class(key="key")
+        class KeyedItem:
+            key: str
+
+            def __init__(self, key):
+                self.key = key
+                self.b = 10
+
+        @spec_class
+        class SubKeyedItem(KeyedItem):
+            key: str = "Hi"
+
+        with pytest.raises(
+            TypeError,
+            match=re.escape("__init__() missing 1 required positional argument: 'key'"),
+        ):
+            KeyedItem()
+        assert SubKeyedItem().key == "Hi"
+        assert SubKeyedItem().b == 10
 
     def test_attr_deletion(self):
         @spec_class

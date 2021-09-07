@@ -55,6 +55,7 @@ class InitMethod(MethodDescriptor):
                     if attr in parent_metadata.attrs
                     and instance_metadata.attrs[attr].owner is parent
                 }
+                print(kwargs)
                 if parent_metadata.key and parent_metadata.key not in parent_kwargs:
                     parent_kwargs[parent_metadata.key] = MISSING
                 parent.__init__(self, **parent_kwargs)
