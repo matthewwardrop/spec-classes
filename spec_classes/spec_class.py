@@ -625,8 +625,6 @@ class spec_class:
         """
         if name in spec_cls.__dict__ and not name.startswith("__spec_class"):
             return
-        if isinstance(method, MethodBuilder):
-            method = method.build()
         if hasattr(method, "__set_name__"):
             method.__set_name__(spec_cls, name)
         setattr(spec_cls, name, method)
