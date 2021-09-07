@@ -274,7 +274,8 @@ class MethodBuilder:
 
         for attr, attr_spec in spec_cls.__spec_class__.attrs.items():
             if (
-                attr in current_args
+                not attr_spec.init
+                or attr in current_args
                 or attr == spec_cls.__spec_class__.init_overflow_attr
             ):
                 continue

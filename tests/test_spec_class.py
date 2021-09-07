@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, List, Set
 
 import pytest
 
-from spec_classes import FrozenInstanceError, MISSING, spec_class
+from spec_classes import Attr, FrozenInstanceError, MISSING, spec_class
 from spec_classes.spec_class import SpecClassMetadata, SpecClassMetadataPlaceholder
 from spec_classes.types import KeyedSet
 
@@ -730,6 +730,46 @@ class TestFramework:
                 return "World"
 
         assert SubSpec().attr == "World"
+
+    def test_explicit_attr_specs(self):
+        @spec_class(bootstrap=True)
+        class Spec:
+            attr: str = Attr(default="Hello World")
+            hidden_attr: str = Attr(
+                default="Hidden", init=False, repr=False, compare=False
+            )
+            invalidated_attr: str = Attr(
+                default="Invalidated", repr=False, invalidated_by=["attr"]
+            )
+
+        # Init and masked attrs
+        assert set(inspect.Signature.from_callable(Spec.__init__).parameters) == {
+            "self",
+            "attr",
+            "invalidated_attr",
+        }
+        assert Spec(attr="Replaced").attr == "Replaced"
+        with pytest.raises(
+            TypeError,
+            match=re.escape(
+                "__init__() got unexpected keyword arguments: {'hidden_attr'}."
+            ),
+        ):
+            Spec(hidden_attr="Not here")
+        assert Spec().hidden_attr == "Hidden"
+
+        # Compare
+        assert Spec(attr="Hi").with_hidden_attr("Changed") == Spec(
+            attr="Hi"
+        ).with_hidden_attr("Different")
+
+        # Representation
+        assert str(Spec(attr="Replaced")) == "Spec(attr='Replaced')"
+
+        # Invalidation
+        s = Spec(invalidated_attr="Pre-invalidation")
+        assert s.invalidated_attr == "Pre-invalidation"
+        assert s.with_attr("Hi").invalidated_attr == "Invalidated"
 
 
 class TestScalarAttribute:

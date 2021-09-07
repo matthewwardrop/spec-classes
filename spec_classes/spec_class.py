@@ -526,11 +526,15 @@ class spec_class:
 
     @classmethod
     def _validate_spec_cls(cls, spec_cls):
-        spec_annotations = spec_cls.__spec_class__.attrs
+        init_attrs = {
+            attr
+            for attr, attr_spec in spec_cls.__spec_class__.attrs.items()
+            if attr_spec.init
+        }
 
         # Check that constructor is present for all managed keys.
         init_sig = Signature.from_callable(spec_cls.__init__)
-        missing_args = set(spec_annotations).difference(init_sig.parameters)
+        missing_args = set(init_attrs).difference(init_sig.parameters)
 
         if missing_args:
             raise ValueError(
