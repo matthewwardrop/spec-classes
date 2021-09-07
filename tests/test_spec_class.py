@@ -771,6 +771,17 @@ class TestFramework:
         assert s.invalidated_attr == "Pre-invalidation"
         assert s.with_attr("Hi").invalidated_attr == "Invalidated"
 
+    def test_post_init(self):
+        @spec_class
+        class Spec:
+            a: int = 10
+
+            def __post_init__(self):
+                self.b = 2 * self.a
+
+        assert Spec().b == 20
+        assert Spec(a=50).b == 100
+
 
 class TestScalarAttribute:
     def test_with(self, spec_cls):
