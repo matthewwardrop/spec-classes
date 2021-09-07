@@ -439,6 +439,16 @@ class spec_class:
             }
         )
 
+        # If key attribute is specified and not in managed attrs, add attr spec
+        # with no helper methods
+        if self.key and self.key not in metadata.attrs:
+            metadata.attrs[self.key] = self.build_attr_spec(
+                spec_cls,
+                self.key,
+                attr_types[self.key],
+                helpers=False,
+            )
+
         # Update __annotations__ attribute to be consistent with spec_class
         # typings (unless already defined on the class contrarily)
         if not hasattr(spec_cls, "__annotations__"):
@@ -474,7 +484,14 @@ class spec_class:
         self._validate_spec_cls(spec_cls)
 
     def build_attr_spec(
-        self, spec_cls, attr, attr_type, *, do_not_copy=False, owner=None
+        self,
+        spec_cls,
+        attr,
+        attr_type,
+        *,
+        do_not_copy=False,
+        owner=None,
+        helpers=True,
     ):
         owner = owner or spec_cls
         if hasattr(spec_cls, attr):
@@ -488,10 +505,6 @@ class spec_class:
                     else attr_value.default,
                 )
                 owner = spec_cls  # If an Attr was declared, this spec-class should own the attribute.
-            elif inspect.isfunction(attr_value) or inspect.isdatadescriptor(attr_value):
-                attr_value = (
-                    MISSING  # Methods will already be bound to instance from class
-                )
             attr_spec = Attr.from_attr_value(
                 attr, attr_value, type=attr_type, do_not_copy=do_not_copy, owner=owner
             )
@@ -501,7 +514,8 @@ class spec_class:
             )
 
         # Add helper methods
-        attr_spec.helper_methods = self.get_methods_for_attribute(attr_spec)
+        if helpers:
+            attr_spec.helper_methods = self.get_methods_for_attribute(attr_spec)
 
         # Check for invalidated_by information
         if not attr_spec.invalidated_by and hasattr(

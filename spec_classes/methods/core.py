@@ -9,7 +9,7 @@ from typing import Any, Callable, Iterable, Optional
 
 from spec_classes.errors import FrozenInstanceError
 from spec_classes.methods.scalar import WithAttrMethod
-from spec_classes.types import MISSING
+from spec_classes.types import Attr, MISSING
 from spec_classes.utils.method_builder import MethodBuilder
 from spec_classes.utils.mutation import invalidate_attrs, mutate_attr
 
@@ -129,13 +129,19 @@ class InitMethod(MethodDescriptor):
         spec_class_key = self.spec_cls.__spec_class__.key
         key_default = inspect.Parameter.empty
         if spec_class_key:
+            spec_class_key_spec = (
+                self.spec_cls.__spec_class__.attrs.get(spec_class_key) or Attr()
+            )
+            # If the key has a default, don't require it to be set during
+            # construction.
             key_default = (
                 MISSING
-                if hasattr(self.spec_cls, spec_class_key)
+                if (
+                    spec_class_key_spec.default_factory is not MISSING
+                    or spec_class_key_spec.default is not MISSING
+                )
                 else inspect.Parameter.empty
             )
-            if inspect.isfunction(key_default) or inspect.isdatadescriptor(key_default):
-                spec_class_key = None
 
         return (
             MethodBuilder("__init__", functools.partial(self.init, self.spec_cls))
