@@ -1,6 +1,6 @@
 import functools
 from inspect import Parameter
-from typing import Any, Callable, Dict, TypeVar
+from typing import Any, Callable, Dict, TypeVar, Union
 
 from spec_classes.types import Attr, MISSING
 from spec_classes.utils.method_builder import MethodBuilder
@@ -8,6 +8,25 @@ from spec_classes.utils.mutation import mutate_attr
 from spec_classes.utils.type_checking import type_label
 
 from ..base import AttrMethodDescriptor
+
+
+def _get_mapping_key_and_value_annotations(attr_spec):
+    """
+    Get the annotations of keys and values for mapping method signatures.
+    """
+    key_type = (
+        attr_spec.type.__args__[0]
+        if hasattr(attr_spec.type, "__args__")
+        and not isinstance(attr_spec.type.__args__[0], TypeVar)
+        else Any
+    )
+    value_type = attr_spec.item_type
+    if attr_spec.item_spec_key_type:
+        value_type = Union[
+            attr_spec.item_spec_key_type,
+            value_type,
+        ]
+    return key_type, value_type
 
 
 class WithMappingItemMethod(AttrMethodDescriptor):
@@ -55,11 +74,8 @@ class WithMappingItemMethod(AttrMethodDescriptor):
         )
 
     def build_method(self) -> Callable:
-        fn_key_type = (
-            self.attr_spec.type.__args__[0]
-            if hasattr(self.attr_spec.type, "__args__")
-            and not isinstance(self.attr_spec.type.__args__[0], TypeVar)
-            else Any
+        fn_key_type, fn_value_type = _get_mapping_key_and_value_annotations(
+            self.attr_spec
         )
         return (
             MethodBuilder(
@@ -78,7 +94,7 @@ class WithMappingItemMethod(AttrMethodDescriptor):
                 "_value",
                 desc=f"A new `{type_label(self.attr_spec.item_type)}` instance for {self.attr_spec.name}.",
                 default=MISSING if self.attr_spec.item_spec_type else Parameter.empty,
-                annotation=self.attr_spec.item_type,
+                annotation=fn_value_type,
             )
             .with_arg(
                 "_inplace",
@@ -152,11 +168,8 @@ class TransformMappingItemMethod(AttrMethodDescriptor):
         )
 
     def build_method(self) -> Callable:
-        fn_key_type = (
-            self.attr_spec.type.__args__[0]
-            if hasattr(self.attr_spec.type, "__args__")
-            and not isinstance(self.attr_spec.type.__args__[0], TypeVar)
-            else Any
+        fn_key_type, fn_value_type = _get_mapping_key_and_value_annotations(
+            self.attr_spec
         )
         return (
             MethodBuilder(
@@ -175,7 +188,7 @@ class TransformMappingItemMethod(AttrMethodDescriptor):
                 "_transform",
                 desc="A function that takes the old item as input, and returns the new item.",
                 default=MISSING if self.attr_spec.item_spec_type else Parameter.empty,
-                annotation=Callable,
+                annotation=Callable[[fn_value_type], fn_value_type],
             )
             .with_arg(
                 "_inplace",
@@ -237,12 +250,7 @@ class WithoutMappingItemMethod(AttrMethodDescriptor):
         )
 
     def build_method(self) -> Callable:
-        fn_key_type = (
-            self.attr_spec.type.__args__[0]
-            if hasattr(self.attr_spec.type, "__args__")
-            and not isinstance(self.attr_spec.type.__args__[0], TypeVar)
-            else Any
-        )
+        fn_key_type, _ = _get_mapping_key_and_value_annotations(self.attr_spec)
         return (
             MethodBuilder(
                 f"without_{self.attr_spec.item_name}",

@@ -10,6 +10,22 @@ from spec_classes.utils.type_checking import type_label
 from ..base import AttrMethodDescriptor
 
 
+def _get_sequence_index_and_item_annotations(attr_spec):
+    """
+    Get the annotations of indexes and items for sequence method signatures.
+    """
+    index_type = Union[
+        int, Any
+    ]  # Some sequence containers (e.g. KeyedList) accept arbitrary index types.
+    item_type = attr_spec.item_type
+    if attr_spec.item_spec_key_type:
+        item_type = Union[
+            attr_spec.item_spec_key_type,
+            item_type,
+        ]
+    return index_type, item_type
+
+
 class WithSequenceItemMethod(AttrMethodDescriptor):
     """
     The method descriptor/generator for `with_<attr_singular>' for sequence
@@ -57,13 +73,9 @@ class WithSequenceItemMethod(AttrMethodDescriptor):
         )
 
     def build_method(self) -> Callable:
-        fn_item_type = self.attr_spec.item_type
-        fn_index_type = Union[int, Any]
-        if self.attr_spec.item_spec_key_type:
-            fn_item_type = Union[
-                self.attr_spec.item_spec_key_type,
-                fn_item_type,
-            ]
+        fn_index_type, fn_item_type = _get_sequence_index_and_item_annotations(
+            self.attr_spec
+        )
         return (
             MethodBuilder(
                 self.name,
@@ -166,13 +178,9 @@ class TransformSequenceItemMethod(AttrMethodDescriptor):
         )
 
     def build_method(self) -> Callable:
-        fn_item_type = self.attr_spec.item_type
-        fn_index_type = Union[int, Any]
-        if self.attr_spec.item_spec_key_type:
-            fn_item_type = Union[
-                self.attr_spec.item_spec_key_type,
-                fn_item_type,
-            ]
+        fn_index_type, fn_item_type = _get_sequence_index_and_item_annotations(
+            self.attr_spec
+        )
         return (
             MethodBuilder(
                 self.name,
@@ -190,7 +198,7 @@ class TransformSequenceItemMethod(AttrMethodDescriptor):
                 "_transform",
                 desc="A function that takes the old item as input, and returns the new item.",
                 default=MISSING if self.attr_spec.item_spec_type else Parameter.empty,
-                annotation=Callable,
+                annotation=Callable[[fn_item_type], fn_item_type],
             )
             .with_arg(
                 "_by_index",
@@ -268,13 +276,9 @@ class WithoutSequenceItemMethod(AttrMethodDescriptor):
         )
 
     def build_method(self) -> Callable:
-        fn_item_type = self.attr_spec.item_type
-        fn_index_type = Union[int, Any]
-        if self.attr_spec.item_spec_key_type:
-            fn_item_type = Union[
-                self.attr_spec.item_spec_key_type,
-                fn_item_type,
-            ]
+        fn_index_type, fn_item_type = _get_sequence_index_and_item_annotations(
+            self.attr_spec
+        )
         return (
             MethodBuilder(
                 self.name,

@@ -10,6 +10,7 @@ import pytest
 
 from spec_classes import FrozenInstanceError, MISSING, spec_class
 from spec_classes.spec_class import SpecClassMetadata, SpecClassMetadataPlaceholder
+from spec_classes.types import KeyedSet
 
 
 @spec_class
@@ -37,6 +38,7 @@ class Spec:
     spec_dict_items: Dict[str, UnkeyedSpec]
     keyed_spec_list_items: List[KeyedSpec]
     keyed_spec_dict_items: Dict[str, KeyedSpec]
+    keyed_spec_set_items: KeyedSet[KeyedSpec, str]
     recursive: Spec
 
 
@@ -74,6 +76,7 @@ class TestFramework:
             "key",
             "keyed_spec_dict_items",
             "keyed_spec_list_items",
+            "keyed_spec_set_items",
             "list_values",
             "set_values",
             "scalar",
@@ -158,6 +161,7 @@ class TestFramework:
             "key",
             "keyed_spec_dict_items",
             "keyed_spec_list_items",
+            "keyed_spec_set_items",
             "list_values",
             "recursive",
             "scalar",
@@ -212,6 +216,7 @@ class TestFramework:
             spec_dict_items=MISSING,
             keyed_spec_list_items=MISSING,
             keyed_spec_dict_items=MISSING,
+            keyed_spec_set_items=MISSING,
             recursive=Spec(
                 key='nested',
                 scalar=MISSING,
@@ -223,6 +228,7 @@ class TestFramework:
                 spec_dict_items=MISSING,
                 keyed_spec_list_items=MISSING,
                 keyed_spec_dict_items=MISSING,
+                keyed_spec_set_items=MISSING,
                 recursive=MISSING
             )
         )
@@ -241,8 +247,9 @@ class TestFramework:
         ).__repr__(indent=False) == (
             "Spec(key='key', scalar=MISSING, list_values=[1, 2, 3], dict_values={'a': 1, 'b': 2}, set_values={'a'}, "
             "spec=MISSING, spec_list_items=MISSING, spec_dict_items=MISSING, keyed_spec_list_items=MISSING, keyed_spec_dict_items=MISSING, "
-            "recursive=Spec(key='nested', scalar=MISSING, list_values=MISSING, dict_values=MISSING, set_values=MISSING, spec=MISSING, "
-            "spec_list_items=MISSING, spec_dict_items=MISSING, keyed_spec_list_items=MISSING, keyed_spec_dict_items=MISSING, recursive=MISSING))"
+            "keyed_spec_set_items=MISSING, recursive=Spec(key='nested', scalar=MISSING, list_values=MISSING, dict_values=MISSING, "
+            "set_values=MISSING, spec=MISSING, spec_list_items=MISSING, spec_dict_items=MISSING, keyed_spec_list_items=MISSING, "
+            "keyed_spec_dict_items=MISSING, keyed_spec_set_items=MISSING, recursive=MISSING))"
         )
 
         with pytest.raises(
@@ -287,6 +294,7 @@ class TestFramework:
                 spec_dict_items=MISSING,
                 keyed_spec_list_items=MISSING,
                 keyed_spec_dict_items=MISSING,
+                keyed_spec_set_items=MISSING,
                 recursive=MISSING
             )
         """
@@ -1393,3 +1401,47 @@ class TestSetAttribute:
 
         assert spec.without_set_value("a").set_values == {"b"}
         assert spec.without_set_value("a", _if=False).set_values == {"a", "b"}
+
+
+class TestSpecSetAttribute:
+    def test_with(self, spec_cls):
+
+        spec = spec_cls()
+        assert set(
+            inspect.Signature.from_callable(spec.with_keyed_spec_set_item).parameters
+        ) == {
+            "_item",
+            "_inplace",
+            "_if",
+            "key",
+            "nested_scalar",
+            "nested_scalar2",
+        }
+
+        # Constructors
+        assert "spec_dict_items" not in spec.__dict__
+        keyed = KeyedSpec()
+        assert keyed in spec.with_keyed_spec_set_item(keyed).keyed_spec_set_items
+
+        # Insert
+        assert (
+            sorted(
+                spec.with_keyed_spec_set_item(keyed)
+                .with_keyed_spec_set_item("b", nested_scalar=3)
+                .keyed_spec_set_items,
+                key=lambda x: x.key,
+            )
+            == [KeyedSpec("b", nested_scalar=3), keyed]
+        )
+        assert (
+            sorted(
+                spec.with_keyed_spec_set_item("b", nested_scalar=3)
+                .with_keyed_spec_set_item("b", nested_scalar=10)
+                .keyed_spec_set_items,
+                key=lambda x: x.key,
+            )
+            == [KeyedSpec("b", nested_scalar=10)]
+        )
+
+    # The rest of the set-container behavior is covered already in `KeyedSpec`
+    # tests and in `TestSetAttribute`.

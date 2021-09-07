@@ -1,6 +1,6 @@
 import functools
 from inspect import Parameter
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Union
 
 from spec_classes.types import Attr, MISSING
 from spec_classes.utils.method_builder import MethodBuilder
@@ -8,6 +8,19 @@ from spec_classes.utils.mutation import mutate_attr
 from spec_classes.utils.type_checking import type_label
 
 from ..base import AttrMethodDescriptor
+
+
+def _get_set_item_type(attr_spec):
+    """
+    Get the type(s) of items for set method signatures.
+    """
+    item_type = attr_spec.item_type
+    if attr_spec.item_spec_key_type:
+        item_type = Union[
+            attr_spec.item_spec_key_type,
+            item_type,
+        ]
+    return item_type
 
 
 class WithSetItemMethod(AttrMethodDescriptor):
@@ -53,6 +66,7 @@ class WithSetItemMethod(AttrMethodDescriptor):
         )
 
     def build_method(self) -> Callable:
+        fn_item_type = _get_set_item_type(self.attr_spec)
         return (
             MethodBuilder(
                 self.name,
@@ -65,7 +79,7 @@ class WithSetItemMethod(AttrMethodDescriptor):
                 "_item",
                 desc=f"A new `{type_label(self.attr_spec.item_type)}` instance for {self.attr_spec.name}.",
                 default=MISSING if self.attr_spec.item_spec_type else Parameter.empty,
-                annotation=self.attr_spec.item_type,
+                annotation=fn_item_type,
             )
             .with_arg(
                 "_inplace",
@@ -139,6 +153,7 @@ class TransformSetItemMethod(AttrMethodDescriptor):
         )
 
     def build_method(self) -> Callable:
+        fn_item_type = _get_set_item_type(self.attr_spec)
         return (
             MethodBuilder(
                 self.name,
@@ -150,13 +165,13 @@ class TransformSetItemMethod(AttrMethodDescriptor):
             .with_arg(
                 "_item",
                 desc="The value to transform.",
-                annotation=self.attr_spec.item_type,
+                annotation=fn_item_type,
             )
             .with_arg(
                 "_transform",
                 desc="A function that takes the old item as input, and returns the new item.",
                 default=MISSING if self.attr_spec.item_spec_type else Parameter.empty,
-                annotation=Callable,
+                annotation=Callable[[fn_item_type], fn_item_type],
             )
             .with_arg(
                 "_inplace",
@@ -218,6 +233,7 @@ class WithoutSetItemMethod(AttrMethodDescriptor):
         )
 
     def build_method(self) -> Callable:
+        fn_item_type = _get_set_item_type(self.attr_spec)
         return (
             MethodBuilder(
                 self.name,
@@ -229,7 +245,7 @@ class WithoutSetItemMethod(AttrMethodDescriptor):
             .with_arg(
                 "_item",
                 desc="The value to remove.",
-                annotation=self.attr_spec.item_type,
+                annotation=fn_item_type,
             )
             .with_arg(
                 "_inplace",
