@@ -2,7 +2,8 @@ This section of the documentation is an introduction to the practical use of
 `spec_classes`. If you are interested
 in deeply understanding spec-classes, it is recommended you read the following
 subsections in order, as each subsection assumes knowledge introduced
-previously.
+previously. If you only want a quick sense of what spec-classes look like,
+please refer to the [Examples](../examples/index.md) section.
 
 !!! note
     This documentation is predominantly targeted at developers integrating

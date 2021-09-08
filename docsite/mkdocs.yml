@@ -1,6 +1,12 @@
 site_name: Spec Classes
 pages:
   - Introduction: index.md
+  - Examples:
+    - Overview: examples/index.md
+    - Basic: examples/basic.md
+    - Collections: examples/collections.md
+    - Dataclass Interoperability: examples/dataclasses.md
+    - Preparation/Typecasting: examples/preparation.md
   - Usage:
     - Overview: usage/index.md
     - Basic Usage: usage/basic.md
