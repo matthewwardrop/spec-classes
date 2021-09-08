@@ -375,9 +375,7 @@ class spec_class:
                 setattr(
                     spec_cls,
                     attr,
-                    attr_value.default_factory()
-                    if attr_value.default_factory
-                    else attr_value.default,
+                    attr_value.default_value,
                 )
                 owner = spec_cls  # If an Attr was declared, this spec-class should own the attribute.
             attr_spec = Attr.from_attr_value(

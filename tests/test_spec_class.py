@@ -649,10 +649,10 @@ class TestFramework:
             a_overridden: int
             a_defaulted: int
 
-            def __init__(self, a=MISSING, a_overridden=MISSING, a_defaulted=MISSING):
-                self.a = 100
-                self.a_overridden = 100
-                self.a_defaulted = 100
+            def __init__(self, a=100, a_overridden=100, a_defaulted=100):
+                self.a = a + 1
+                self.a_overridden = a_overridden + 1
+                self.a_defaulted = a_defaulted + 1
 
         @spec_class
         class B:
@@ -664,10 +664,12 @@ class TestFramework:
         @spec_class
         class C(A, B):
             a_overridden: int = 10
-            a_defaulted = 10
+            a_defaulted = (
+                10  # default changed, but not owner. Passed to super constructor.
+            )
             c: int
 
-        assert A().a_overridden == 100
+        assert A().a_overridden == 101
         assert list(C().__spec_class__.annotations) == [
             "b",
             "a",
@@ -675,12 +677,12 @@ class TestFramework:
             "a_defaulted",
             "c",
         ]
-        assert C().a == 100
+        assert C().a == 101
         assert C().a_overridden == 10
-        assert C().a_defaulted == 100
+        assert C().a_defaulted == 11
         assert C().b == 100
         assert not hasattr(C(), "c")
-        assert C(a=1).a == 100
+        assert C(a=1).a == 2
         assert C(b=1).b == 100
 
     def test_class_attribute_masking(self):

@@ -49,13 +49,15 @@ class InitMethod(MethodDescriptor):
         for parent in spec_cls.__bases__:
             parent_metadata = getattr(parent, "__spec_class__", None)
             if parent_metadata:
-                parent_kwargs = {
-                    attr: kwargs.pop(attr)
-                    for attr in list(kwargs)
-                    if attr in parent_metadata.attrs
-                    and instance_metadata.attrs[attr].owner is parent
-                }
-                print(kwargs)
+                parent_kwargs = {}
+                for attr in parent_metadata.attrs:
+                    instance_attr_spec = instance_metadata.attrs[attr]
+                    if instance_attr_spec.owner is not parent:
+                        continue
+                    if attr in kwargs:
+                        parent_kwargs[attr] = kwargs.pop(attr)
+                    elif instance_attr_spec.has_default:
+                        parent_kwargs[attr] = instance_attr_spec.default_value
                 if parent_metadata.key and parent_metadata.key not in parent_kwargs:
                     parent_kwargs[parent_metadata.key] = MISSING
                 parent.__init__(self, **parent_kwargs)
@@ -87,8 +89,8 @@ class InitMethod(MethodDescriptor):
                         copy_required = True
                         break
 
-                # Attempt to lookup from class attr
-                value = getattr(self.__class__, attr, MISSING)
+                # Lookup from `Attr`
+                value = attr_spec.default_value
                 copy_required = True
                 break
 
@@ -136,12 +138,7 @@ class InitMethod(MethodDescriptor):
             # If the key has a default, don't require it to be set during
             # construction.
             key_default = (
-                MISSING
-                if (
-                    spec_class_key_spec.default_factory is not MISSING
-                    or spec_class_key_spec.default is not MISSING
-                )
-                else inspect.Parameter.empty
+                MISSING if spec_class_key_spec.has_default else inspect.Parameter.empty
             )
 
         return (
