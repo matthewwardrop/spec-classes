@@ -9,7 +9,7 @@ from typing import Any, Callable, Dict, List, Set
 import pytest
 
 from spec_classes import Attr, FrozenInstanceError, MISSING, spec_class
-from spec_classes.spec_class import SpecClassMetadata, SpecClassMetadataPlaceholder
+from spec_classes.spec_class import SpecClassMetadata, _SpecClassMetadataPlaceholder
 from spec_classes.types import KeyedSet
 
 
@@ -59,7 +59,7 @@ class TestFramework:
             a: int
 
         assert isinstance(
-            MyClass.__dict__["__spec_class__"], SpecClassMetadataPlaceholder
+            MyClass.__dict__["__spec_class__"], _SpecClassMetadataPlaceholder
         )
         assert MyClass(a=1).a == 1
         assert isinstance(MyClass.__dict__["__spec_class__"], SpecClassMetadata)

@@ -12,71 +12,13 @@ from spec_classes.methods.scalar import SCALAR_METHODS
 from .types import Attr, MISSING, spec_property
 
 
-@dataclasses.dataclass
-class SpecClassMetadata:
-    @classmethod
-    def for_class(cls, spec_cls):
-        metadata = MISSING
-        for klass in spec_cls.mro()[1:]:
-            if klass.__dict__.get("__spec_class__", MISSING) is not MISSING:
-                metadata = klass.__spec_class__
-                break
-        if metadata is MISSING:
-            return cls(owner=spec_cls)
-
-        attrs_inherited = {}
-
-        for parent in reversed(spec_cls.__bases__):
-            parent_metadata = getattr(parent, "__spec_class__", None)
-            if parent_metadata:
-                attrs_inherited.update(parent_metadata.attrs)
-
-        return cls(
-            owner=spec_cls,
-            key=metadata.key,
-            init_overflow_attr=metadata.init_overflow_attr,
-            frozen=metadata.frozen,
-            do_not_copy=False,  # We always reset this (but attributes inherited will not be copied unless overridden)
-            attrs=attrs_inherited,
-        )
-
-    owner: Type
-    key: Optional[str] = None
-    init_overflow_attr: Optional[str] = None
-    frozen: bool = False
-    do_not_copy: bool = False
-    attrs: Dict[str, Attr] = dataclasses.field(default_factory=dict)
-    deferred_bootstrap: Optional[Callable] = None
-
-    @spec_property(cache=True, overridable=False)
-    def annotations(self):
-        return {attr: spec.type for attr, spec in self.attrs.items()}
-
-    @spec_property(cache=True, overridable=False)
-    def invalidation_map(self):
-        invalidation_map = defaultdict(set)
-        for attr, attr_spec in self.attrs.items():
-            for invalidator in attr_spec.invalidated_by or ():
-                invalidation_map[invalidator].add(attr)
-        return invalidation_map
-
-
-@dataclasses.dataclass
-class SpecClassMetadataPlaceholder:
-
-    bootstrapper: Callable
-
-    def __get__(self, instance, owner):
-        self.bootstrapper()
-        return owner.__spec_class__
-
-
 class spec_class:
     """
-    A class decorator that adds `with_<field>`, `transform_<field>` and
-    `without_<field>` methods to a class in order to simplify the incremental
-    building and mutating of specification objects. By default these methods
-    return a new instance decorated class, with the appropriate field mutated.
+    A class decorator that converts an ordinary class into a spec-class.
+
+    This class can be used as a decorator to mutate incoming class by adding
+    helper methods and various dunder methods (like `__init__`, `__repr__`,
+    etc), as described in the [documentation](https://matthewwardrop.github.io/spec-classes).
 
     It can be used directly on a class, for example:
     >>> @spec_class
@@ -97,6 +39,7 @@ class spec_class:
         - `with_<attribute>(...)`: Update the attribute value.
         - `transform_<attribute>(...)`: Update the attribute value by calling
             a passed function on the existing value.
+        - `reset_<attribute>(...)`: Reset an attribute to the default value.
     - collection types (sequence, mapping, set):
         - `with_<singular_noun_for_attribute>(...)`: Add/modify a member of the
             collection.
@@ -112,74 +55,8 @@ class spec_class:
     method `with_foo` method will have signature:
     `with_foo(<spec>, *, _index=MISSING, _insert=False, <all attributes of foo>=MISSING)`
 
-    If the attribute type (or type stored by a collection) is annoted by
-    `spec_cls` and a key attribute has been specified, then in collections the
-    key of the element can additionally be used to directly look up elements.
-
     For more information, you can look up the generated docstrings on any of
     these methods.
-
-    Notes:
-        * `spec_cls` "upgrades" all classes to be dataclasses. As always,
-            if you have already implemented __init__, it won't be overridden.
-        * Any attribute passed to `spec_cls` (or all attributes if none are
-            explicitly passed to the constructor) should be both gettable and
-            settable (i.e., no read-only properties). Where this is not
-            satisfied you will need to implement your own `with_*`, `transform_*`
-            and `without_*` methods (`spec_cls` will never clobber existing
-            methods).
-        * For any attribute managed by `spec_cls`, it should be possible to
-            construct an instance of the decorated class using
-            `cls(**attributes)`. This is used whenever a decorated class refers
-            to other types decorated by `spec_cls`.
-
-    Examples:
-    (1) Simple example
-        @spec_class
-        class Foo:
-            key: str
-            value: int
-
-        @SpecClass(foo=Foo)
-        class Bar:
-            foo: Foo = Foo('k', 1)
-
-        Bar().with_foo(Foo('k2', 2)).foo  # Foo('k2', 2)
-        Bar().with_foo(value=3).foo  # Foo('k', 3)
-        Bar().transform_foo(lambda x: x.with_value(10)).foo  # Foo('k', 10)
-
-    (2) A class demonstrating all functionalities. You can experiment with this
-        class and/or look up its docstrings in order to understand how
-        everything works.
-
-        @spec_class
-        class UnkeyedSpec:
-            nested_scalar: int = 1
-            nested_scalar2: str = 'original value'
-
-        @spec_class(key='key')
-        class KeyedSpec:
-            key: str = 'key'
-            nested_scalar: int = 1
-            nested_scalar2: str = 'original value'
-
-
-        @spec_class(key='key')
-        class Spec:
-            key: str = None
-            scalar: int = None
-            list_values: List[int] = None
-            dict_values: Dict[str, int] = None
-            set_values: Set[str] = None
-            spec: UnkeyedSpec = None
-            spec_list_items: List[UnkeyedSpec] = None
-            spec_dict_items: Dict[str, UnkeyedSpec] = None
-            keyed_spec_list_items: List[KeyedSpec] = None
-            keyed_spec_dict_items: Dict[str, KeyedSpec] = None
-            recursive: Spec = None
-
-    For more complete examples, refer to the method docstrings, or to the unit
-    tests which thoroughly test example (2) above.
     """
 
     def __new__(cls, *args, **kwargs):
@@ -307,7 +184,7 @@ class spec_class:
         if self.bootstrap_immediately:
             self.bootstrap(spec_cls)
         else:
-            spec_cls.__spec_class__ = SpecClassMetadataPlaceholder(
+            spec_cls.__spec_class__ = _SpecClassMetadataPlaceholder(
                 lambda: self.bootstrap(spec_cls)
             )
             orig_new = spec_cls.__new__ if "__new__" in spec_cls.__dict__ else None
@@ -640,3 +517,124 @@ class spec_class:
         if hasattr(method, "__set_name__"):
             method.__set_name__(spec_cls, name)
         setattr(spec_cls, name, method)
+
+
+@dataclasses.dataclass
+class SpecClassMetadata:
+    """
+    A container for the metadata stored on spec-class. It is constructed by the
+    `spec_class` class below.
+
+    Attributes:
+        Passable via constructor:
+            owner: The spec-class to which this metadata belongs.
+            key: The name of the attribute to use as the "key" for the spec class,
+                or `None` if there is no key attribute.
+            init_overflow_attr: The attribute into which additional kwarg arguments
+                pass to the constructor should be dumped. If not present, no
+                overflow occurs and this is `None`.
+            frozen: Whether instances of the spec-class to which this metadata
+                belongs should be considered frozen.
+            do_not_copy: Whether instances of the spec-class to which this metadata
+                belongs should be copied. If `True`, all operations are inplace.
+            attrs: The attributes associated with the spec-class.
+
+        Generated (and cached) properties:
+            annotations: A mapping from attribute name to type for all of the
+                attributes. Generated from `.attrs`.
+            invalidation_map: A mapping of attribute names to the attributes
+                which are invalided when that attribute is mutated. Generated
+                from `.attrs`.
+    """
+
+    @classmethod
+    def for_class(cls, spec_cls: Type) -> SpecClassMetadata:
+        """
+        Generate a new instance of `SpecClassMetadata` for the nominated `spec_cls`.
+
+        This constructor either returns the an empty instance if none of the
+        bases of `spec_cls` are a spec-class, or a new instance with attributes
+        and features inherited from the parent class.
+
+        Args:
+            spec_cls: The spec-class for which a `SpecClassMetadata` instance
+                should be generated.
+        """
+        metadata = MISSING
+        for klass in spec_cls.mro()[1:]:
+            if klass.__dict__.get("__spec_class__", MISSING) is not MISSING:
+                metadata = klass.__spec_class__
+                break
+        if metadata is MISSING:
+            return cls(owner=spec_cls)
+
+        attrs_inherited = {}
+
+        for parent in reversed(spec_cls.__bases__):
+            parent_metadata = getattr(parent, "__spec_class__", None)
+            if parent_metadata:
+                attrs_inherited.update(parent_metadata.attrs)
+
+        return cls(
+            owner=spec_cls,
+            key=metadata.key,
+            init_overflow_attr=metadata.init_overflow_attr,
+            frozen=metadata.frozen,
+            do_not_copy=False,  # We always reset this (but attributes inherited will not be copied unless overridden)
+            attrs=attrs_inherited,
+        )
+
+    owner: Type
+    key: Optional[str] = None
+    init_overflow_attr: Optional[str] = None
+    frozen: bool = False
+    do_not_copy: bool = False
+    attrs: Dict[str, Attr] = dataclasses.field(default_factory=dict)
+
+    @spec_property(cache=True, overridable=False)
+    def annotations(self):
+        """
+        A mapping from attribute name to type for all of the attributes.
+        Generated from `.attrs`.
+        """
+        return {attr: spec.type for attr, spec in self.attrs.items()}
+
+    @spec_property(cache=True, overridable=False)
+    def invalidation_map(self):
+        """
+        A mapping of attribute names to the attributes which are invalided when
+        that attribute is mutated. Generated from `.attrs`.
+        """
+        invalidation_map = defaultdict(set)
+        for attr, attr_spec in self.attrs.items():
+            for invalidator in attr_spec.invalidated_by or ():
+                invalidation_map[invalidator].add(attr)
+        return invalidation_map
+
+
+@dataclasses.dataclass
+class _SpecClassMetadataPlaceholder:
+    """
+    A placeholder for a `SpecClassMetadata` instance on a to-be spec-class.
+    When it is inspected, it causes the associated `__spec_class__` instance to
+    be bootstrapped. This allows modules to be fully loaded before types are
+    looked up from type annotations, prevent cyclic import errors. This is not
+    the only what that a spec-class can be bootstrapped (instantiating a
+    spec-class also triggers instantiation).
+
+    This class is for internal use only.
+
+    Attributes:
+        bootstrapper: The callable to evaluate in order to bootstrap the
+            spec-class to which it is attached.
+    """
+
+    bootstrapper: Callable[[], None]
+
+    def __get__(self, instance, owner):
+        """
+        Bootstrap the spec-class to which this attached (`owner`) if/when it is
+        looked up on the class.
+        """
+        self.bootstrapper()
+        return owner.__spec_class__
