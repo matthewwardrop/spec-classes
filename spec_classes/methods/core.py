@@ -94,11 +94,7 @@ class InitMethod(MethodDescriptor):
                 copy_required = True
                 break
 
-            if not (  # Avoid attempting to override a method or descriptor
-                value is MISSING
-                or inspect.isfunction(value)
-                or inspect.isdatadescriptor(value)
-            ):
+            if value is not MISSING:
                 if copy_required and not isinstance(value, (int, str, tuple)):
                     value = copy.deepcopy(value)
                 setattr(self, attr, value)
@@ -255,8 +251,7 @@ class DelAttrMethod(MethodDescriptor):
                 force
                 or not attr_spec
                 or attr_spec.default is MISSING
-                or inspect.isfunction(attr_spec.default)
-                or inspect.isdatadescriptor(attr_spec.default)
+                or attr_spec.is_masked
             ):
                 self.__delattr__.__raw__(self, attr)
                 invalidate_attrs(self, attr)

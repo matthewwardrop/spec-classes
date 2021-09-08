@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import dataclasses
 import functools
+import inspect
 from collections.abc import MutableMapping, MutableSequence, MutableSet
 from typing import Any, Callable, Iterable, Optional, TYPE_CHECKING, Type
 
@@ -74,6 +75,8 @@ class Attr:
                 attribute. If a spec-class is a subclass of another spec-class,
                 this may not be the same as the class of the current spec-class
                 instance.
+            is_masked: Whether the attribute is masked by a method or
+                descriptor.
             helper_methods: The method (descriptor)s to add to the class in
                 order to help manage this attribute.
             prepare: A optional callable used to cast incoming attribute values
@@ -122,6 +125,9 @@ class Attr:
                 metadata=value.metadata,
             )
         else:
+            # If attribute is a function or descriptor, we shouldn't interfere with them.
+            if inspect.isfunction(value) or inspect.isdatadescriptor(value):
+                kwargs["is_masked"] = True
             attr_spec = Attr(default=value)
 
         attr_spec.name = name
@@ -165,6 +171,7 @@ class Attr:
         self.name: str = None
         self.type: Type = None
         self.owner: Type = None
+        self.is_masked: bool = False
         self.helper_methods: Optional[Iterable[AttrMethodDescriptor]] = None
         self.prepare: Optional[Callable[[Any], Any]] = None
         self.prepare_item: Optional[Callable[[Any], Any]] = None
@@ -244,6 +251,8 @@ class Attr:
         A default value for this `Attr` (evaluating `default_factory`) if
         necessary.
         """
+        if self.is_masked:
+            return MISSING
         if self.default_factory:
             return self.default_factory()
         return self.default

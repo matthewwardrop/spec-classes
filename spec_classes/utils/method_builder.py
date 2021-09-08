@@ -285,12 +285,7 @@ class MethodBuilder:
                 else attr_spec.desc
             )
             annotations[attr] = attr_spec.type
-            defaults[attr] = (
-                attr_spec.default
-                if not inspect.isfunction(attr_spec.default)
-                and not inspect.isdatadescriptor(attr_spec.default)
-                else MISSING
-            )
+            defaults[attr] = MISSING if attr_spec.is_masked else attr_spec.default
 
         self.with_args(
             args=args,
