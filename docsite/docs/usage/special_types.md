@@ -4,22 +4,57 @@ types from the standard library or any custom type you choose. However, the
 enrich your spec classes (or indeed any class). These are detailed below, and
 are all available by importing from `spec_classes.types`.
 
-## Sentinels
+## Attribute specification
 
-It is often useful to have at least one value reserved for use as a sentinel.
-Depending on the context they can be interpreted as an failure state or trigger
-some fallback behavior. In `spec_classes`, we use `MISSING`.
+In most cases, you can simply set spec-class attribute defaults (and or lack
+thereof) directly in the class definition. This attribute will then be "managed",
+and included in the constructor, equality comparisons, representations, etc.
+However, in some cases you need to customize this behavior... and that's where
+`field` and `Attr` come in.
 
-### `MISSING`
+### `field`
 
-In `spec_classes`, `spec_classes.MISSING` is the sentinel used to indicate that
-an attribute or argument value has not (yet) been provided. If you are using
-spec-classes in your project, you can feel free to use this sentinel also.
+Spec-classes is compatible with the standard-libraries dataclass
+[field specification](https://docs.python.org/3/library/dataclasses.html#dataclasses.field),
+so you can use that directly as the attribute values in spec-classes just as you
+would in a dataclass. However, in most cases you will want to use `Attr` below.
 
-`MISSING` is implemented in `spec_classes.types.missing`, and is an instance of
-the singleton class `_MissingType` (every instantiation will return the same
-instance). `MISSING` is falsey (`bool(MISSING) is False`), but otherwise cannot
-be compared to anything else. Its string representation is `'MISSING'`.
+### `Attr`
+
+`Attr` is to `spec_class` what `field` is to `dataclass`, and it offers a
+superset of the API of `field`, making it a drop in replacement. The signature
+of `Attr` is:
+```python
+Attr(
+    *,
+    default: Any = MISSING,
+    default_factory: Callable[[], Any] = MISSING,
+    init: bool = True,
+    repr: bool = True,
+    compare: bool = True,
+    hash: Optional[bool] = None,
+    metadata: Optional[Any] = None,
+    desc: Optional[str] = None,
+    do_not_copy: bool = False,
+    invalidated_by: Optional[Iterable[str]] = None,
+)
+```
+
+The default value for the attribute is set by either `default` or `default_factory`,
+and `init`, `repr`, `compare` and `hash` control whether the attribute is
+considered by `__init__`, `__repr__`, `__eq__` and `__hash__` respectively.
+Metadata is an arbitrary object that is not looked at by spec-classes. `desc`
+is a docstring for the attribute. `do_not_copy` is an instruction to
+spec-classes not to copy the attribute, and so when the parent spec-class is
+copied the new spec-class instance will have a reference to the same attribute.
+`invalidated_by` is an instruction to spec-classes to reset this attribute
+whenever the attributes in this list are mutated.
+
+!!! note
+    Hashing is not yet implemented by spec-classes, but is provided here for
+    API compatibility. Ordering of spec-classes is also not yet implemented.
+
+For more information, refer to `help(Attr)`.
 
 ## Validated Types
 
@@ -32,9 +67,9 @@ validation types (all of which are implemented in
 
 ### `ValidatedType`
 
-This is the base class that powers all validated type checking offered by 
-`spec_classes`. It translates `isinstance(obj, ValidatedType)` into 
-`ValidatedType.validate(obj)`, allowing for arbitrary validation logic. To 
+This is the base class that powers all validated type checking offered by
+`spec_classes`. It translates `isinstance(obj, ValidatedType)` into
+`ValidatedType.validate(obj)`, allowing for arbitrary validation logic. To
 leverage this you can either subclass this class, or use the `validated` wrapper
 below.
 
@@ -60,7 +95,7 @@ class MySpec:
 
 ### `validated`
 
-`validated` is a wrapper around `ValidatedType` that bypasses the need to 
+`validated` is a wrapper around `ValidatedType` that bypasses the need to
 manually subclass. Instead, you  can just call this function to generate a type
 and use it inline or via variable. This signature of this function is:
 
@@ -315,3 +350,20 @@ m.label  # 'Object 1'
 m.label = "My Object"
 m.label  # 'My Object'
 ```
+
+## Sentinels
+
+It is often useful to have at least one value reserved for use as a sentinel.
+Depending on the context they can be interpreted as an failure state or trigger
+some fallback behavior. In `spec_classes`, we use `MISSING`.
+
+### `MISSING`
+
+In `spec_classes`, `spec_classes.MISSING` is the sentinel used to indicate that
+an attribute or argument value has not (yet) been provided. If you are using
+spec-classes in your project, you can feel free to use this sentinel also.
+
+`MISSING` is implemented in `spec_classes.types.missing`, and is an instance of
+the singleton class `_MissingType` (every instantiation will return the same
+instance). `MISSING` is falsey (`bool(MISSING) is False`), but otherwise cannot
+be compared to anything else. Its string representation is `'MISSING'`.
