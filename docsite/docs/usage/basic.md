@@ -26,7 +26,7 @@ The result is a class that:
 
 - Thoroughly type-checks class attributes whenever and however they are mutated.
 - Has helper methods that assist with the mutation of annotated attributes,
-  allowing one to adopt copy-on-write workflows (see [below](#helper-methods) 
+  allowing one to adopt copy-on-write workflows (see [below](#helper-methods)
   for more details).
 - Knows how to output a human-friendly representation of the spec class when
   printed.
@@ -40,39 +40,39 @@ import copy
 from spec_classes import MISSING
 
 class MySpec:
-    
+
     def __init__(self, my_str=MISSING)
         if my_str is not MISSING:
             self.my_str = my_str
-    
+
     def __repr__(self):
         return f"MySpec(my_str={getattr(self, 'my_str', MISSING)}")
-    
+
     def __eq__(self, other):
         return isinstance(other, MySpec) and getattr(self, 'my_str') == getattr(other, 'my_str')
-    
+
     def __setattr__(self, attr, value):
         if attr == 'my_str' and not isinstance(my_str, str):
             raise TypeError("`MySpec.my_str` should be a string.")
         super().__setattr__(attr, value)
-    
+
     def with_my_str(self, value):
         obj = copy.deepcopy(self)
         obj.my_str = value
         return obj
-    
+
     def transform_my_str(self, transform):
         obj = copy.deepcopy(self)
         obj.my_str = transform(self.my_str)
         return obj
-    
+
     def reset_my_str(self):
         obj = copy.deepcopy(self)
         del obj.my_str
         return obj
 ```
 
-The remainder of this documentation is dedicated to exploring exactly which 
+The remainder of this documentation is dedicated to exploring exactly which
 attributes get managed by spec-classes, which methods get generated when, and so
 on.
 
@@ -190,28 +190,6 @@ and any mutation. Attempts to set attributes to an invalid type will result in a
 MySpec(my_str=1)  # TypeError: Attempt to set `MySpec.my_str` with an invalid type [got `1`; expecting `str`].
 ```
 
-## Frozen spec classes
-
-By default, instances of spec-classes behave much like any other instance in
-that you can mutate attributes in-place. If you would like to prevent in-place mutation, you
-can use the `frozen` keyword argument to the constructor. For example:
-
-```python
-@spec_class(frozen=True)
-class MyClass:
-    my_str: str
-
-MyClass().my_str = "hi"  # FrozenInstanceError: Cannot mutate attribute `my_str` of frozen spec class `MySpec`.
-```
-
-!!! note
-    Frozen spec class instances can still be updated using the copy-on-write
-    helper methods (introduced below):
-
-    ```python
-    MySpec().with_my_str("hi")  # MyClass(my_str="hi")
-    ```
-
 ## Helper methods
 
 To simplify the adoption of copy-on-write workflows, and to make mutation of
@@ -257,7 +235,7 @@ class ClassExaminationResults:
     .with_student_grade('Jane', 14.1)
     .without_student_grade('Jerry')
     .transform_teacher_name(lambda name: 'Mrs. Elocution')
-) 
+)
 # ClassExaminationResults(
 #   teacher_name='Mrs. Elocution',
 #   student_grades={
