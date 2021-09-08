@@ -237,6 +237,25 @@ class Attr:
             ]
         return None
 
+    # Helpers
+    @property
+    def default_value(self) -> Any:
+        """
+        A default value for this `Attr` (evaluating `default_factory`) if
+        necessary.
+        """
+        if self.default_factory:
+            return self.default_factory()
+        return self.default
+
+    @property
+    def has_default(self) -> bool:
+        """
+        Whether this attribute has a default value or default value factory.
+        The default factory is *not* evaluated by this method.
+        """
+        return self.default is not MISSING or self.default_factory is not MISSING
+
     # Decorators
 
     def preparer(self, fpreparer: Optional[Callable[[Any], Any]]) -> Attr:

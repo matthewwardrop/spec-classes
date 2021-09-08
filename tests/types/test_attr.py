@@ -56,6 +56,15 @@ class TestAttr:
         ):
             Attr(default="Hi", default_factory=lambda: "Hi")
 
+    def test_default_helpers(self):
+        assert Attr(default="Hi").has_default
+        assert Attr(default_factory=lambda: "Hi").has_default
+        assert not Attr().has_default
+
+        assert Attr(default="Hi").default_value == "Hi"
+        assert Attr(default_factory=lambda: "Hi").default_value == "Hi"
+        assert Attr().default_value is MISSING
+
     def test_set_name(self):
         class MyClass:
             a: int = Attr(default=Attr())
