@@ -616,10 +616,16 @@ class TestFramework:
             def overridden(self):
                 return 2.0
 
+        class C(A):
+            overridden = 2.0
+
         assert B("foo").key == "foo"
         assert B(key="foo").key == "foo"
         assert B("foo", field=10).field == 10
         assert B("foo", value="bar").value == "bar"
+        assert B("foo").overridden == 2.0
+
+        assert C("foo").overridden == 2.0
 
     def test_respect_super_init(self):
         @spec_class

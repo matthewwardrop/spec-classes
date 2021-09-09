@@ -78,8 +78,8 @@ class InitMethod(MethodDescriptor):
             if value is not MISSING:
                 copy_required = not attr_spec.do_not_copy
             else:
-                value = attr_spec.default_value
-                copy_required = not attr_spec.default_factory
+                value = attr_spec.lookup_default_value(self.__class__)
+                copy_required = False
 
             if value is not MISSING:
                 if copy_required and not isinstance(
