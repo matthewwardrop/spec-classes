@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 from typing import List
 
@@ -135,6 +137,11 @@ def test_mutate_value():
         ValueError, match="Cannot use attrs on a missing value without a constructor."
     ):
         assert mutate_value(MISSING, attrs={"invalid_attr": "value"})
+
+    # Verify that construction is not recursive.
+    assert not hasattr(
+        mutate_value(MISSING, constructor=Spec, attrs={"scalar": MISSING}), "scalar"
+    )
 
 
 def test__get_function_args():

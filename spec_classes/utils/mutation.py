@@ -123,6 +123,7 @@ def mutate_value(
         The mutated object.
     """
     mutate_safe = False
+    used_attrs = set()
 
     # If `new_value` is not `MISSING`, use it; otherwise use `old_value` if not
     # `replace`; otherwise use MISSING.
@@ -145,24 +146,27 @@ def mutate_value(
             constructor = constructor.__origin__
         if attrs:
             constructor_args = _get_function_args(constructor, attrs)
+            used_attrs.update(constructor_args)
             value = constructor(
                 **{
                     attr: value
-                    for attr, value in (attrs or {}).items()
-                    if attr in constructor_args
+                    for attr, value in attrs.items()
+                    if attr in constructor_args and value is not MISSING
                 }
             )
         else:
             value = constructor()
 
-    # If there are any attributes to apply to our value, we do so here,
-    # special casing any spec classes.
+    # If there are any left-over attributes to apply to our value, we do so here.
     if value is not None and value is not MISSING and attrs:
         if not mutate_safe:
             value = copy.deepcopy(value)
             mutate_safe = True
         for attr, attr_value in attrs.items():
-            setattr(value, attr, attr_value)
+            if attr in used_attrs:
+                continue
+            if attr_value is not MISSING:
+                setattr(value, attr, attr_value)
     elif attrs:
         raise ValueError("Cannot use attrs on a missing value without a constructor.")
 
