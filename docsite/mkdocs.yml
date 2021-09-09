@@ -15,9 +15,8 @@ pages:
     - Special Types: usage/special_types.md
     - Advanced Usage: usage/advanced.md
   - Implementation Details:
-    - How it works: implementation/how_it_works.md
-    - Architecture: implementation/architecture.md
-    - Performance: implementation/performance.md
+    - How It Works: implementation/how_it_works.md
+    - Performance Implications: implementation/performance.md
 theme:
   name: material
   features:
