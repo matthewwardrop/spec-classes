@@ -62,8 +62,6 @@ class InitMethod(MethodDescriptor):
                     parent_kwargs[parent_metadata.key] = MISSING
                 parent.__init__(self, **parent_kwargs)
 
-        get_attr_default = getattr(self, "__spec_class_get_attr_default__", None)
-
         # For each attribute owned by this spec_cls in `instance_metadata`,
         # initalize the attribute.
         for attr, attr_spec in instance_metadata.attrs.items():
@@ -81,13 +79,6 @@ class InitMethod(MethodDescriptor):
                 if value is not MISSING:
                     copy_required = not attr_spec.do_not_copy
                     break
-
-                # Attempt to lookup from class default getter
-                if get_attr_default:
-                    value = get_attr_default(attr)
-                    if value is not MISSING:
-                        copy_required = True
-                        break
 
                 # Lookup from `Attr`
                 value = attr_spec.default_value
