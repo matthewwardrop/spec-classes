@@ -136,11 +136,6 @@ def mutate_value(
     if isinstance(value, Proxy):
         value = value.__wrapped__
 
-    # Clean up attrs
-    attrs = {
-        attr: value for attr, value in (attrs or {}).items() if value is not MISSING
-    }
-
     # If `value` is `MISSING`, or `replace` is True, and we have a
     # constructor, create a new instance with existing attrs. Any attrs not
     # found in the constructor will be assigned later.
@@ -148,14 +143,17 @@ def mutate_value(
         mutate_safe = True
         while hasattr(constructor, "__origin__"):
             constructor = constructor.__origin__
-        constructor_args = _get_function_args(constructor, attrs)
-        value = constructor(
-            **{
-                attr: value
-                for attr, value in (attrs or {}).items()
-                if attr in constructor_args
-            }
-        )
+        if attrs:
+            constructor_args = _get_function_args(constructor, attrs)
+            value = constructor(
+                **{
+                    attr: value
+                    for attr, value in (attrs or {}).items()
+                    if attr in constructor_args
+                }
+            )
+        else:
+            value = constructor()
 
     # If there are any attributes to apply to our value, we do so here,
     # special casing any spec classes.

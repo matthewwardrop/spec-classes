@@ -400,14 +400,16 @@ class MethodBuilder:
                 f"Proposed method signature `{self.name}{signature}` is not compatible with implementation signature `implementation{impl_signature}`."
             )
 
+        VALID_KWARGS = {p.name for p in self.method_args_virtual}
+
         def validate_attrs(attrs):
-            extra_attrs = set(attrs).difference(
-                [p.name for p in self.method_args_virtual]
-            )
-            if extra_attrs:
-                raise TypeError(
-                    f"{self.name}() got unexpected keyword arguments: {repr(extra_attrs)}."
-                )
+            for attr in attrs:
+                if attr not in VALID_KWARGS:
+                    extra_attrs = set(attrs)
+                    extra_attrs.difference_update(VALID_KWARGS)
+                    raise TypeError(
+                        f"{self.name}() got unexpected keyword arguments: {repr(extra_attrs)}."
+                    )
 
         str_signature, defaults = self._method_signature_to_definition_str(signature)
 

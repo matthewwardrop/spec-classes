@@ -116,9 +116,8 @@ class InitMethod(MethodDescriptor):
                     _inplace=True,
                 )
 
-            post_init = getattr(self, "__post_init__", None)
-            if post_init:
-                post_init()
+            if instance_metadata.post_init:
+                instance_metadata.post_init(self)
 
             if is_frozen:
                 instance_metadata.frozen = True
@@ -169,11 +168,8 @@ class GetAttrMethod(MethodDescriptor):
 
     def build_method(self) -> Callable:
         def __getattr__(self, attr):
-            if (
-                attr in self.__spec_class__.annotations
-                and attr not in self.__dict__
-                and not inspect.isdatadescriptor(getattr(self.__class__, attr, None))
-            ):
+            attr_spec = self.__spec_class__.attrs.get(attr)
+            if attr_spec and not attr_spec.is_masked:
                 raise AttributeError(
                     f"`{self.__class__.__name__}.{attr}` has not yet been assigned a value."
                 )

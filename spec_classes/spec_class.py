@@ -3,13 +3,14 @@ from __future__ import annotations
 import dataclasses
 import typing
 from collections import defaultdict
+from functools import cached_property
 from inspect import Signature
 from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Type, Union
 
 from spec_classes.methods import core as core_methods
 from spec_classes.methods.scalar import SCALAR_METHODS
 
-from .types import Attr, MISSING, spec_property
+from .types import Attr, MISSING
 
 
 class spec_class:
@@ -536,6 +537,9 @@ class SpecClassMetadata:
             do_not_copy: Whether instances of the spec-class to which this metadata
                 belongs should be copied. If `True`, all operations are inplace.
             attrs: The attributes associated with the spec-class.
+            post_init: An optional callable to call post __init__. Lifted from
+                spec-class `__post_init__`. It should take only a single argument
+                (self).
 
         Generated (and cached) properties:
             annotations: A mapping from attribute name to type for all of the
@@ -564,7 +568,9 @@ class SpecClassMetadata:
                 metadata = klass.__spec_class__
                 break
         if metadata is MISSING:
-            return cls(owner=spec_cls)
+            return cls(
+                owner=spec_cls, post_init=getattr(spec_cls, "__post_init__", None)
+            )
 
         attrs_inherited = {}
 
@@ -580,6 +586,7 @@ class SpecClassMetadata:
             frozen=metadata.frozen,
             do_not_copy=False,  # We always reset this (but attributes inherited will not be copied unless overridden)
             attrs=attrs_inherited,
+            post_init=getattr(spec_cls, "__post_init__", None),
         )
 
     owner: Type
@@ -588,8 +595,9 @@ class SpecClassMetadata:
     frozen: bool = False
     do_not_copy: bool = False
     attrs: Dict[str, Attr] = dataclasses.field(default_factory=dict)
+    post_init: Optional[Callable[[Any], None]] = None
 
-    @spec_property(cache=True, overridable=False)
+    @cached_property
     def annotations(self):
         """
         A mapping from attribute name to type for all of the attributes.
@@ -597,7 +605,7 @@ class SpecClassMetadata:
         """
         return {attr: spec.type for attr, spec in self.attrs.items()}
 
-    @spec_property(cache=True, overridable=False)
+    @cached_property
     def invalidation_map(self):
         """
         A mapping of attribute names to the attributes which are invalided when
