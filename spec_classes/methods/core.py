@@ -57,6 +57,7 @@ class InitMethod(MethodDescriptor):
                     if attr in kwargs:
                         parent_kwargs[attr] = kwargs.pop(attr)
                     elif instance_attr_spec.has_default:
+                        # Parent constructor may have defaults in signature when overridden
                         parent_kwargs[attr] = instance_attr_spec.default_value
                 if parent_metadata.key and parent_metadata.key not in parent_kwargs:
                     parent_kwargs[parent_metadata.key] = MISSING
@@ -66,27 +67,24 @@ class InitMethod(MethodDescriptor):
         # initalize the attribute.
         for attr, attr_spec in instance_metadata.attrs.items():
 
-            if not attr_spec.init or attr_spec.owner is not spec_cls:
+            if (
+                not attr_spec.init
+                or attr_spec.owner is not spec_cls
+                or attr == instance_metadata.init_overflow_attr
+            ):
                 continue
 
-            if attr == instance_metadata.init_overflow_attr:
-                continue
-
-            # Using a while loop allows us to avoid nesting the code.
-            while True:
-                # Attempt to lookup in kwargs
-                value = kwargs.get(attr, MISSING)
-                if value is not MISSING:
-                    copy_required = not attr_spec.do_not_copy
-                    break
-
-                # Lookup from `Attr`
+            value = kwargs.get(attr, MISSING)
+            if value is not MISSING:
+                copy_required = not attr_spec.do_not_copy
+            else:
                 value = attr_spec.default_value
-                copy_required = True
-                break
+                copy_required = not attr_spec.default_factory
 
             if value is not MISSING:
-                if copy_required and not isinstance(value, (int, str, tuple)):
+                if copy_required and not isinstance(
+                    value, (bool, int, float, str, bytes, tuple)
+                ):
                     value = copy.deepcopy(value)
                 setattr(self, attr, value)
 
@@ -198,9 +196,7 @@ class SetAttrMethod(MethodDescriptor):
             if attr_spec:
                 WithAttrMethod.with_attr(attr_spec, self, value, _inplace=True)
                 return
-            mutate_attr(
-                self, attr=attr, value=value, inplace=True, type_check=True, force=force
-            )
+            mutate_attr(self, attr=attr, value=value, inplace=True, force=force)
 
         # Add reference to original __setattr__.
         __setattr__.__raw__ = getattr(

@@ -3,9 +3,10 @@ from __future__ import annotations
 import dataclasses
 import typing
 from collections import defaultdict
-from functools import cached_property
 from inspect import Signature
 from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Type, Union
+
+from cached_property import cached_property
 
 from spec_classes.methods import core as core_methods
 from spec_classes.methods.scalar import SCALAR_METHODS
