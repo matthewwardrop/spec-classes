@@ -1,12 +1,12 @@
 import builtins
 import copy
 import inspect
-from typing import Any, Callable, Dict, Set, Type, Union
+from typing import Any, Callable, Dict, Optional, Set, Type, Union
 
 from lazy_object_proxy import Proxy
 
 from spec_classes.errors import FrozenInstanceError
-from spec_classes.types import MISSING
+from spec_classes.types import Attr, MISSING
 
 from .type_checking import check_type, type_label
 
@@ -183,6 +183,43 @@ def mutate_value(
             if transformed_value is not MISSING:
                 setattr(value, attr, transformed_value)
 
+    return value
+
+
+def prepare_attr_value(
+    attr_spec: Attr, instance: Any, value: Any, attrs: Optional[Dict[str, Any]] = None
+) -> Any:
+    """
+    Prepare an incoming `value` for assignment to the attribute associated with
+    `attr_spec`. This can be called independently, such as in `spec_property`,
+    to ensure that dynamically generated values are consistent with the
+    operations of `with_<attr>`.
+
+    Args:
+        attr_spec: The attribute specification for which the value is being
+            prepared.
+        instance: The spec-class instance for which the value is being prepared.
+        value: The value to be prepared.
+        attrs: Optional arguments to pass to the constructor/set on the value in
+            `mutate_value`.
+
+    Returns:
+        The prepared value.
+    """
+    value = mutate_value(
+        old_value=MISSING,
+        new_value=value,
+        constructor=attr_spec.type,
+        attrs=attrs,
+    )
+    if attr_spec.prepare:
+        value = attr_spec.prepare(instance, value)
+    if attr_spec.is_collection:
+        value = (
+            attr_spec.get_collection_mutator(instance=instance, collection=value)
+            .prepare()
+            .collection
+        )
     return value
 
 

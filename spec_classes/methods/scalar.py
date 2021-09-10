@@ -10,7 +10,7 @@ from lazy_object_proxy import Proxy
 
 from spec_classes.types import Attr, MISSING
 from spec_classes.utils.method_builder import MethodBuilder
-from spec_classes.utils.mutation import mutate_attr, mutate_value
+from spec_classes.utils.mutation import mutate_attr, mutate_value, prepare_attr_value
 
 from .base import AttrMethodDescriptor
 
@@ -41,25 +41,12 @@ class WithAttrMethod(AttrMethodDescriptor):
         if not _if:
             return self
 
-        _new_value = mutate_value(
-            old_value=MISSING,
-            new_value=_new_value,
-            constructor=attr_spec.type,
-            attrs=attrs,
-        )
-        if attr_spec.prepare:
-            _new_value = attr_spec.prepare(self, _new_value)
-        if attr_spec.is_collection:
-            _new_value = (
-                attr_spec.get_collection_mutator(instance=self, collection=_new_value)
-                .prepare()
-                .collection
-            )
-
         return mutate_attr(
             obj=self,
             attr=attr_spec.name,
-            value=_new_value,
+            value=prepare_attr_value(
+                attr_spec=attr_spec, instance=self, value=_new_value, attrs=attrs
+            ),
             inplace=_inplace,
         )
 
