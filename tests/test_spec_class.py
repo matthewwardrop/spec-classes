@@ -879,11 +879,7 @@ class TestSpecAttribute:
         # Constructors
         assert "spec" not in spec.__dict__
         assert isinstance(spec.with_spec().spec, UnkeyedSpec)
-        with pytest.raises(
-            AttributeError,
-            match=re.escape("`Spec.spec` has not yet been assigned a value."),
-        ):
-            spec.transform_spec(lambda x: x)
+        assert spec.transform_spec(lambda x: x).spec is not MISSING
         with pytest.raises(
             TypeError, match=r"Attempt to set `Spec\.spec` with an invalid type"
         ):

@@ -132,7 +132,7 @@ class TransformAttrMethod(AttrMethodDescriptor):
             attr_spec,
             self,
             _new_value=mutate_value(
-                old_value=Proxy(lambda: getattr(self, attr_spec.name)),
+                old_value=Proxy(lambda: getattr(self, attr_spec.name, MISSING)),
                 transform=_transform,
                 constructor=attr_spec.type,
                 attr_transforms=attr_transforms,

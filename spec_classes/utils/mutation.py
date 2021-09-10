@@ -179,7 +179,9 @@ def mutate_value(
         if not mutate_safe:
             value = copy.deepcopy(value)
         for attr, attr_transform in attr_transforms.items():
-            setattr(value, attr, attr_transform(getattr(value, attr)))
+            transformed_value = attr_transform(getattr(value, attr, MISSING))
+            if transformed_value is not MISSING:
+                setattr(value, attr, transformed_value)
 
     return value
 

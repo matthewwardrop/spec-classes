@@ -81,12 +81,12 @@ def test_mutate_value():
         ).attr
         == "default-transformed!"
     )
-    with pytest.raises(
-        AttributeError, match="'Object' object has no attribute 'missing_attr'"
-    ):
-        assert mutate_value(
+    assert not hasattr(
+        mutate_value(
             MISSING, constructor=Object, attr_transforms={"missing_attr": lambda x: x}
-        )
+        ),
+        "missing_attr",
+    )
 
     assert (
         mutate_value(MISSING, constructor=Spec, attrs={"key": "key", "scalar": 10}).key
@@ -125,12 +125,12 @@ def test_mutate_value():
         ).key
         == "override"
     )
-    with pytest.raises(
-        AttributeError, match="'Spec' object has no attribute 'invalid_attr'"
-    ):
-        assert mutate_value(
-            MISSING, constructor=Spec, attr_transforms={"invalid_attr": "value"}
-        )
+    assert (
+        mutate_value(
+            MISSING, constructor=Spec, attr_transforms={"new_attr": lambda x: "value"}
+        ).new_attr
+        == "value"
+    )
     assert mutate_value(Spec(key="my_key"), constructor=Spec, replace=True).key == "key"
 
     with pytest.raises(
