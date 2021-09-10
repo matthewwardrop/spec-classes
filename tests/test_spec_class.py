@@ -4,49 +4,12 @@ import copy
 import inspect
 import re
 import textwrap
-from typing import Any, Callable, Dict, List, Set
-from attr import Attribute
+from typing import Any, Callable, Dict, List
 
 import pytest
 
 from spec_classes import Attr, FrozenInstanceError, MISSING, spec_class
 from spec_classes.spec_class import SpecClassMetadata, _SpecClassMetadataPlaceholder
-from spec_classes.types import KeyedSet
-
-
-@spec_class
-class UnkeyedSpec:
-    nested_scalar: int = 1
-    nested_scalar2: str = "original value"
-
-
-@spec_class(key="key")
-class KeyedSpec:
-    key: str = "key"
-    nested_scalar: int = 1
-    nested_scalar2: str = "original value"
-
-
-@spec_class(key="key", bootstrap=True)
-class Spec:
-    key: str = "key"
-    scalar: int
-    list_values: List[int]
-    dict_values: Dict[str, int]
-    set_values: Set[str]
-    spec: UnkeyedSpec
-    spec_list_items: List[UnkeyedSpec]
-    spec_dict_items: Dict[str, UnkeyedSpec]
-    keyed_spec_list_items: List[KeyedSpec]
-    keyed_spec_dict_items: Dict[str, KeyedSpec]
-    keyed_spec_set_items: KeyedSet[KeyedSpec, str]
-    recursive: Spec
-
-
-@pytest.fixture
-def spec_cls():
-    assert isinstance(Spec.__spec_class__, SpecClassMetadata)
-    return Spec
 
 
 class TestFramework:
@@ -148,16 +111,16 @@ class TestFramework:
         with pytest.raises(TypeError):
             Item().x = "invalid type"
 
-    def test_spec_methods(self):
+    def test_spec_methods(self, spec_cls):
 
-        assert hasattr(Spec, "__init__")
-        assert hasattr(Spec, "__repr__")
-        assert hasattr(Spec, "__eq__")
-        assert hasattr(Spec, "__spec_class_init__")
-        assert hasattr(Spec, "__spec_class_repr__")
-        assert hasattr(Spec, "__spec_class_eq__")
+        assert hasattr(spec_cls, "__init__")
+        assert hasattr(spec_cls, "__repr__")
+        assert hasattr(spec_cls, "__eq__")
+        assert hasattr(spec_cls, "__spec_class_init__")
+        assert hasattr(spec_cls, "__spec_class_repr__")
+        assert hasattr(spec_cls, "__spec_class_eq__")
 
-        assert set(inspect.Signature.from_callable(Spec.__init__).parameters) == {
+        assert set(inspect.Signature.from_callable(spec_cls.__init__).parameters) == {
             "dict_values",
             "key",
             "keyed_spec_dict_items",
@@ -173,23 +136,23 @@ class TestFramework:
             "spec_list_items",
         }
         assert (
-            inspect.Signature.from_callable(Spec.__init__).parameters["key"].default
+            inspect.Signature.from_callable(spec_cls.__init__).parameters["key"].default
             is MISSING
         )
         for attr, param in inspect.Signature.from_callable(
-            Spec.__init__
+            spec_cls.__init__
         ).parameters.items():
             if attr not in {"self", "key"}:
                 assert param.default is MISSING
 
-        assert Spec(key="key").key == "key"
+        assert spec_cls(key="key").key == "key"
         assert (
             repr(
-                Spec(
+                spec_cls(
                     key="key",
                     list_values=[1, 2, 3],
                     dict_values={"a": 1, "b": 2},
-                    recursive=Spec(key="nested"),
+                    recursive=spec_cls(key="nested"),
                     set_values={
                         "a"
                     },  # sets are unordered, so we use one item to guarantee order
@@ -237,11 +200,11 @@ class TestFramework:
             ).strip()
         )
 
-        assert Spec(
+        assert spec_cls(
             key="key",
             list_values=[1, 2, 3],
             dict_values={"a": 1, "b": 2},
-            recursive=Spec(key="nested"),
+            recursive=spec_cls(key="nested"),
             set_values={
                 "a"
             },  # sets are unordered, so we use one item to guarantee order
@@ -257,10 +220,12 @@ class TestFramework:
             ValueError,
             match=r"Some attributes were both included and excluded: {'key'}\.",
         ):
-            Spec("key").__repr__(include_attrs=["key", "asd"], exclude_attrs=["key"])
+            spec_cls("key").__repr__(
+                include_attrs=["key", "asd"], exclude_attrs=["key"]
+            )
 
         # Check that type checking works during direct mutation of elements
-        s = Spec(key="key")
+        s = spec_cls(key="key")
         s.scalar = 10
         assert s.scalar == 10
 
@@ -276,7 +241,7 @@ class TestFramework:
 
         # Test empty containers
         assert (
-            Spec(
+            spec_cls(
                 key="key",
                 list_values=[],
                 dict_values={},
@@ -303,7 +268,7 @@ class TestFramework:
         )
 
         # Test recursive representations
-        s = Spec()
+        s = spec_cls()
         s.with_recursive(s, _inplace=True)
         assert (
             s.__repr__(indent=True)
@@ -327,9 +292,9 @@ class TestFramework:
             ).strip()
         )
 
-        assert Spec(key="key") != "key"
-        assert Spec(key="key") == Spec(key="key")
-        assert Spec(key="key") != Spec(key="notkey")
+        assert spec_cls(key="key") != "key"
+        assert spec_cls(key="key") == spec_cls(key="key")
+        assert spec_cls(key="key") != spec_cls(key="notkey")
 
         # Test passing around of callable values with default implementations, and classes
         @spec_class(bootstrap=True)
@@ -819,744 +784,3 @@ class TestFramework:
 
         assert Spec().b == 20
         assert Spec(a=50).b == 100
-
-
-class TestToplevelMethods:
-    def test_update(self, spec_cls):
-        spec = spec_cls()
-        assert spec.update() is spec
-        assert spec.update(scalar=3) is not spec
-        assert spec.update(1) == 1
-        assert spec.update(scalar=3).scalar == 3
-        assert spec.update(scalar=3, _inplace=True) is spec
-        assert spec.update(scalar=10, _if=False).scalar == 3
-
-    def test_transform(self, spec_cls):
-        spec = spec_cls()
-        assert spec.transform() is spec
-        assert spec.transform(scalar=lambda scalar: 3) is not spec
-        assert spec.transform(lambda spec: 1) == 1
-        assert spec.transform(scalar=lambda scalar: 3).scalar == 3
-        assert spec.transform(scalar=lambda scalar: 3, _inplace=True) is spec
-        assert spec.transform(scalar=10, _if=False).scalar == 3
-
-    def test_reset(self, spec_cls):
-        spec = spec_cls(scalar=10)
-        assert spec.scalar == 10
-        with pytest.raises(AttributeError):
-            spec.reset().scalar
-        assert spec.scalar == 10
-        assert spec.reset(_if=False).scalar == 10
-        assert spec.reset() is not spec
-        assert spec.reset(_inplace=True) is spec
-
-
-class TestScalarAttribute:
-    def test_with(self, spec_cls):
-        spec = spec_cls(scalar=3)
-        assert set(inspect.Signature.from_callable(spec.with_scalar).parameters) == {
-            "_new_value",
-            "_inplace",
-            "_if",
-        }
-        assert spec.with_scalar(4) is not spec
-        assert spec.with_scalar(4).scalar == 4
-        assert spec.with_scalar(4, _if=False).scalar == 3
-
-        assert spec.with_scalar(4, _inplace=True) is spec
-        assert spec.scalar == 4
-
-    def test_transform(self, spec_cls):
-        spec = spec_cls(scalar=3)
-        assert set(
-            inspect.Signature.from_callable(spec.transform_scalar).parameters
-        ) == {"_transform", "_inplace", "_if"}
-        assert spec.transform_scalar(lambda x: x * 2) is not spec
-        assert spec.transform_scalar(lambda x: x * 2).scalar == 6
-        assert spec.transform_scalar(lambda x: x * 2, _if=False).scalar == 3
-
-        assert spec.transform_scalar(lambda x: x * 2, _inplace=True) is spec
-        assert spec.scalar == 6
-
-    def test_reset(self, spec_cls):
-        spec = spec_cls(scalar=3)
-
-        assert spec.reset_scalar(_if=False).scalar == 3
-
-        with pytest.raises(
-            AttributeError, match=r"`Spec\.scalar` has not yet been assigned a value\."
-        ):
-            spec.reset_scalar().scalar
-
-
-class TestSpecAttribute:
-    def test_get(self, spec_cls):
-        spec = spec_cls()
-
-        assert "scalar" not in spec.__dict__
-
-        with pytest.raises(
-            AttributeError, match=r"`Spec\.scalar` has not yet been assigned a value\."
-        ):
-            spec.scalar
-
-    def test_with(self, spec_cls):
-
-        spec = spec_cls()
-        assert set(inspect.Signature.from_callable(spec.with_spec).parameters) == {
-            "_new_value",
-            "_inplace",
-            "_if",
-            "nested_scalar",
-            "nested_scalar2",
-        }
-
-        # Constructors
-        assert "spec" not in spec.__dict__
-        assert isinstance(spec.with_spec().spec, UnkeyedSpec)
-        assert spec.transform_spec(lambda x: x).spec is not MISSING
-        with pytest.raises(
-            TypeError, match=r"Attempt to set `Spec\.spec` with an invalid type"
-        ):
-            spec.with_spec(None)
-
-        # Assignments
-        nested_spec = UnkeyedSpec()
-        assert spec.with_spec(nested_spec).spec is nested_spec
-
-        # Nested assignments
-        assert spec.with_spec(nested_scalar=2) is not spec
-        assert spec.with_spec(nested_scalar=2).spec.nested_scalar == 2
-        assert (
-            spec.with_spec(nested_scalar2="overridden").spec.nested_scalar2
-            == "overridden"
-        )
-        assert (
-            spec.with_spec(nested_scalar2="overridden").with_spec().spec.nested_scalar2
-            == "original value"
-        )
-
-        assert spec.with_spec(nested_scalar=2, _inplace=True) is spec
-        assert spec.spec.nested_scalar == 2
-
-    def test_transform(self, spec_cls):
-        spec = spec_cls().with_spec()
-        assert set(inspect.Signature.from_callable(spec.transform_spec).parameters) == {
-            "_transform",
-            "_inplace",
-            "_if",
-            "nested_scalar",
-            "nested_scalar2",
-        }
-
-        # Direct mutation
-        assert spec.transform_spec(lambda x: x.with_nested_scalar(3)) is not spec
-        assert (
-            spec.transform_spec(lambda x: x.with_nested_scalar(3)).spec.nested_scalar
-            == 3
-        )
-
-        # Nested mutations
-        assert spec.transform_spec(nested_scalar=lambda x: 3) is not spec
-        assert spec.transform_spec(nested_scalar=lambda x: 3).spec.nested_scalar == 3
-
-        # Inplace operation
-        assert spec.transform_spec(nested_scalar=lambda x: 3, _inplace=True) is spec
-        assert spec.transform_spec(nested_scalar=lambda x: 3).spec.nested_scalar == 3
-
-    def test_reset(self, spec_cls):
-        spec = spec_cls()
-        assert not hasattr(spec.with_spec().reset_spec(), "spec")
-
-    def test_illegal_nested_update(self, spec_cls):
-        base = spec_cls()
-        with pytest.raises(
-            TypeError,
-            match=re.escape(
-                "with_spec() got unexpected keyword arguments: {'invalid'}."
-            ),
-        ):
-            base.with_spec(invalid=10)
-
-
-class TestListAttribute:
-    @pytest.fixture
-    def list_spec(self):
-        @spec_class
-        class ListSpec:
-            list_values: List[int]
-            list_str_values: List[str]
-
-        return ListSpec(list_values=[1, 2, 3], list_str_values=["a", "b", "c"])
-
-    def test_with(self, spec_cls):
-
-        spec = spec_cls()
-        assert set(
-            inspect.Signature.from_callable(spec.with_list_value).parameters
-        ) == {
-            "_item",
-            "_index",
-            "_insert",
-            "_inplace",
-            "_if",
-        }
-
-        # Constructors
-        assert "list_values" not in spec.__dict__
-        assert spec.with_list_values().list_values == []
-        assert spec.with_list_value().list_values == [0]
-        assert spec.with_list_value(1).list_values == [1]
-        assert spec.with_list_value(1).with_list_value(2, _if=False).list_values == [1]
-
-        # Pass through values
-        assert spec.with_list_values([2, 3]).list_values == [2, 3]
-
-        # append
-        assert spec.with_list_value(3).with_list_value(3).with_list_value(
-            4
-        ).list_values == [3, 3, 4]
-
-        # replace
-        assert spec.with_list_value(1).with_list_value(2, _index=0).list_values == [2]
-        assert spec.with_list_value(1).with_list_value(
-            2, _index=0, _insert=False
-        ).list_values == [2]
-
-        # insert
-        assert spec.with_list_values([1, 2, 3]).with_list_value(
-            4, _index=0, _insert=True
-        ).list_values == [4, 1, 2, 3]
-
-        with pytest.raises(ValueError, match="Attempted to add an invalid item "):
-            spec.with_list_value("string")
-
-        spec.list_values = [1, 2, 3, 4]
-        assert spec.list_values == [1, 2, 3, 4]
-
-    def test_transform(self, list_spec):
-
-        spec = list_spec.with_list_values([1]).with_list_str_values(["a"])
-        assert set(
-            inspect.Signature.from_callable(spec.transform_list_value).parameters
-        ) == {
-            "_value_or_index",
-            "_transform",
-            "_by_index",
-            "_inplace",
-            "_if",
-        }
-
-        # scalar form
-        assert spec.transform_list_values(lambda x: x * 2).list_values == [1, 1]
-
-        # by value
-        assert spec.transform_list_value(1, lambda x: x * 2).list_values == [2]
-        assert spec.transform_list_value(1, lambda x: x * 2, _if=False).list_values == [
-            1
-        ]
-        assert spec.transform_list_str_value("a", lambda x: x * 2).list_str_values == [
-            "aa"
-        ]
-
-        # by index
-        assert spec.transform_list_value(
-            0, lambda x: x * 2, _by_index=True
-        ).list_values == [2]
-        assert spec.transform_list_str_value(0, lambda x: x * 2).list_str_values == [
-            "aa"
-        ]
-
-        # check raises if value not in list to be transformed
-        with pytest.raises(
-            ValueError,
-            match=r"Item `2` not found in collection `ListSpec.list_values`\.",
-        ):
-            spec.transform_list_value(2, lambda x: x)
-        with pytest.raises(
-            ValueError,
-            match=r"Item `'b'` not found in collection `ListSpec.list_str_values`\.",
-        ):
-            spec.transform_list_str_value("b", lambda x: x)
-        with pytest.raises(
-            IndexError,
-            match=r"Index `2` not found in collection `ListSpec.list_str_values`\.",
-        ):
-            spec.transform_list_str_value(2, lambda x: x)
-
-    def test_without(self, list_spec):
-        assert set(
-            inspect.Signature.from_callable(list_spec.without_list_value).parameters
-        ) == {
-            "_value_or_index",
-            "_by_index",
-            "_inplace",
-            "_if",
-        }
-
-        assert list_spec.without_list_value(1).list_values == [2, 3]
-        assert list_spec.without_list_value(1, _by_index=True).list_values == [1, 3]
-        assert list_spec.without_list_value(1, _if=False).list_values == [1, 2, 3]
-
-        assert list_spec.without_list_str_value("a").list_str_values == ["b", "c"]
-        assert list_spec.without_list_str_value(1).list_str_values == ["a", "c"]
-        assert list_spec.without_list_str_value(1, _by_index=True).list_str_values == [
-            "a",
-            "c",
-        ]
-
-
-class TestSpecListAttribute:
-    def test_with(self, spec_cls):
-
-        spec = spec_cls()
-        assert set(
-            inspect.Signature.from_callable(spec.with_spec_list_item).parameters
-        ) == {
-            "_item",
-            "_index",
-            "_insert",
-            "_inplace",
-            "_if",
-            "nested_scalar",
-            "nested_scalar2",
-        }
-
-        # Constructors
-        assert "spec_list_items" not in spec.__dict__
-        assert spec.with_spec_list_items().spec_list_items == []
-        unkeyed = UnkeyedSpec()
-        assert spec.with_spec_list_item(unkeyed).spec_list_items[0] is unkeyed
-        assert isinstance(spec.with_spec_list_item().spec_list_items[0], UnkeyedSpec)
-
-        # append
-        assert (
-            spec.with_spec_list_item(unkeyed)
-            .with_spec_list_item(unkeyed)
-            .with_spec_list_item(unkeyed)
-            .spec_list_items
-            == [unkeyed] * 3
-        )
-
-        # insert
-        assert spec.with_spec_list_items(
-            [unkeyed, unkeyed, unkeyed]
-        ).with_spec_list_item(
-            _index=1, _insert=True, nested_scalar=10
-        ).spec_list_items == [
-            unkeyed,
-            UnkeyedSpec(nested_scalar=10),
-            unkeyed,
-            unkeyed,
-        ]
-
-        # replace
-        assert spec.with_spec_list_items(
-            [unkeyed, unkeyed, unkeyed]
-        ).with_spec_list_item(
-            _index=0, _insert=False, nested_scalar=10
-        ).spec_list_items == [
-            UnkeyedSpec(nested_scalar=10),
-            unkeyed,
-            unkeyed,
-        ]
-
-        # remove
-        assert spec.with_spec_list_items(
-            [unkeyed, unkeyed, unkeyed]
-        ).without_spec_list_item(unkeyed).without_spec_list_item(
-            -1
-        ).spec_list_items == [
-            unkeyed
-        ]
-        assert spec.with_spec_list_items(
-            [unkeyed, unkeyed, unkeyed]
-        ).without_spec_list_item(unkeyed).without_spec_list_item(
-            -1, _by_index=True
-        ).spec_list_items == [
-            unkeyed
-        ]
-
-    def test_transform(self, spec_cls):
-
-        spec = spec_cls(spec_list_items=[UnkeyedSpec(), UnkeyedSpec()])
-        assert set(
-            inspect.Signature.from_callable(spec.transform_spec_list_item).parameters
-        ) == {
-            "_value_or_index",
-            "_transform",
-            "_by_index",
-            "_inplace",
-            "_if",
-            "nested_scalar",
-            "nested_scalar2",
-        }
-
-        # scalar form
-        assert (
-            spec.transform_spec_list_items(lambda x: x * 2).spec_list_items
-            == [UnkeyedSpec()] * 4
-        )
-
-        # by value
-        assert spec.transform_spec_list_item(
-            UnkeyedSpec(), lambda x: x.with_nested_scalar(3)
-        ).spec_list_items == [
-            UnkeyedSpec(nested_scalar=3),
-            UnkeyedSpec(nested_scalar=1),
-        ]  # TODO: transform all matches
-        assert spec.transform_spec_list_item(
-            UnkeyedSpec(), nested_scalar=lambda x: 3
-        ).spec_list_items == [
-            UnkeyedSpec(nested_scalar=3),
-            UnkeyedSpec(nested_scalar=1),
-        ]  # TODO: transform all matches
-
-        # by index
-        assert spec.transform_spec_list_item(
-            0, lambda x: x.with_nested_scalar(3)
-        ).spec_list_items == [
-            UnkeyedSpec(nested_scalar=3),
-            UnkeyedSpec(nested_scalar=1),
-        ]
-        assert spec.transform_spec_list_item(
-            1, nested_scalar=lambda x: 3, _by_index=True
-        ).spec_list_items == [
-            UnkeyedSpec(nested_scalar=1),
-            UnkeyedSpec(nested_scalar=3),
-        ]
-
-    def test_without(self, spec_cls):
-
-        spec = spec_cls(
-            spec_list_items=[UnkeyedSpec(nested_scalar=1), UnkeyedSpec(nested_scalar=2)]
-        )
-        assert set(
-            inspect.Signature.from_callable(spec.without_spec_list_item).parameters
-        ) == {
-            "_value_or_index",
-            "_by_index",
-            "_inplace",
-            "_if",
-        }
-
-        assert spec.without_spec_list_item(
-            UnkeyedSpec(nested_scalar=1)
-        ).spec_list_items == [UnkeyedSpec(nested_scalar=2)]
-        assert spec.without_spec_list_item(1).spec_list_items == [
-            UnkeyedSpec(nested_scalar=1)
-        ]
-        assert spec.without_spec_list_item(1, _by_index=True).spec_list_items == [
-            UnkeyedSpec(nested_scalar=1)
-        ]
-
-
-class TestDictAttribute:
-    def test_with(self, spec_cls):
-
-        spec = spec_cls()
-        assert set(
-            inspect.Signature.from_callable(spec.with_dict_value).parameters
-        ) == {
-            "_key",
-            "_value",
-            "_inplace",
-            "_if",
-        }
-
-        # constructors
-        assert "dict_values" not in spec.__dict__
-        assert spec.with_dict_values({}).dict_values == {}
-        assert spec.with_dict_value("a", 1).dict_values == {"a": 1}
-        assert (
-            spec.with_dict_values({}).with_dict_value("a", 1, _if=False).dict_values
-            == {}
-        )
-
-        # update dictionary
-        assert spec.with_dict_values({"a": 1, "b": 2}) is not spec
-        assert spec.with_dict_values({"a": 1, "b": 2}).with_dict_value(
-            "c", 3
-        ).dict_values == {"a": 1, "b": 2, "c": 3}
-        assert spec.with_dict_values({"a": 1, "b": 2}).with_dict_value(
-            "c", 3
-        ).dict_values == {"a": 1, "b": 2, "c": 3}
-
-        # inplace update
-        assert (
-            spec.with_dict_values({"a": 1, "b": 2}, _inplace=True).with_dict_value(
-                "c", 3, _inplace=True
-            )
-            is spec
-        )
-        assert spec.dict_values == {"a": 1, "b": 2, "c": 3}
-
-        # check for invalid types
-        with pytest.raises(
-            ValueError,
-            match="Attempted to add an invalid item `'Hello World'` to `Spec.dict_values`",
-        ):
-            spec.with_dict_value("a", "Hello World")
-
-        spec.dict_values = {"a": 1, "b": 2}
-        assert spec.dict_values == {"a": 1, "b": 2}
-
-    def test_transform(self, spec_cls):
-        spec = spec_cls(dict_values={"a": 1})
-        assert set(
-            inspect.Signature.from_callable(spec.transform_dict_value).parameters
-        ) == {
-            "_key",
-            "_transform",
-            "_inplace",
-            "_if",
-        }
-
-        assert spec.transform_dict_values(lambda x: {"a": 2}).dict_values == {"a": 2}
-        assert spec.transform_dict_value("a", lambda x: x + 1).dict_values == {"a": 2}
-        assert spec.transform_dict_value(
-            "a", lambda x: x + 1, _if=False
-        ).dict_values == {"a": 1}
-
-    def test_without(self, spec_cls):
-        spec = spec_cls(dict_values={"a": 1})
-        assert set(
-            inspect.Signature.from_callable(spec.without_dict_value).parameters
-        ) == {
-            "_key",
-            "_inplace",
-            "_if",
-        }
-
-        assert spec.without_dict_value("a").dict_values == {}
-        assert spec.without_dict_value("a", _if=False).dict_values == {"a": 1}
-
-
-class TestSpecDictAttribute:
-    def test_with(self, spec_cls):
-
-        spec = spec_cls()
-        assert set(
-            inspect.Signature.from_callable(spec.with_spec_dict_item).parameters
-        ) == {
-            "_key",
-            "_value",
-            "_inplace",
-            "_if",
-            "nested_scalar",
-            "nested_scalar2",
-        }
-
-        # Constructors
-        assert "spec_dict_items" not in spec.__dict__
-        unkeyed = UnkeyedSpec()
-        assert spec.with_spec_dict_item("a", unkeyed).spec_dict_items["a"] is unkeyed
-        assert isinstance(
-            spec.with_spec_dict_item("a").spec_dict_items["a"], UnkeyedSpec
-        )
-
-        # Insert
-        assert spec.with_spec_dict_item("a", unkeyed).with_spec_dict_item(
-            "b", nested_scalar=3
-        ).spec_dict_items == {"a": unkeyed, "b": UnkeyedSpec(nested_scalar=3)}
-        assert spec.with_spec_dict_item("a", unkeyed).with_spec_dict_item(
-            "a", nested_scalar=3
-        ).spec_dict_items == {"a": UnkeyedSpec(nested_scalar=3)}
-
-        # Test keyed spec classes
-        assert spec.with_keyed_spec_dict_item("a", "a").keyed_spec_dict_items == {
-            "a": KeyedSpec("a")
-        }
-        assert spec.with_keyed_spec_dict_item(
-            "a", "a", nested_scalar=10
-        ).keyed_spec_dict_items == {"a": KeyedSpec("a", nested_scalar=10)}
-        assert spec.with_keyed_spec_dict_item("a").keyed_spec_dict_items == {
-            "a": KeyedSpec()
-        }
-
-    def test_transform(self, spec_cls):
-
-        spec = spec_cls(
-            spec_dict_items={
-                "a": UnkeyedSpec(nested_scalar=1),
-                "b": UnkeyedSpec(nested_scalar=2),
-            }
-        )
-        assert set(
-            inspect.Signature.from_callable(spec.transform_spec_dict_item).parameters
-        ) == {
-            "_key",
-            "_transform",
-            "_inplace",
-            "nested_scalar",
-            "nested_scalar2",
-            "_if",
-        }
-
-        # scalar form
-        assert spec.transform_spec_dict_items(lambda x: {}).spec_dict_items == {}
-
-        # by value
-        assert spec.transform_spec_dict_item(
-            "a", lambda x: x.with_nested_scalar(3)
-        ).spec_dict_items == {
-            "a": UnkeyedSpec(nested_scalar=3),
-            "b": UnkeyedSpec(nested_scalar=2),
-        }
-        assert spec.transform_spec_dict_item(
-            "a", nested_scalar=lambda x: 3
-        ).spec_dict_items == {
-            "a": UnkeyedSpec(nested_scalar=3),
-            "b": UnkeyedSpec(nested_scalar=2),
-        }
-
-        # Check missing
-        with pytest.raises(KeyError):
-            spec.transform_spec_dict_item("c", nested_scalar=lambda x: 3)
-
-    def test_without(self, spec_cls):
-
-        spec = spec_cls(
-            spec_dict_items={
-                "a": UnkeyedSpec(nested_scalar=1),
-                "b": UnkeyedSpec(nested_scalar=2),
-            }
-        )
-        assert set(
-            inspect.Signature.from_callable(spec.without_spec_dict_item).parameters
-        ) == {
-            "_key",
-            "_inplace",
-            "_if",
-        }
-
-        assert spec.without_spec_dict_item("a").spec_dict_items == {
-            "b": UnkeyedSpec(nested_scalar=2)
-        }
-
-
-class TestSetAttribute:
-    def test_with(self, spec_cls):
-
-        spec = spec_cls()
-        assert set(inspect.Signature.from_callable(spec.with_set_value).parameters) == {
-            "_item",
-            "_inplace",
-            "_if",
-        }
-
-        # constructors
-        assert "set_values" not in spec.__dict__
-        assert spec.with_set_values().set_values == set()
-        assert spec.with_set_value("a").set_values == {"a"}
-        assert spec.with_set_values().with_set_value("a", _if=False).set_values == set()
-
-        # update set
-        assert spec.with_set_values({"a", "b"}) is not spec
-        assert spec.with_set_values({"a", "b"}).with_set_value("c").set_values == {
-            "a",
-            "b",
-            "c",
-        }
-        assert spec.with_set_values({"a", "b"}).with_set_value("b").set_values == {
-            "a",
-            "b",
-        }
-
-        # inplace update
-        assert (
-            spec.with_set_values({"a", "b"}, _inplace=True).with_set_value(
-                "c", _inplace=True
-            )
-            is spec
-        )
-        assert spec.set_values == {"a", "b", "c"}
-
-        # check for invalid types
-        with pytest.raises(
-            ValueError,
-            match="Attempted to add an invalid item `1` to `Spec.set_values`. Expected item of type `str`.",
-        ):
-            spec.with_set_value(1)
-
-    def test_transform(self, spec_cls):
-        spec = spec_cls(set_values={"a", "b"})
-        assert set(
-            inspect.Signature.from_callable(spec.transform_set_value).parameters
-        ) == {
-            "_item",
-            "_transform",
-            "_inplace",
-            "_if",
-        }
-
-        assert spec.transform_set_values(lambda x: x | {"c"}).set_values == {
-            "a",
-            "b",
-            "c",
-        }
-        assert spec.transform_set_value("a", lambda x: "c").set_values == {"b", "c"}
-        assert spec.transform_set_value("a", lambda x: "c", _if=False).set_values == {
-            "a",
-            "b",
-        }
-
-        with pytest.raises(ValueError):
-            assert spec.transform_set_value("c", lambda x: "c")
-
-    def test_without(self, spec_cls):
-        spec = spec_cls(set_values={"a", "b"})
-        assert set(
-            inspect.Signature.from_callable(spec.without_set_value).parameters
-        ) == {
-            "_item",
-            "_inplace",
-            "_if",
-        }
-
-        assert spec.without_set_value("a").set_values == {"b"}
-        assert spec.without_set_value("a", _if=False).set_values == {"a", "b"}
-
-
-class TestSpecSetAttribute:
-    def test_with(self, spec_cls):
-
-        spec = spec_cls()
-        assert set(
-            inspect.Signature.from_callable(spec.with_keyed_spec_set_item).parameters
-        ) == {
-            "_item",
-            "_inplace",
-            "_if",
-            "key",
-            "nested_scalar",
-            "nested_scalar2",
-        }
-
-        # Constructors
-        assert "spec_dict_items" not in spec.__dict__
-        keyed = KeyedSpec()
-        assert keyed in spec.with_keyed_spec_set_item(keyed).keyed_spec_set_items
-
-        # Insert
-        assert (
-            sorted(
-                spec.with_keyed_spec_set_item(keyed)
-                .with_keyed_spec_set_item("b", nested_scalar=3)
-                .keyed_spec_set_items,
-                key=lambda x: x.key,
-            )
-            == [KeyedSpec("b", nested_scalar=3), keyed]
-        )
-        assert (
-            sorted(
-                spec.with_keyed_spec_set_item("b", nested_scalar=3)
-                .with_keyed_spec_set_item("b", nested_scalar=10)
-                .keyed_spec_set_items,
-                key=lambda x: x.key,
-            )
-            == [KeyedSpec("b", nested_scalar=10)]
-        )
-
-    # The rest of the set-container behavior is covered already in `KeyedSpec`
-    # tests and in `TestSetAttribute`.
