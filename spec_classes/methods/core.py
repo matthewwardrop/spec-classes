@@ -52,13 +52,22 @@ class InitMethod(MethodDescriptor):
                 parent_kwargs = {}
                 for attr in parent_metadata.attrs:
                     instance_attr_spec = instance_metadata.attrs[attr]
-                    if instance_attr_spec.owner is not parent:
+                    if instance_attr_spec.owner is spec_cls:
                         continue
                     if attr in kwargs:
                         parent_kwargs[attr] = kwargs.pop(attr)
-                    elif instance_attr_spec.has_default:
-                        # Parent constructor may have defaults in signature when overridden
-                        parent_kwargs[attr] = instance_attr_spec.default_value
+                    else:
+                        # Parent constructor may may be overridden, and not pick up
+                        # subclass defaults. We pre-emptively solve this here.
+                        # If the constructor was not overridden, then no harm is
+                        # done (we just looked it up earlier than we had to).
+                        # We don't pass missing values in case overridden constructor
+                        # has defaults in the signature.
+                        instance_default = instance_attr_spec.lookup_default_value(
+                            self.__class__
+                        )
+                        if instance_default is not MISSING:
+                            parent_kwargs[attr] = instance_default
                 if parent_metadata.key and parent_metadata.key not in parent_kwargs:
                     parent_kwargs[parent_metadata.key] = MISSING
                 parent.__init__(self, **parent_kwargs)
@@ -76,7 +85,11 @@ class InitMethod(MethodDescriptor):
 
             value = kwargs.get(attr, MISSING)
             if value is not MISSING:
-                copy_required = not attr_spec.do_not_copy
+                copy_required = (
+                    instance_metadata.owner
+                    is spec_cls  # Otherwise values are already looked up and passed as kwargs.
+                    or not attr_spec.do_not_copy
+                )
             else:
                 value = attr_spec.lookup_default_value(self.__class__)
                 copy_required = False

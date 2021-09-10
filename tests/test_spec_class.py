@@ -654,6 +654,9 @@ class TestFramework:
             )
             c: int
 
+        class D(C):
+            a_defaulted = 1000
+
         assert A().a_overridden == 101
         assert list(C().__spec_class__.annotations) == [
             "b",
@@ -669,6 +672,7 @@ class TestFramework:
         assert not hasattr(C(), "c")
         assert C(a=1).a == 2
         assert C(b=1).b == 100
+        assert D().a_defaulted == 1001
 
     def test_class_attribute_masking(self):
         @spec_class
