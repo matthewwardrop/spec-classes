@@ -194,12 +194,20 @@ MySpec(my_str=1)  # TypeError: Attempt to set `MySpec.my_str` with an invalid ty
 
 To simplify the adoption of copy-on-write workflows, and to make mutation of
 instances more convenient and chainable, `spec_class` generates helper methods
-for every managed attribute. The number and types of methods added depends on
-the type annotation, but in every case mutations performed by these methods are
-(by default) done on copies of the original instance, and so can be used safely
-on instances that are shared between multiple objects.
+for the base class and every managed attribute. The number and types of methods
+added depends on type annotations, but in every case mutations performed by
+these methods are (by default) done on copies of the original instance, and so
+can be used safely on instances that are shared between multiple objects.
 
-All attributes have three "scalar" methods added:
+The base class has three "toplevel" methods added:
+
+  - `update`
+  - `transform`
+  - `reset`
+
+which can be used to mutate the state of the spec-class as a whole.
+
+All managed attributes have three "scalar" methods added:
 
   - `with_<attr>`
   - `transform_<attr>`
@@ -230,6 +238,7 @@ class ClassExaminationResults:
 
 (
     ClassExaminationResults()
+    .update(teacher_name='TBD')
     .with_teacher_name('Mr. Didactic')
     .with_student_grade('Jerry', 12.3)
     .with_student_grade('Jane', 14.1)
@@ -244,5 +253,5 @@ class ClassExaminationResults:
 # )
 ```
 
-For more information about how these methods work, please peruse the [Scalar Methods](scalars.md) and
+For more information about how these methods work, please peruse the [Toplevel Methods](toplevel.md), [Scalar Methods](scalars.md) and
 [Collection Methods](collections.md) documentation.

@@ -10,6 +10,7 @@ pages:
   - Usage:
     - Overview: usage/index.md
     - Basic Usage: usage/basic.md
+    - Toplevel Methods: usage/toplevel.md
     - Scalar Methods: usage/scalars.md
     - Collection Methods: usage/collections.md
     - Special Types: usage/special_types.md

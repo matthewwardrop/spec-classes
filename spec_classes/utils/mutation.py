@@ -90,6 +90,7 @@ def mutate_value(
     attrs: Dict[str, Any] = None,
     transform: Callable = None,
     attr_transforms: Dict[str, Callable] = None,
+    inplace: bool = False,
 ) -> Any:
     """
     Mutates an existing value according to the following procedure:
@@ -122,7 +123,7 @@ def mutate_value(
     Returns:
         The mutated object.
     """
-    mutate_safe = False
+    mutate_safe = inplace
     used_attrs = set()
 
     # If `new_value` is not `MISSING`, use it; otherwise use `old_value` if not

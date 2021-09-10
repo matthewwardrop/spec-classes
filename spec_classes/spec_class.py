@@ -8,8 +8,7 @@ from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Type, Union
 
 from cached_property import cached_property
 
-from spec_classes.methods import core as core_methods
-from spec_classes.methods.scalar import SCALAR_METHODS
+from spec_classes.methods import core as core_methods, SCALAR_METHODS, TOPLEVEL_METHODS
 
 from .types import Attr, MISSING
 
@@ -462,11 +461,16 @@ class spec_class:
             "__delattr__": __delattr__,
             "__deepcopy__": __deepcopy__,
         }
-        return {
+
+        methods = {
             name: method
             for name, method in methods.items()
             if name.startswith("__spec_class") or methods_filter.get(name, False)
         }
+
+        methods.update({method.method_name: method() for method in TOPLEVEL_METHODS})
+
+        return methods
 
     def get_methods_for_attribute(self, attr_spec: Attr) -> Dict[str, Callable]:
         """
