@@ -3,6 +3,7 @@ import re
 import pytest
 
 from spec_classes import spec_class, spec_property
+from spec_classes.errors import NestedAttributeError
 
 
 class TestSpecProperty:
@@ -59,6 +60,21 @@ class TestSpecProperty:
             @spec_property(cache=True, invalidated_by="*")
             def always_invalidated_obj(self):
                 return object()
+
+            @spec_property
+            def suppresses_attribute_error(self):
+                raise AttributeError("I will be swallowed!")
+
+            @spec_property(allow_attribute_error=True)
+            def raises_attribute_error(self):
+                raise AttributeError("I will not be swallowed!")
+
+            def __getattr__(self, name):
+                if name == "raises_attribute_error":
+                    raise AttributeError(
+                        "I swallowed the attribute error raised by `raises_attribute_error`."
+                    )
+                return object.__getattribute__(self, name)
 
         return MySpecClass()
 
@@ -156,3 +172,18 @@ class TestSpecProperty:
         spec_cls.with_overridable_int(10, _inplace=True)
         assert spec_cls.invalidated_obj is not obj
         assert spec_cls.always_invalidated_obj is not aobj
+
+    def test_attribute_error_handling(self, spec_cls):
+
+        with pytest.raises(
+            NestedAttributeError, match=re.escape("I will be swallowed!")
+        ):
+            spec_cls.suppresses_attribute_error
+
+        with pytest.raises(
+            AttributeError,
+            match=re.escape(
+                "I swallowed the attribute error raised by `raises_attribute_error`."
+            ),
+        ):
+            spec_cls.raises_attribute_error

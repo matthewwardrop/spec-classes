@@ -1,3 +1,4 @@
+from spec_classes.errors import NestedAttributeError
 from spec_classes.utils.mutation import prepare_attr_value
 from spec_classes.utils.type_checking import check_type, type_label
 
@@ -55,6 +56,7 @@ class spec_property:
         invalidated_by=None,
         owner=None,
         attr_name=None,
+        allow_attribute_error=False,
     ):
         # Standard `property` attributes
         self.fget = fget
@@ -70,6 +72,7 @@ class spec_property:
         self.invalidated_by = invalidated_by or []
         self.owner = owner
         self.attr_name = attr_name
+        self.allow_attribute_error = allow_attribute_error
 
     # Standard Python property methods to allow customization of getters, setters and deleters.
 
@@ -84,6 +87,7 @@ class spec_property:
             self.invalidated_by,
             self.owner,
             self.attr_name,
+            self.allow_attribute_error,
         )
 
     def setter(self, fset):
@@ -97,6 +101,7 @@ class spec_property:
             self.invalidated_by,
             self.owner,
             self.attr_name,
+            self.allow_attribute_error,
         )
 
     def deleter(self, fdel):
@@ -110,6 +115,7 @@ class spec_property:
             self.invalidated_by,
             self.owner,
             self.attr_name,
+            self.allow_attribute_error,
         )
 
     # Descriptor protocol implementation
@@ -138,7 +144,12 @@ class spec_property:
             )
 
         # Get value from getter
-        value = self.fget(instance)
+        try:
+            value = self.fget(instance)
+        except AttributeError as e:
+            if self.allow_attribute_error:
+                raise
+            raise NestedAttributeError(e) from e
 
         # If attribute is annotated with a `spec_class` type, apply any
         # transforms using `_prepare_foo()` methods, and then check that the
