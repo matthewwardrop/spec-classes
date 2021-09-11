@@ -63,10 +63,10 @@ class TestSequenceMutator:
         s2.add_item("b", attrs={"a": 10})
         assert s2.collection == [Spec("a"), Spec("b", a=10)]
 
-        s2.add_item("c", index=0)
+        s2.add_item("c", value_or_index=0)
         assert s2.collection == [Spec("c"), Spec("b", a=10)]
 
-        s2.add_item("d", index=10, insert=True)
+        s2.add_item("d", value_or_index=10, insert=True)
         assert s2.collection == [Spec("c"), Spec("b", a=10), Spec("d")]
 
         with pytest.raises(

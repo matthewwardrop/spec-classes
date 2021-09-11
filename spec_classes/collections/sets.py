@@ -26,30 +26,36 @@ class SetMutator(CollectionAttrMutator):
             raise ValueError(
                 f"Value `{repr(value_or_index)}` not found in collection `{self.attr_spec.qualified_name}`."
             )
-        return (
-            value_or_index,
-            value_or_index if value_or_index in self.collection else MISSING,
-        )
+        if value_or_index not in self.collection:
+            return (value_or_index, MISSING)
+        try:  # If set supports lookup, try that first (e.g. KeyedSet)
+            return (value_or_index, self.collection[value_or_index])
+        except TypeError:
+            return (
+                value_or_index,
+                value_or_index,
+            )
 
-    def _inserter(self, index, item, replace=False):  # pylint: disable=arguments-differ
+    def _inserter(self, index, item, replace=True):  # pylint: disable=arguments-differ
         if not check_type(item, self.attr_spec.item_type):
             raise ValueError(
                 f"Attempted to add an invalid item `{repr(item)}` to `{self.attr_spec.qualified_name}`. Expected item of type `{type_label(self.attr_spec.item_type)}`."
             )
-        if replace:
+        if index and replace:
             self.collection.discard(index)
         self.collection.add(item)
 
     def add_item(
-        self, item, *, replace=True, attrs=None
+        self, item, *, value_or_index=MISSING, replace=True, attrs=None
     ):  # pylint: disable=arguments-differ
         return self._mutate_collection(
-            value_or_index=item,
+            value_or_index=value_or_index,
             extractor=self._extractor,
             inserter=self._inserter,
             new_item=item,
             attrs=attrs,
             replace=replace,
+            require_pre_existent=value_or_index is not MISSING,
         )
 
     def add_items(self, items: Iterable):

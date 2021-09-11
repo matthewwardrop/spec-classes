@@ -94,6 +94,25 @@ class TestSpecAttribute:
         assert spec.with_spec(nested_scalar=2, _inplace=True) is spec
         assert spec.spec.nested_scalar == 2
 
+    def test_update(self, spec_cls, unkeyed_spec_cls):
+        spec = spec_cls()
+        assert set(inspect.Signature.from_callable(spec.update_spec).parameters) == {
+            "_new_value",
+            "_inplace",
+            "_if",
+            "nested_scalar",
+            "nested_scalar2",
+        }
+
+        assert spec.update_spec().spec is not MISSING
+        assert spec.update_spec(nested_scalar=1).spec.nested_scalar == 1
+
+        a = unkeyed_spec_cls()
+        assert spec.update_spec(a).spec is a
+
+        with pytest.raises(AttributeError):
+            spec.update_spec(_if=False).spec
+
     def test_transform(self, spec_cls):
         spec = spec_cls().with_spec()
         assert set(inspect.Signature.from_callable(spec.transform_spec).parameters) == {

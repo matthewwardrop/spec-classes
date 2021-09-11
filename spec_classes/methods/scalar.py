@@ -90,6 +90,87 @@ class WithAttrMethod(AttrMethodDescriptor):
         )
 
 
+class UpdateAttrMethod(AttrMethodDescriptor):
+    """
+    The method descriptor/generator for `update_<attr>'.
+
+    The default behavior of this method is to copy the spec-class with the
+    nominated attribute updated with the provided values. For more
+    information refer to the spec-classes documentation or the generated method.
+    """
+
+    @cached_property
+    def method_name(self) -> str:
+        return f"update_{self.attr_spec.name}"
+
+    @staticmethod
+    def update_attr(
+        attr_spec: Attr,
+        self,
+        _new_value=MISSING,
+        *,
+        _inplace: bool = False,
+        _if: bool = True,
+        **attrs,
+    ):
+        if not _if:
+            return self
+        return WithAttrMethod.with_attr(
+            attr_spec,
+            self,
+            _new_value=mutate_value(
+                old_value=Proxy(lambda: getattr(self, attr_spec.name, MISSING)),
+                new_value=_new_value,
+                constructor=attr_spec.type,
+                attrs=attrs,
+            ),
+            _inplace=_inplace,
+        )
+
+    def build_method(self) -> Callable:
+        self.attr_spec.name = self.attr_spec.name
+        self.attr_spec.type = self.attr_spec.type
+        attr_spec_type = self.attr_spec.spec_type
+        or_its_attributes = " or its attributes" if attr_spec_type else ""
+        return (
+            MethodBuilder(
+                self.name, functools.partial(self.update_attr, self.attr_spec)
+            )
+            .with_preamble(
+                f"Return a `{self.spec_cls.__name__}` instance identical to this one except with `{self.attr_spec.name}`{or_its_attributes} updated."
+            )
+            .with_arg(
+                "_new_value",
+                desc=f"An optional value to replace the old value for `{self.attr_spec.name}`.",
+                default=MISSING if attr_spec_type else inspect.Parameter.empty,
+                annotation=Callable,
+            )
+            .with_arg(
+                "_inplace",
+                desc="Whether to perform change without first copying.",
+                default=False,
+                kind="keyword_only",
+                annotation=bool,
+            )
+            .with_arg(
+                "_if",
+                desc="This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
+                default=True,
+                kind="keyword_only",
+                annotation=bool,
+            )
+            .with_spec_attrs_for(
+                self.attr_spec.type,
+                desc_template=f"An optional new value for {self.attr_spec.name}.{{}}.",
+            )
+            .with_returns(
+                f"A reference to the mutated `{self.spec_cls.__name__}` instance.",
+                annotation=self.spec_cls,
+            )
+            .build()
+        )
+
+
 class TransformAttrMethod(AttrMethodDescriptor):
     """
     The method descriptor/generator for `transform_<attr>'.
@@ -223,6 +304,7 @@ class ResetAttrMethod(AttrMethodDescriptor):
 
 SCALAR_METHODS = [
     WithAttrMethod,
+    UpdateAttrMethod,
     TransformAttrMethod,
     ResetAttrMethod,
 ]

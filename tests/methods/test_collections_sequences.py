@@ -206,6 +206,87 @@ class TestSpecListAttribute:
             unkeyed
         ]
 
+    def test_update(self, spec_cls, unkeyed_spec_cls, keyed_spec_cls):
+        spec = spec_cls(
+            spec_list_items=[unkeyed_spec_cls(), unkeyed_spec_cls()],
+            keyed_spec_list_items=[keyed_spec_cls("a"), keyed_spec_cls("b")],
+        )
+        assert set(
+            inspect.Signature.from_callable(spec.update_spec_list_item).parameters
+        ) == {
+            "_value_or_index",
+            "_new_item",
+            "_by_index",
+            "_inplace",
+            "_if",
+            "nested_scalar",
+            "nested_scalar2",
+        }
+
+        assert spec.update_spec_list_item(0) is not spec
+        assert spec.update_spec_list_item(0).spec_list_items[0].nested_scalar == 1
+        assert (
+            spec.update_spec_list_item(0, unkeyed_spec_cls(nested_scalar=100))
+            .spec_list_items[0]
+            .nested_scalar
+            == 100
+        )
+        assert (
+            spec.update_spec_list_item(0, nested_scalar=100, _if=False)
+            .spec_list_items[0]
+            .nested_scalar
+            == 1
+        )
+        assert (
+            spec.update_spec_list_item(0, nested_scalar=100)
+            .spec_list_items[0]
+            .nested_scalar
+            == 100
+        )
+
+        assert (
+            spec.update_keyed_spec_list_item(0).keyed_spec_list_items[0].nested_scalar
+            == 1
+        )
+        assert (
+            spec.update_keyed_spec_list_item("a", keyed_spec_cls("c"))
+            .keyed_spec_list_items[0]
+            .key
+            == "c"
+        )
+        assert (
+            spec.update_keyed_spec_list_item(0, keyed_spec_cls("c"))
+            .keyed_spec_list_items[0]
+            .key
+            == "c"
+        )
+        assert (
+            spec.update_keyed_spec_list_item(keyed_spec_cls("a"), keyed_spec_cls("c"))
+            .keyed_spec_list_items[0]
+            .key
+            == "c"
+        )
+        assert (
+            spec.update_keyed_spec_list_item("a", nested_scalar=100)
+            .keyed_spec_list_items[0]
+            .nested_scalar
+            == 100
+        )
+        assert (
+            spec.update_keyed_spec_list_item(0, nested_scalar=100)
+            .keyed_spec_list_items[0]
+            .nested_scalar
+            == 100
+        )
+
+        # Check that new items are not created when missing
+        with pytest.raises(IndexError):
+            spec.update_keyed_spec_list_item(10)
+        with pytest.raises(KeyError):
+            spec.update_keyed_spec_list_item("c")
+        with pytest.raises(ValueError):
+            spec.update_keyed_spec_list_item(keyed_spec_cls("c"))
+
     def test_transform(self, spec_cls, unkeyed_spec_cls):
 
         spec = spec_cls(spec_list_items=[unkeyed_spec_cls(), unkeyed_spec_cls()])

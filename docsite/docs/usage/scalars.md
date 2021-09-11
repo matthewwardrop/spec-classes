@@ -1,12 +1,15 @@
 Every attributed [managed by spec-classes](basic.md#managed-attributes) is
-furnished with three generated scalar helper methods that simplify incremental
+furnished with generated scalar helper methods that simplify incremental
 mutation of the attributes and adoption of a copy-on-write workflow.
 
-The three methods and their signatures are:
+The methods and their signatures are:
 
   - `with_<attr>(_new_value, *, _inplace=False, _if=True)`:  Sets
-    `<attr>` to `_new_value` if `_if` is `True`. If `_inplace` is `True`, then 
+    `<attr>` to `_new_value` if `_if` is `True`. If `_inplace` is `True`, then
     the value is mutated on the current instance.
+  - `update_<attr>(_new_value, *, _inplace=False, _if=True)`: Updates an instance
+    (this differs from `with_<attr>` in that spec-classes will be incrementally
+    updated rather than replaced by this method).
   - `transform_<attr>(_new_value, *, _inplace=False, _if=True)`: If `_if` is
     `True`, applies a function to the current value of `<attr>`, stores the
     result as the new value for `<attr>` on a copy of the spec class instance.
@@ -62,7 +65,7 @@ class Box:
 help(Box().with_nested_box)
 # with_nested_box(_new_value: __main__.Box = MISSING, *, _inplace: bool = False, _if: bool = True, width: float = None, height: float = None, depth: float = None, color: str = None, nested_box: __main__.Box = None) method of __main__.Box instance
 #     Return a `Box` instance identical to this one except with `nested_box` or its attributes mutated.
-    
+#
 #     Args:
 #         _new_value: The new value for `nested_box`.
 #         _inplace: Whether to perform change without first copying.
@@ -76,10 +79,29 @@ help(Box().with_nested_box)
 #     Returns:
 #         A reference to the mutated `Box` instance.
 
+help(Box().update_nested_box)
+# update_nested_box(_new_value: Callable = MISSING, *, _inplace: bool = False, _if: bool = True, width: float = MISSING, height: float = MISSING, depth: float = MISSING, color: str = MISSING, nested_box: __main__.Box = MISSING) method of __main__.Box instance
+#     Return a `Box` instance identical to this one except with `nested_box` or its attributes updated.
+#
+#     Args:
+#         _new_value: An optional value to replace the old value for
+#             `nested_box`.
+#         _inplace: Whether to perform change without first copying.
+#         _if: This action is only taken when `_if` is `True`. If it is `False`,
+#             this is a no-op.
+#         width: An optional new value for nested_box.width.
+#         height: An optional new value for nested_box.height.
+#         depth: An optional new value for nested_box.depth.
+#         color: An optional new value for nested_box.color.
+#         nested_box: An optional new value for nested_box.nested_box.
+
+#     Returns:
+#         A reference to the mutated `Box` instance.
+
 help(Box().transform_nested_box)
 # transform_nested_box(_transform: Callable = MISSING, *, _inplace: bool = False, _if: bool = True, width: float = None, height: float = None, depth: float = None, color: str = None, nested_box: __main__.Box = None) method of __main__.Box instance
 #     Return a `Box` instance identical to this one except with `nested_box` or its attributes transformed.
-    
+#
 #     Args:
 #         _transform: A function that takes the old value for nested_box as
 #             input, and returns the new value.
@@ -94,14 +116,19 @@ help(Box().transform_nested_box)
 #     Returns:
 #         A reference to the mutated `Box` instance.
 
-Box().with_nested_box(width=10., height=10., depth=10., color='red')
+(
+  Box()
+  .with_nested_box(width=10., height=10., depth=10., color='red')
+  .update_nested_box(width=30.)
+  # Using `with_nested_box` instead would reset other properties to their default values.
+)
 # Box(
 #     width=MISSING,
 #     height=MISSING,
 #     depth=MISSING,
 #     color=MISSING,
 #     nested_box=Box(
-#         width=10.0,
+#         width=30.0,
 #         height=10.0,
 #         depth=10.0,
 #         color='red',

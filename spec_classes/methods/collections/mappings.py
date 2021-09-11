@@ -122,6 +122,100 @@ class WithMappingItemMethod(AttrMethodDescriptor):
         )
 
 
+class UpdateMappingItemMethod(AttrMethodDescriptor):
+    """
+    The method descriptor/generator for `update_<attr_singular>' for mapping
+    collections.
+
+    This method updates the value (or the attributes thereof) associated
+    assigned to a spec-class atribute. For more information refer to the
+    spec-classes documentation or the generated method.
+    """
+
+    @property
+    def method_name(self) -> str:
+        return f"update_{self.attr_spec.item_name}"
+
+    @staticmethod
+    def update_mapping_item(
+        attr_spec: Attr,
+        self,
+        _key: Any,
+        _new_item: Any,
+        *,
+        _inplace: bool = False,
+        _if: bool = True,
+        **attrs: Dict[str, Any],
+    ) -> Any:
+        if not _if:
+            return self
+        return mutate_attr(
+            obj=self,
+            attr=attr_spec.name,
+            value=(
+                attr_spec.get_collection_mutator(self, inplace=_inplace)
+                .add_item(
+                    key=_key,
+                    value=_new_item,
+                    attrs=attrs,
+                    replace=False,
+                    require_pre_existent=True,
+                )
+                .collection
+            ),
+            inplace=_inplace,
+            type_check=False,
+        )
+
+    def build_method(self) -> Callable:
+        fn_key_type, fn_value_type = _get_mapping_key_and_value_annotations(
+            self.attr_spec
+        )
+        return (
+            MethodBuilder(
+                self.name,
+                functools.partial(self.update_mapping_item, self.attr_spec),
+            )
+            .with_preamble(
+                f"Return a `{self.spec_cls.__name__}` instance identical to this one except with an item updated in `{self.attr_spec.name}`."
+            )
+            .with_arg(
+                "_key",
+                desc="The key for the item to be updated.",
+                annotation=fn_key_type,
+            )
+            .with_arg(
+                "_new_item",
+                desc="A new value for the nominated key.",
+                default=MISSING if self.attr_spec.item_spec_type else Parameter.empty,
+                annotation=Callable[[fn_value_type], fn_value_type],
+            )
+            .with_arg(
+                "_inplace",
+                desc="Whether to perform change without first copying.",
+                default=False,
+                kind="keyword_only",
+                annotation=bool,
+            )
+            .with_arg(
+                "_if",
+                desc="This action is only taken when `_if` is `True`. If it is `False`, this is a no-op.",
+                default=True,
+                kind="keyword_only",
+                annotation=bool,
+            )
+            .with_spec_attrs_for(
+                self.attr_spec.item_spec_type,
+                desc_template=f"Optional new value for `{self.attr_spec.item_name}.{{}}`.",
+            )
+            .with_returns(
+                f"A reference to the mutated `{self.spec_cls.__name__}` instance.",
+                annotation=self.spec_cls,
+            )
+            .build()
+        )
+
+
 class TransformMappingItemMethod(AttrMethodDescriptor):
     """
     The method descriptor/generator for `transform_<attr_singular>' for mapping
@@ -286,6 +380,7 @@ class WithoutMappingItemMethod(AttrMethodDescriptor):
 
 MAPPING_METHODS = [
     WithMappingItemMethod,
+    UpdateMappingItemMethod,
     TransformMappingItemMethod,
     WithoutMappingItemMethod,
 ]

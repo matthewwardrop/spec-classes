@@ -6,7 +6,7 @@ import pytest
 
 from spec_classes import spec_class
 from spec_classes.spec_class import SpecClassMetadata
-from spec_classes.types import KeyedSet
+from spec_classes.types import KeyedList, KeyedSet
 
 
 @spec_class(key="key")
@@ -19,7 +19,7 @@ class Spec:
     spec: UnkeyedSpec
     spec_list_items: List[UnkeyedSpec]
     spec_dict_items: Dict[str, UnkeyedSpec]
-    keyed_spec_list_items: List[KeyedSpec]
+    keyed_spec_list_items: KeyedList[KeyedSpec, str]
     keyed_spec_dict_items: Dict[str, KeyedSpec]
     keyed_spec_set_items: KeyedSet[KeyedSpec, str]
     recursive: Spec

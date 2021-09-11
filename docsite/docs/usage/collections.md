@@ -7,6 +7,7 @@ collection; again with a view to simplifying incremental setting of the
 attributes and/or adoption of a copy-on-write workflow. The helper methods are:
 
   - `with_<attr_singular>(...)`
+  - `update_<attr_singular>(...)`
   - `transform_<attr_singular>(...)`
   - `without_<attr_sigular>(...)`
 
@@ -48,6 +49,9 @@ The helper method signatures for mutable sequences (including `list`) are:
     which case the new item is inserted before it. If `_inplace` is `True` then
     the current instance is mutated, otherwise the mutation happens on a
     copy.
+  - `update_<attr_singular>(_value_or_index, _new_item=MISSING, *, _by_index=MISSING, _inplace=False, _if=True)`:
+    Updates/replaces an element of the collection. Indexing semantics are as for
+    `transform_<attr_singular>` below.
   - `transform_<attr_singular>(_value_or_index, _transform, *, _by_index=MISSING, _inplace=False, _if=True)`:
     Transforms an element of the collection if `_if` is `True`. The item to be
     transformed is passed to the callable `_transform`, and is:
@@ -55,19 +59,19 @@ The helper method signatures for mutable sequences (including `list`) are:
     - if `_by_index` is `False`, the first instance of `_value_or_index` in the
       collection.
     - if `_by_index` is `True`, the item at index `_value_or_index`.
-    
+
     If `_by_index` is not specified, it defaults to `True` if `_value_or_index`
     is not of the same type as as that contained in the sequence. If `_inplace`
     is `True` then the current instance is mutated, otherwise the mutation
     happens on a copy.
   - `without_<attr_singular>(_value_or_index, *, _by_index: bool = False, _inplace: bool = False, _if=True)`:
-    Removes an element from the collection if `_if` is `True`. The item to be 
+    Removes an element from the collection if `_if` is `True`. The item to be
     removed is:
 
     - if `_by_index` is `False`, the first instance of `_value_or_index` in the
       collection.
     - if `_by_index` is `True`, the item at index `_value_or_index`.
-    
+
     If `_by_index` is not specified, it defaults to `True` if `_value_or_index`
     is not of the same type as as that contained in the sequence. If `_inplace`
     is `True` then the current instance is mutated, otherwise the mutation
@@ -89,6 +93,10 @@ The helper method signatures for mutable mappings (including `dict`) are:
     Adds an element to the collection when `_if` is `True` by setting the value
     assigned to key `_key` to value `_value`. If `_inplace` is `True` then the
     current instance is mutated, otherwise the mutation happens on a copy.
+  - `update_<attr_singular>(_key, _new_item=MISSING, *, _inplace=False, _if=True)`:
+    Updates/replaces an element of the collection when `_if` is `True`.If
+    `_inplace` is `True` then the current instance is mutated, otherwise the
+    mutation happens on a copy.
   - `transform_<attr_singular>(_key, _transform, *, _inplace=False, _if=True)`:
     Transforms the value associated with key `_key` by passing it through the
     callable `_transform` when `_if` is `True`. If `_inplace` is `True` then the
@@ -120,6 +128,10 @@ The helper method signatures for mutable sets (including `set`) are:
     Adds the nominated element `_item` to the collection when `_if` is `True`.
     If `_inplace` is `True` then the current instance is mutated, otherwise the
     mutation happens on a copy.
+  - `update_<attr_singular>(_item, _new_item=MISSING, *, _inplace=False, _if=True)`:
+    Updates/replaces an element of the collection when `_if` is `True`. If
+    `_inplace` is `True` then the current instance is mutated, otherwise the
+    mutation happens on a copy.
   - `transform_<attr_singular>(_item, _transform, *, _inplace=False, _if=True)`:
     Transforms the nominated `_item` by passing it through the callable
     `_transform` when `_if` is `True`. If `_inplace` is `True` then the current
@@ -128,12 +140,12 @@ The helper method signatures for mutable sets (including `set`) are:
     Removes `_item` from the collection when `_if` is `True`. If `_inplace` is
     `True` then the current instance is mutated, otherwise the mutation happens
     on a copy.
-  
+
 ```python
 @spec_class
 class FavoriteNumbers:
     numbers: Set[int]
-  
+
 assert (
     FavoriteNumbers()
     .with_number(1)
@@ -163,7 +175,7 @@ class Box:
 help(Box().with_child)
 # with_child(_item: __main__.Box = MISSING, *, _index: int = MISSING, _insert: bool = False, _inplace: bool = False, _if: bool = True, label: str = None, items: List[str] = None, children: List[__main__.Box] = None) method of __main__.Box instance
 #     Return a `Box` instance identical to this one except with an item added to or updated in `children`.
-    
+#
 #     Args:
 #         _item: A new `Box` instance for children.
 #         _index: Index for which to insert or replace, depending on `insert`;
@@ -183,7 +195,7 @@ help(Box().transform_child)
 # transform_child(_value_or_index: Union[__main__.Box, int], _transform: Callable = MISSING, *, _by_index: bool = MISSING, _inplace: bool = False, _if: bool = True, label: str = None, items: List[str] = None, childre
 # n: List[__main__.Box] = None) method of __main__.Box instance
 #     Return a `Box` instance identical to this one except with an item transformed in `children`.
-    
+#
 #     Args:
 #         _value_or_index: The value to transform, or (if `by_index=True`) its
 #             index.

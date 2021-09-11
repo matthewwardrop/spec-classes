@@ -126,6 +126,43 @@ class TestSpecDictAttribute:
             "a": keyed_spec_cls()
         }
 
+    def test_update(self, spec_cls, unkeyed_spec_cls):
+        spec = spec_cls(
+            spec_dict_items={
+                "a": unkeyed_spec_cls(nested_scalar=1),
+                "b": unkeyed_spec_cls(nested_scalar=2),
+            }
+        )
+        assert set(
+            inspect.Signature.from_callable(spec.update_spec_dict_item).parameters
+        ) == {
+            "_key",
+            "_new_item",
+            "_inplace",
+            "_if",
+            "nested_scalar",
+            "nested_scalar2",
+        }
+
+        assert spec.update_spec_dict_item("a") is not spec
+        assert spec.update_spec_dict_item("a").spec_dict_items["a"].nested_scalar == 1
+        assert (
+            spec.update_spec_dict_item("a", nested_scalar=10)
+            .spec_dict_items["a"]
+            .nested_scalar
+            == 10
+        )
+        assert (
+            spec.update_spec_dict_item("a", nested_scalar=10, _if=False)
+            .spec_dict_items["a"]
+            .nested_scalar
+            == 1
+        )
+
+        # Check that new items are not created when missing
+        with pytest.raises(KeyError):
+            spec.update_spec_dict_item("d")
+
     def test_transform(self, spec_cls, unkeyed_spec_cls):
 
         spec = spec_cls(

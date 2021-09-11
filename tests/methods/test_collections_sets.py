@@ -126,5 +126,57 @@ class TestSpecSetAttribute:
             == [keyed_spec_cls("b", nested_scalar=10)]
         )
 
+    def test_update(self, spec_cls, keyed_spec_cls):
+        spec = spec_cls(
+            keyed_spec_set_items=[keyed_spec_cls("a"), keyed_spec_cls("b")],
+        )
+        assert set(
+            inspect.Signature.from_callable(spec.update_keyed_spec_set_item).parameters
+        ) == {
+            "_item",
+            "_new_item",
+            "_inplace",
+            "_if",
+            "key",
+            "nested_scalar",
+            "nested_scalar2",
+        }
+
+        a = keyed_spec_cls("a")
+
+        assert spec.update_keyed_spec_set_item(a) is not spec
+        assert (
+            spec.update_keyed_spec_set_item(a).keyed_spec_set_items[a].nested_scalar
+            == 1
+        )
+        assert (
+            spec.update_keyed_spec_set_item("a", keyed_spec_cls("c"))
+            .keyed_spec_set_items["c"]
+            .key
+            == "c"
+        )
+        assert (
+            spec.update_keyed_spec_set_item(a, keyed_spec_cls("c"))
+            .keyed_spec_set_items["c"]
+            .key
+            == "c"
+        )
+        with pytest.raises(KeyError):
+            spec.update_keyed_spec_set_item(
+                "a", keyed_spec_cls("c")
+            ).keyed_spec_set_items["a"]
+        spec.update_keyed_spec_set_item("a", nested_scalar=100).keyed_spec_set_items[
+            "a"
+        ].nested_scalar == 100
+        spec.update_keyed_spec_set_item(
+            "a", nested_scalar=100, _if=False
+        ).keyed_spec_set_items["a"].nested_scalar == 1
+
+        # Check that new items are not created when missing
+        with pytest.raises(ValueError):
+            spec.update_keyed_spec_set_item("c")
+        with pytest.raises(ValueError):
+            spec.update_keyed_spec_set_item(keyed_spec_cls("c"))
+
     # The rest of the set-container behavior is covered already in `keyed_spec_cls`
     # tests and in `TestSetAttribute`.

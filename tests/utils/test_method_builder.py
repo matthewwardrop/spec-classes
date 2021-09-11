@@ -3,9 +3,10 @@ import re
 import textwrap
 from inspect import Parameter, Signature
 from typing import Tuple
-from spec_classes.utils.method_builder import MethodBuilder
 
 import pytest
+
+from spec_classes.utils.method_builder import MethodBuilder
 
 
 class TestMethodBuilder:

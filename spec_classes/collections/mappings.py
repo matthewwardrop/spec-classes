@@ -34,7 +34,13 @@ class MappingMutator(CollectionAttrMutator):
         self.collection[index] = item
 
     def add_item(
-        self, key=None, value=None, *, attrs=None, replace=True
+        self,
+        key=None,
+        value=None,
+        *,
+        attrs=None,
+        replace=True,
+        require_pre_existent=False,
     ):  # pylint: disable=arguments-differ
         return self._mutate_collection(
             value_or_index=key,
@@ -43,6 +49,7 @@ class MappingMutator(CollectionAttrMutator):
             new_item=value,
             attrs=attrs,
             replace=replace,
+            require_pre_existent=require_pre_existent,
         )
 
     def add_items(self, items: Mapping):
