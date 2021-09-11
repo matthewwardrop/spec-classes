@@ -1,5 +1,6 @@
 import builtins
 import copy
+import functools
 import inspect
 from typing import Any, Callable, Dict, Optional, Set, Type, Union
 
@@ -86,8 +87,9 @@ def mutate_value(
     *,
     new_value: Any = MISSING,
     replace: bool = False,
-    constructor: Union[Type, Callable] = None,
+    prepare: Callable[[Any], Any] = None,
     attrs: Dict[str, Any] = None,
+    constructor: Union[Type, Callable] = None,
     transform: Callable = None,
     attr_transforms: Dict[str, Callable] = None,
     inplace: bool = False,
@@ -95,17 +97,20 @@ def mutate_value(
     """
     Mutates an existing value according to the following procedure:
 
-    1) If `new_value` is provided, set as current value; otherwise if `patch` is
-        `True`, use the old value; otherwise construct a new value via the
-        `constructor`.
-    2) Update the attributes of the current value with the provided attributes.
-    3) Transform the value under `transform`, if provided.
-    4) Transform the attributes of the current value with the transforms
+    1) If `new_value` is not `MISSING` (or `replace` is `True`), set it as
+        the current value; otherwise take `old_value`.
+    2) If a `prepare` callable is provided, and the `new_value` above was chose,
+        run the value through the `prepare` method.
+    3) If the value is `MISSING`, use the provided constructor to build a new
+        instance (using as many of the `attrs` as is possible).
+    4) Set any remaining attributes on current value.
+    5) Transform the value under `transform`, if provided.
+    5) Transform the attributes of the current value with the transforms
         provided in `attr_transforms`.
     5) Return whatever value results from the above steps.
 
     Note: `old_value` is never mutated in place, and will be copied if necessary
-    to prevent such mutation.
+    to prevent such mutation unless `inplace` is `True`.
 
     Args:
         old_value: The existing value (pass `MISSING` to start from scratch).
@@ -113,8 +118,11 @@ def mutate_value(
         replace: If `new_value` is not provided, whether to attempt to update the
             existing value (False) or start from scratch using the constructor
             (True).
-        constructor: A constructor for building a new object if needed.
         attrs: A mapping of attribute names to target values.
+        prepare: An optional callable that is called before the constructor to
+            populate the value (e.g. from a lookup table). Attributes are not
+            passed to this `prepare` method.
+        constructor: A constructor for building a new object if needed.
         transform: A transform to apply to the value before returning it.
         attr_transforms: A mapping of attribute names to transforms to apply
             to the attributes of the value before returning it (applied after
@@ -132,11 +140,16 @@ def mutate_value(
         value = new_value
     elif not replace:
         value = old_value
+        prepare = None  # Old values have already been prepared, so we suppress further preparation.
     else:
         value = MISSING
 
     if isinstance(value, Proxy):
         value = value.__wrapped__
+
+    # Run the value through the (optional) preparer.
+    if prepare is not None:
+        value = prepare(value)
 
     # If `value` is `MISSING`, or `replace` is True, and we have a
     # constructor, create a new instance with existing attrs. Any attrs not
@@ -210,11 +223,14 @@ def prepare_attr_value(
     value = mutate_value(
         old_value=MISSING,
         new_value=value,
+        prepare=(
+            functools.partial(attr_spec.prepare, instance)
+            if attr_spec.prepare
+            else None
+        ),
         constructor=attr_spec.type,
         attrs=attrs,
     )
-    if attr_spec.prepare:
-        value = attr_spec.prepare(instance, value)
     if attr_spec.is_collection:
         value = (
             attr_spec.get_collection_mutator(instance=instance, collection=value)

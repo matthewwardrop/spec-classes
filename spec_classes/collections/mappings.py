@@ -36,13 +36,6 @@ class MappingMutator(CollectionAttrMutator):
     def add_item(
         self, key=None, value=None, *, attrs=None, replace=True
     ):  # pylint: disable=arguments-differ
-        if (
-            self.attr_spec.item_spec_key_type
-            and value is not MISSING
-            and not check_type(value, self.attr_spec.item_type)
-            and check_type(value, self.attr_spec.item_spec_key_type)
-        ):
-            value = self.attr_spec.item_spec_type(value)
         return self._mutate_collection(
             value_or_index=key,
             extractor=self._extractor,

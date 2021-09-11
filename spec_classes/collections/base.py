@@ -1,5 +1,4 @@
 import copy
-import functools
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from typing import Any, Callable, Dict, List, Type
@@ -44,11 +43,6 @@ class CollectionAttrMutator(metaclass=ABCMeta):
                 associated with `attr_spec`.
             inplace: Whether to mutate the existing collection object, or to
                 copy it before doing any mutations.
-
-        Derived attributes:
-            prepare_item: An (optional) callable that should be called on all
-                items as the are added to the collection. This is derived from
-                `attr_spec` and `instance`.
     """
 
     COLLECTION_FAMILY: Type = MISSING
@@ -63,15 +57,42 @@ class CollectionAttrMutator(metaclass=ABCMeta):
         inplace: bool = True,
     ):
         self.attr_spec = attr_spec
-        self.prepare_item = self.attr_spec.prepare_item
-        if self.prepare_item:
-            self.prepare_item = functools.partial(self.prepare_item, instance)
+        self.instance = instance
 
         if collection is MISSING_COLLECTION:
             collection = getattr(instance, self.attr_spec.name, MISSING)
         if collection is not MISSING and not inplace:
             collection = copy.deepcopy(collection)
         self.collection = collection
+
+    def prepare_item(self, new_item: Any) -> Any:
+        """
+        This method when an item in this collection is mutated in the
+        `mutate_value` method. It:
+        (1) Transforms the new item under the attribute-specific item-preparer.
+        (2) Automatically casts stand-alone spec-class keys to a spec-class
+            instance with that key.
+
+        Args:
+            new_item: The incoming item.
+
+        Returns:
+            The transformed item ready for further mutation/transformation.
+
+        Note: This is called *after* we know which base value we are using
+        but before we fallback to constructors and/or apply passed attributes
+        and transforms.
+        """
+        if self.attr_spec.prepare_item:
+            new_item = self.attr_spec.prepare_item(self.instance, new_item)
+        if (  # Convert to spec-class if key was provided.
+            self.attr_spec.item_spec_key_type
+            and new_item is not MISSING
+            and not check_type(new_item, self.attr_spec.item_type)
+            and check_type(new_item, self.attr_spec.item_spec_key_type)
+        ):
+            new_item = self.attr_spec.item_spec_type(new_item)
+        return new_item
 
     def _mutate_collection(
         self,
@@ -85,7 +106,6 @@ class CollectionAttrMutator(metaclass=ABCMeta):
         attrs: Dict[str, Any] = None,
         attr_transforms: Dict[str, Callable] = None,
         replace: bool = False,
-        inplace: bool = False,
     ) -> Any:
         """
         General strategy for mutation elements within a collection, which wraps
@@ -108,14 +128,14 @@ class CollectionAttrMutator(metaclass=ABCMeta):
         new_item = mutate_value(
             old_value=old_item,
             new_value=new_item,
+            prepare=self.prepare_item,
+            attrs=attrs,
             constructor=self.attr_spec.item_type,
             transform=transform,
-            attrs=attrs,
             attr_transforms=attr_transforms,
             replace=replace,
+            inplace=True,  # We've already copied!
         )
-        if self.prepare_item:
-            new_item = self.prepare_item(new_item)
         inserter(index, new_item)
         return self
 
