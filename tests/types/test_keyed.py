@@ -234,6 +234,7 @@ class TestKeyedSet:
 
         assert list(s.keys()) == ["1", "2", "3"]
         assert s["1"] == 1
+        assert s[1] == 1
         assert s.get("4") is None
         assert list(s.items()) == [("1", 1), ("2", 2), ("3", 3)]
 

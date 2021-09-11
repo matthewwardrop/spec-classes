@@ -351,4 +351,9 @@ class KeyedSet(
         return self._dict.get(key, default)
 
     def __getitem__(self, key):
-        return self._dict[key]
+        if key in self._dict:
+            return self._dict[key]
+        item_key = self.key(key)
+        if item_key in self._dict:
+            return self._dict[item_key]
+        raise KeyError(key)
