@@ -61,11 +61,11 @@ class TestSpecProperty:
             def always_invalidated_obj(self):
                 return object()
 
-            @spec_property
+            @spec_property(allow_attribute_error=False)
             def suppresses_attribute_error(self):
                 raise AttributeError("I will be swallowed!")
 
-            @spec_property(allow_attribute_error=True)
+            @spec_property
             def raises_attribute_error(self):
                 raise AttributeError("I will not be swallowed!")
 

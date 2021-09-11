@@ -56,7 +56,7 @@ class spec_property:
         invalidated_by=None,
         owner=None,
         attr_name=None,
-        allow_attribute_error=False,
+        allow_attribute_error=True,
     ):
         # Standard `property` attributes
         self.fget = fget
@@ -154,7 +154,7 @@ class spec_property:
         # If attribute is annotated with a `spec_class` type, apply any
         # transforms using `_prepare_foo()` methods, and then check that the
         # attribute type is correct.
-        spec_metadata = getattr(instance, "__spec_class__")
+        spec_metadata = getattr(instance, "__spec_class__", None)
         if spec_metadata and self.attr_name in spec_metadata.attrs:
             attr_spec = spec_metadata.attrs[self.attr_name]
             value = prepare_attr_value(attr_spec, instance, value)
