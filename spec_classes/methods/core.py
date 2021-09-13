@@ -46,31 +46,32 @@ class InitMethod(MethodDescriptor):
             instance_metadata.frozen = False
 
         # Initialise any non-local spec attributes via parent constructors
-        for parent in spec_cls.__bases__:
-            parent_metadata = getattr(parent, "__spec_class__", None)
-            if parent_metadata:
-                parent_kwargs = {}
-                for attr in parent_metadata.attrs:
-                    instance_attr_spec = instance_metadata.attrs[attr]
-                    if instance_attr_spec.owner is spec_cls:
-                        continue
-                    if attr in kwargs:
-                        parent_kwargs[attr] = kwargs.pop(attr)
-                    else:
-                        # Parent constructor may may be overridden, and not pick up
-                        # subclass defaults. We pre-emptively solve this here.
-                        # If the constructor was not overridden, then no harm is
-                        # done (we just looked it up earlier than we had to).
-                        # We don't pass missing values in case overridden constructor
-                        # has defaults in the signature.
-                        instance_default = instance_attr_spec.lookup_default_value(
-                            self.__class__
-                        )
-                        if instance_default is not MISSING:
-                            parent_kwargs[attr] = instance_default
-                if parent_metadata.key and parent_metadata.key not in parent_kwargs:
-                    parent_kwargs[parent_metadata.key] = MISSING
-                parent.__init__(self, **parent_kwargs)
+        if instance_metadata.owner is spec_cls:
+            for parent in reversed(spec_cls.mro()[1:]):
+                parent_metadata = getattr(parent, "__spec_class__", None)
+                if parent_metadata:
+                    parent_kwargs = {}
+                    for attr in parent_metadata.attrs:
+                        instance_attr_spec = instance_metadata.attrs[attr]
+                        if instance_attr_spec.owner is not parent:
+                            continue
+                        if attr in kwargs:
+                            parent_kwargs[attr] = kwargs.pop(attr)
+                        else:
+                            # Parent constructor may may be overridden, and not pick up
+                            # subclass defaults. We pre-emptively solve this here.
+                            # If the constructor was not overridden, then no harm is
+                            # done (we just looked it up earlier than we had to).
+                            # We don't pass missing values in case overridden constructor
+                            # has defaults in the signature.
+                            instance_default = instance_attr_spec.lookup_default_value(
+                                self.__class__
+                            )
+                            if instance_default is not MISSING:
+                                parent_kwargs[attr] = instance_default
+                    if parent_metadata.key and parent_metadata.key not in parent_kwargs:
+                        parent_kwargs[parent_metadata.key] = MISSING
+                    parent.__init__(self, **parent_kwargs)
 
         # For each attribute owned by this spec_cls in `instance_metadata`,
         # initalize the attribute.
