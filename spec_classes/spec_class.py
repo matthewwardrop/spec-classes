@@ -201,7 +201,7 @@ class spec_class:
                 # spec class, and remove this __new__ wrapper.
                 if orig_new:
                     spec_cls.__new__ = orig_new
-                elif super(spec_cls, cls).__new__ is object.__new__:
+                elif super(spec_cls, spec_cls).__new__ is object.__new__:
 
                     def __new__(cls, *args, **kwargs):
                         return object.__new__(cls)
