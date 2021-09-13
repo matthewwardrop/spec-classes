@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, List
 
 import pytest
 
-from spec_classes import Attr, FrozenInstanceError, MISSING, spec_class
+from spec_classes import Attr, FrozenInstanceError, MISSING, spec_class, spec_property
 from spec_classes.spec_class import SpecClassMetadata, _SpecClassMetadataPlaceholder
 
 
@@ -741,15 +741,11 @@ class TestFramework:
             hidden_attr: str = Attr(
                 default="Hidden", init=False, repr=False, compare=False
             )
-            invalidated_attr: str = Attr(
-                default="Invalidated", repr=False, invalidated_by=["attr"]
-            )
 
         # Init and masked attrs
         assert set(inspect.Signature.from_callable(Spec.__init__).parameters) == {
             "self",
             "attr",
-            "invalidated_attr",
         }
         assert Spec(attr="Replaced").attr == "Replaced"
         with pytest.raises(
@@ -769,10 +765,55 @@ class TestFramework:
         # Representation
         assert str(Spec(attr="Replaced")) == "Spec(attr='Replaced')"
 
-        # Invalidation
+    def test_invalidation(self):
+        @spec_class
+        class Spec:
+            attr: str = Attr(default="Hello World")
+            unmanaged_attr = "Hi"
+            invalidated_attr: str = Attr(
+                default="Invalidated",
+                repr=False,
+                invalidated_by=["attr", "unmanaged_attr"],
+            )
+
+            @spec_property(cache=True, invalidated_by=["unmanaged_attr"])
+            def invalidated_property(self):
+                return self.unmanaged_attr
+
+        assert Spec.__spec_class__.invalidation_map == {
+            "attr": {"invalidated_attr"},
+            "unmanaged_attr": {"invalidated_attr", "invalidated_property"},
+        }
+
         s = Spec(invalidated_attr="Pre-invalidation")
         assert s.invalidated_attr == "Pre-invalidation"
         assert s.with_attr("Hi").invalidated_attr == "Invalidated"
+
+        @spec_class
+        class SubSpec(Spec):
+            sub_invalidated_attr: str = Attr(
+                default="Also Invalidated",
+                repr=False,
+                invalidated_by=["invalidated_attr"],
+            )
+
+        assert SubSpec.__spec_class__.invalidation_map == {
+            "attr": {"invalidated_attr"},
+            "invalidated_attr": {"sub_invalidated_attr"},
+            "unmanaged_attr": {"invalidated_attr", "invalidated_property"},
+        }
+
+        s = SubSpec(
+            invalidated_attr="Pre-invalidation",
+            sub_invalidated_attr="Also Pre-invalidation",
+        )
+        assert s.invalidated_attr == "Pre-invalidation"
+        assert s.sub_invalidated_attr == "Also Pre-invalidation"
+        assert s.invalidated_property == s.unmanaged_attr
+        s.unmanaged_attr = "Changed"
+        assert s.invalidated_attr == "Invalidated"
+        assert s.sub_invalidated_attr == "Also Invalidated"
+        assert s.invalidated_property == s.unmanaged_attr
 
     def test_post_init(self):
         @spec_class

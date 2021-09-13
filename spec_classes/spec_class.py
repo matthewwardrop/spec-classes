@@ -333,14 +333,6 @@ class spec_class:
             if attr_spec.owner is spec_cls and attr not in spec_cls.__annotations__:
                 spec_cls.__annotations__[attr] = attr_spec.type
 
-        # Add any extra invalidation mappings from non-attributes
-        for name, member in spec_cls.__dict__.items():
-            if name not in metadata.attrs and hasattr(
-                member, "__spec_class_invalidated_by__"
-            ):
-                for invalidator in member.__spec_class_invalidated_by__:
-                    metadata.invalidation_map[invalidator].add(name)
-
         # Finalize metadata and remove bootstrapper from class.
         spec_cls.__spec_class__ = metadata
 
@@ -614,12 +606,31 @@ class SpecClassMetadata:
     def invalidation_map(self):
         """
         A mapping of attribute names to the attributes which are invalided when
-        that attribute is mutated. Generated from `.attrs`.
+        that attribute is mutated. Generated from `.attrs` and by enumerating
+        over all members of the class.
         """
         invalidation_map = defaultdict(set)
+
+        # Add all attribute configurations
         for attr, attr_spec in self.attrs.items():
             for invalidator in attr_spec.invalidated_by or ():
                 invalidation_map[invalidator].add(attr)
+
+        # Add in any explicitly mapped invalidations from class attributes
+        seen_attributes = set(self.attrs)
+        for klass in self.owner.mro():
+            for name, member in klass.__dict__.items():
+                if (
+                    name in seen_attributes
+                    or name.startswith("__")
+                    and name.endswith("__")
+                ):
+                    continue
+                seen_attributes.add(name)
+
+                for invalidator in getattr(member, "__spec_class_invalidated_by__", ()):
+                    invalidation_map[invalidator].add(name)
+
         return invalidation_map
 
 
