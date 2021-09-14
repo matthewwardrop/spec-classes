@@ -9,10 +9,16 @@ KeyType = TypeVar("KeyType")
 
 class KeyedBase:
     def __init__(self, key: Optional[Callable[[ItemType], Any]] = None):
-        if key is None:
-            key = self.__get_item_key
-        self.key = key
+        self._key = key
         self._type = self.__class__
+
+    def key(self, item: ItemType) -> KeyType:
+        """
+        Look up the key for a nominated item.
+        """
+        if self._key:
+            return self._key(item)
+        return self.__get_item_key(item)
 
     # Helpers
 
