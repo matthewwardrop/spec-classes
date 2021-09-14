@@ -103,7 +103,7 @@ spec-classes allows you to lazily import types that are used to annotate
 attributes by importing them in a method that is only evaluated immediately
 before the types are used. You can also use this mechanism to alias types.
 
-```
+```python
 from __future__ import annotations
 
 @spec_class

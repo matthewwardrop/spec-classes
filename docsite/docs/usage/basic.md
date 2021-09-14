@@ -3,8 +3,8 @@
 ## The `spec_class` decorator
 
 The primary entry-point into `spec_classes` is the `spec_class` decorator, which
-takes your standard class and converts it into a 🌟SPEC CLASS🌟 (ooh... shiny!).
-In practice, this just means that it adds some dunder magic methods like
+takes your standard class and converts it into a "spec-class" (🌟 ooh... shiny!
+🌟). In practice, this just means that it adds some dunder magic methods like
 `__init__` and `__setattr__`, along with a few [helper
 methods](#helper-methods)... and nothing else. This is intentionally very
 similar to the standard library's
@@ -32,8 +32,8 @@ The result is a class that:
   printed.
 - Knows how to compare itself with other instances of the spec class.
 
-As such, and with some amount of simplification, the above spec-class
-declaration would be roughly equivalent to writing something like:
+As such, and with a huge amount of simplification, the above spec-class
+declaration would be roughly similar to writing something like:
 
 ```python
 import copy
@@ -56,6 +56,17 @@ class MySpec:
             raise TypeError("`MySpec.my_str` should be a string.")
         super().__setattr__(attr, value)
 
+    def update(self, my_str=MISSING):
+        obj = copy.deepcopy(self)
+        obj.my_str = my_str
+        return obj
+
+    def transform(self, transform=MISSING, *, my_str_transform=MISSING):
+        obj = copy.deepcopy(obj)
+        obj = transform(self)
+        obj.my_str = my_str_transform(obj.my_str)
+        return obj
+
     def with_my_str(self, value):
         obj = copy.deepcopy(self)
         obj.my_str = value
@@ -73,8 +84,8 @@ class MySpec:
 ```
 
 The remainder of this documentation is dedicated to exploring exactly which
-attributes get managed by spec-classes, which methods get generated when, and so
-on.
+attributes get managed by spec-classes, which methods get generated when, and
+how it all fits together.
 
 ## Managed attributes
 
@@ -123,16 +134,14 @@ MySpec(my_int=2)  # All good.
 ## Constructor
 
 Using the `@spec_class` decorator will by default add a constructor to the class
-(unless one is already defined on the class, in which case spec-classes will
-verify that it takes *at least* the managed attributes as arguments). You
-can disable the addition of a constructor by passing `init=False` to the
-decorator.
+(unless one is already defined on the class). You can disable the addition of a
+constructor by passing `init=False` to the decorator.
 
 All arguments to the generated constructor must be passed by name (except for
-the `key` attribute; see [below](#keyed-spec-classes)). Also, instances of spec-classes are permitted
-to have missing values. If the class does not provide a default value for an
-attribute, instances will not have the attribute present, and representations of
-the class will render it as `MISSING`. For example:
+the `key` attribute; see [below](#keyed-spec-classes)). Also, instances of
+spec-classes are permitted to have missing values. If the class does not provide
+a default value for an attribute, instances will not have the attribute present,
+and representations of the class will render it as `MISSING`. For example:
 
 ```python
 @spec_class
@@ -144,9 +153,9 @@ MySpec().my_str  # AttributeError: `MySpec.my_str` has not yet been assigned a v
 ```
 
 !!! tip
-    It is always safe to use mutable default values with your managed
-    attributes. They will be (deep)copied in the constructor before being
-    assigned to instances of your class. For example:
+    It is always safe to use mutable default values when using the default
+    constructor with your managed attributes. They will be deep-copied in the
+    constructor before being assigned to instances of your class. For example:
     ```python
     @spec_class
     class MySpec:
@@ -158,11 +167,11 @@ MySpec().my_str  # AttributeError: `MySpec.my_str` has not yet been assigned a v
 ## Keyed Spec Classes
 
 Most attributes on a spec-class are treated identically and without privilege.
-The one exception to that is an optional `key` attribute. Semantically, a key
-is intended to uniquely identify an instance of a spec-class, and if configured
-*must* be assigned a value at instantiation time. To indicate that a spec-class
-should be "keyed", pass the `key` argument to the `spec_class` constructor.
-For example:
+The one exception to that is an optional `key` attribute. Semantically, a key is
+intended to uniquely identify an instance of a spec-class within some context,
+and if configured *must* be assigned a value at instantiation time. To indicate
+that a spec-class should be "keyed", pass the `key` argument to the `spec_class`
+constructor. For example:
 
 ```python
 @spec_class(key='key')
@@ -198,60 +207,4 @@ for the base class and every managed attribute. The number and types of methods
 added depends on type annotations, but in every case mutations performed by
 these methods are (by default) done on copies of the original instance, and so
 can be used safely on instances that are shared between multiple objects.
-
-The base class has three "toplevel" methods added:
-
-  - `update`
-  - `transform`
-  - `reset`
-
-which can be used to mutate the state of the spec-class as a whole.
-
-All managed attributes have three "scalar" methods added:
-
-  - `with_<attr>`
-  - `transform_<attr>`
-  - `reset_<attr>`
-
-These methods allow the replacement or mutation of attribute values, and are
-called scalar because each attribute is treated as one entity by these methods
-(as compared to methods that mutate elements of a collection, as below).
-
-Attributes which have collection types (subclasses of `MutableSequence`,
-`MutableMapping` or `MutableSet`) also have attract three more "collection"
-methods:
-
-  - `with_<attr_singular>`
-  - `transform_<attr_singular>`
-  - `without_<attr_singular>`
-
-These methods act on individual elements within these collections.
-
-By way of demonstration, here is a simple example of how these methods can be
-used together:
-
-```python
-@spec_class
-class ClassExaminationResults:
-    teacher_name: str
-    student_grades: Dict[str, float]
-
-(
-    ClassExaminationResults()
-    .update(teacher_name='TBD')
-    .with_teacher_name('Mr. Didactic')
-    .with_student_grade('Jerry', 12.3)
-    .with_student_grade('Jane', 14.1)
-    .without_student_grade('Jerry')
-    .transform_teacher_name(lambda name: 'Mrs. Elocution')
-)
-# ClassExaminationResults(
-#   teacher_name='Mrs. Elocution',
-#   student_grades={
-#       'Jane': 14.1
-#   }
-# )
-```
-
-For more information about how these methods work, please peruse the [Toplevel Methods](toplevel.md), [Scalar Methods](scalars.md) and
-[Collection Methods](collections.md) documentation.
+Refer to the [Helper Methods](methods/index.md) documentation for more details.

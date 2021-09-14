@@ -220,6 +220,14 @@ that the **keys** (which are supposed to uniquely identify the objects) are
 stored by hash, and mapped to the values of the set. Internally this is just
 using a dictionary for storage.
 
+!!! warning
+    Care should be taken when using `KeyedSet` where the key of the item
+    is of the same type as the item itself. In such cases there is the risk of
+    ambiguity about whether an item being referenced in the collection is being
+    referenced by key or by value. For example, when `.discard(<item>)` is
+    called, `KeyedSet` allows item or keys to be passed. Note that if an item
+    is identical to its key there is no ambiguity.
+
 The computational complexity for set-like operations is the same as the base
 `set` class, with additional dict-like operations with complexity as
 follows:
@@ -250,14 +258,6 @@ str(l)  # KeyedSet[KeyedSpec, str]([KeyedSpec(key='object_1')])
 l['object_1']  # KeyedSpec(key='object_1')
 l.add(KeyedSpec('object_1', value=10))  # ValueError: Item for `'object_1'` already exists, and is not equal to the incoming item.
 ```
-
-!!! warning
-    It is not recommended to use this class when the item-type and the key-type
-    are the same without careful thought, since then discard operations are
-    potentially ambiguous. This is because when `.discard(<item>)` is called we
-    first try to treat the item as a key, and if that fails we then try to
-    extract the key from the item and try again. If the item and key types are
-    the same, it is possible to have an unwanted collision.
 
 ## Descriptors
 

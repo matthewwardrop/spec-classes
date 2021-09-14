@@ -22,7 +22,7 @@ wrappers. Spec-class definitions are Pythonic, simple, and concise.
 This library is especially useful in contexts where run-time validation and
 instant feedback is desirable, and/or where correctness is valued over
 performance. With that said, we do try to keep spec-classes performant (see
-[performance details](https://matthewwardrop.github.io/spec-classes/implementation/performance.md)).
+[performance details](https://matthewwardrop.github.io/spec-classes/implementation/performance)).
 
 ## Philosophy
 
@@ -45,7 +45,7 @@ write yourself.
 specification is that if they are mutated in one context, they are mutated for
 all contexts. Spec classes does not prevent (by default) local mutations of
 class instances (you can still do `my_spec.foo = 'bar'`); but all helper methods
-return a mutated copy (by default). For example, `my_spec.with_foo('bar')` will
+return a mutated copy by default. For example, `my_spec.with_foo('bar')` will
 not be the same instance as `my_spec`, and so these methods are always safe to
 use.
 
@@ -81,7 +81,7 @@ class Rectangle:
 
 rect = Rectangle()
 rect  # Rectangle(width=MISSING, height=MISSING, color=MISSING)
-rect.with_color("red")  # Rectangle(width=MISSING, height=MISSING, color='red')
+rect.update(width=10., height=12.).with_color("red")  # Rectangle(width=10.0, height=12.0, color='red')
 
 Rectangle(width=10., height=10.).area  # 100.0
 
@@ -116,10 +116,9 @@ python -c "import spec_classes; print(spec_classes.__version__)"
 ## Related projects and prior art
 
 `spec_classes` takes a more opinionated stance than most libraries in this space
-on exactly how data-classes should be built and on copy-on-write patterns.
-Nevertheless, there are excellent pre-existing alternatives to spec-classes
-for those looking for something lighter-weight. In particular, you could
-consider:
+on exactly how data-classes should be built and mutated. Nevertheless, there are
+excellent pre-existing alternatives to spec-classes for those looking for
+something lighter-weight. In particular, you could consider:
 
 - [typeguard](https://github.com/agronholm/typeguard): A utility library for
     run-time type-checking functions, methods and classes.
@@ -132,6 +131,6 @@ consider:
     run-time overhead (no type-checking, extra helper-methods, etc).
 
 There are many other libraries in the business of mapping and validating
-transformations from JSON to Python classes, but these somewhat orthogonal to
-the aims of this project (which is to make Python classes themselves pleasant
-to use), and so they are not mentioned here.
+transformations from JSON to Python classes, but these are somewhat orthogonal
+to the aims of this project (which is to make Python classes themselves pleasant
+to use), and so they are not included here.
