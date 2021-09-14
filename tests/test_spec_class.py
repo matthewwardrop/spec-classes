@@ -815,6 +815,33 @@ class TestFramework:
         assert s.sub_invalidated_attr == "Also Invalidated"
         assert s.invalidated_property == s.unmanaged_attr
 
+    def test_overlapping_attributes(self):
+        @spec_class
+        class Spec:
+            items: List[int]
+
+        assert Spec.__spec_class__.attrs["items"].item_name == "item"
+
+        @spec_class
+        class Spec:
+            item: int
+            items: List[int]
+
+        assert Spec.__spec_class__.attrs["items"].item_name == "items_item"
+
+        with pytest.raises(
+            RuntimeError,
+            match=re.escape(
+                "`spec_class.items`'s singular name 'item' overlaps with an existing attribute, and so does the fallback of 'items_item'. Please rename the attribute(s) to avoid this collision."
+            ),
+        ):
+
+            @spec_class(bootstrap=True)
+            class Spec:
+                item: int
+                items_item: int
+                items: List[int]
+
     def test_post_init(self):
         @spec_class
         class Spec:

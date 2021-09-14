@@ -325,6 +325,19 @@ class spec_class:
                 helpers=False,
             )
 
+        # Check if any collection attributes' singular forms overlap with
+        # another attribute, and if so, attempt to work around it.
+        for attr, attr_spec in metadata.attrs.items():
+            if attr_spec.is_collection and attr_spec.item_name in metadata.attrs:
+                if f"{attr}_item" not in metadata.attrs:
+                    attr_spec.item_name = f"{attr}_item"
+                else:
+                    raise RuntimeError(
+                        f"`{spec_class.__name__}.{attr}`'s singular name '{attr_spec.item_name}' "
+                        "overlaps with an existing attribute, and so does the fallback of "
+                        f"'{attr}_item'. Please rename the attribute(s) to avoid this collision."
+                    )
+
         # Update __annotations__ attribute to be consistent with spec_class
         # typings (unless already defined on the class contrarily)
         if not hasattr(spec_cls, "__annotations__"):

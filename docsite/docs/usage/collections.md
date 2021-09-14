@@ -25,9 +25,12 @@ This approach has two main benefits:
   1. It clearly distinguishes the target of the collection from the scalar helper methods.
   2. It encourages sensible naming of collections (i.e. plural names).
 
-If `inflect` cannot find a singular form either because the attribute name
-was not plural, or the plural form is the same as the singular form, then
-a suffix of `_item` will be used instead.
+If `inflect` cannot find a singular form either because the attribute name was
+not plural, or the plural form is the same as the singular form, or the plural
+form overlaps with an existing attribute, then a suffix of `_item` will be used
+instead. If the resulting singular form overlaps with an existing attribute, a
+`RuntimeError` is raised and the user is invited to remedy the problem by
+renaming the attribute(s).
 
 By way of example, here are a few mappings:
 
