@@ -3,7 +3,6 @@ from __future__ import annotations
 import dataclasses
 import typing
 from collections import defaultdict
-from inspect import Signature
 from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Type, Union
 
 from cached_property import cached_property
@@ -361,9 +360,6 @@ class spec_class:
                 methods[method.method_name] = method
         self.register_methods(spec_cls, methods)
 
-        # Ensure resulting spec class is valid.
-        self._validate_spec_cls(spec_cls)
-
     def build_attr_spec(
         self,
         spec_cls,
@@ -416,23 +412,6 @@ class spec_class:
                 attr_spec.prepare_item = item_preparer
 
         return attr_spec
-
-    @classmethod
-    def _validate_spec_cls(cls, spec_cls):
-        init_attrs = {
-            attr
-            for attr, attr_spec in spec_cls.__spec_class__.attrs.items()
-            if attr_spec.init
-        }
-
-        # Check that constructor is present for all managed keys.
-        init_sig = Signature.from_callable(spec_cls.__init__)
-        missing_args = set(init_attrs).difference(init_sig.parameters)
-
-        if missing_args:
-            raise ValueError(
-                f"`{spec_cls.__name__}.__init__()` is missing required arguments to populate attributes: {missing_args}."
-            )
 
     @classmethod
     def get_methods_for_spec_class(

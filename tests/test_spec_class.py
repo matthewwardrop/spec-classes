@@ -521,16 +521,6 @@ class TestFramework:
         ):
             assert Item3(x=1)
 
-    def test_spec_validation(self):
-
-        with pytest.raises(
-            ValueError, match="is missing required arguments to populate attributes"
-        ):
-
-            @spec_class(init=False, bootstrap=True)
-            class Item:
-                x: int = 1
-
     def test_frozen(self):
         @spec_class(frozen=True, bootstrap=True)
         class Item:

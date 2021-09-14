@@ -246,17 +246,18 @@ def _get_function_args(function, attrs):
         builtins, function.__name__, None
     ):
         return set()
-    # If this is a spec-class, handle it separately
-    if getattr(function, "__spec_class__", None):
-        if function.__spec_class__.init_overflow_attr:
-            return set(attrs)
-        return set(attrs).intersection(function.__spec_class__.attrs)
+    function = getattr(function, "__init__", function)
+    if function is object.__init__:
+        return set()
     # Otherwise, lookup signature and annotate function with args.
     if not hasattr(function, "__spec_class_args__"):
         try:
-            parameters = inspect.signature(function).parameters
-        except ValueError:  # pragma: no cover; Python 3.7 and newer raise a ValueError for C functions
-            parameters = {}
+            parameters = function.__signature__.parameters
+        except AttributeError:
+            try:
+                parameters = inspect.signature(function).parameters
+            except ValueError:  # pragma: no cover; Python 3.7 and newer raise a ValueError for C functions
+                parameters = {}
         if (
             parameters
             and list(parameters.values())[-1].kind is inspect.Parameter.VAR_KEYWORD
@@ -264,6 +265,6 @@ def _get_function_args(function, attrs):
             return set(attrs or {})
         try:
             function.__spec_class_args__ = set(parameters)
-        except AttributeError:
+        except AttributeError:  # pragma: no cover; this is a *very* rare edge-case affecting functions defined in C.
             return set(parameters)
     return function.__spec_class_args__

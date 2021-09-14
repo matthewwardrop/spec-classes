@@ -141,13 +141,6 @@ spec-classes' implementation of these methods as `__spec_class_init__`,
 your overrides (this is necessary because spec-classes does not touch your
 classes' MRO, and so no `super()` calls to spec-classes' methods are possible).
 
-!!! warning
-    When implementing your own `__init__` constructor, you *must* accept as
-    keyword arguments *at least* the managed attributes of the spec-class (that
-    do not opt out of init), as spec-classes assumes that these keyword
-    arguments are available. This can be done via `**kwargs` if that is
-    preferable.
-
 ## Subclassing
 
 Spec-classes fully supports subclassing, including the honoring of overridden
