@@ -13,13 +13,14 @@ from spec_classes.types import Attr, MISSING
 from .type_checking import check_type, type_label
 
 
-def protect_via_deepcopy(obj: Any) -> Any:
+def protect_via_deepcopy(obj: Any, memo: Any = None) -> Any:
     """
     Protect the incoming `obj` from subsequent mutations by returning an
     identical copy of that object.
 
     Args:
         obj: The object to protect.
+        memo: An (optional) memo object to pass down through `copy.deepcopy`.
 
     Returns:
         A mutate-safe copy of the incoming object.
@@ -31,7 +32,7 @@ def protect_via_deepcopy(obj: Any) -> Any:
     """
     if isinstance(obj, (bool, int, float, str, bytes, type, ModuleType)):
         return obj
-    return copy.deepcopy(obj)
+    return copy.deepcopy(obj, memo)
 
 
 def mutate_attr(

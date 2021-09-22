@@ -451,7 +451,7 @@ class DeepCopyMethod(MethodDescriptor):
             if attr_spec and attr_spec.do_not_copy:
                 new.__dict__[attr] = value
             else:
-                new.__dict__[attr] = copy.deepcopy(value, memo)
+                new.__dict__[attr] = protect_via_deepcopy(value, memo)
         return new
 
     def build_method(self) -> Callable:
