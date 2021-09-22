@@ -2,6 +2,7 @@ import builtins
 import copy
 import functools
 import inspect
+from types import ModuleType
 from typing import Any, Callable, Dict, Optional, Set, Type, Union
 
 from lazy_object_proxy import Proxy
@@ -10,6 +11,27 @@ from spec_classes.errors import FrozenInstanceError
 from spec_classes.types import Attr, MISSING
 
 from .type_checking import check_type, type_label
+
+
+def protect_via_deepcopy(obj: Any) -> Any:
+    """
+    Protect the incoming `obj` from subsequent mutations by returning an
+    identical copy of that object.
+
+    Args:
+        obj: The object to protect.
+
+    Returns:
+        A mutate-safe copy of the incoming object.
+
+    Notes:
+      - For base immutable types copying is not required to ensure object
+        protection, and so such objects are returned as is.
+      - Modules are not copyable, and so are also returned as is.
+    """
+    if isinstance(obj, (bool, int, float, str, bytes, type, ModuleType)):
+        return obj
+    return copy.deepcopy(obj)
 
 
 def mutate_attr(
@@ -174,7 +196,7 @@ def mutate_value(
     # If there are any left-over attributes to apply to our value, we do so here.
     if value is not None and value is not MISSING and attrs:
         if not mutate_safe:
-            value = copy.deepcopy(value)
+            value = protect_via_deepcopy(value)
             mutate_safe = True
         for attr, attr_value in attrs.items():
             if attr in used_attrs:
@@ -191,7 +213,7 @@ def mutate_value(
     # If `attr_transforms` is provided, transform attributes
     if attr_transforms:
         if not mutate_safe:
-            value = copy.deepcopy(value)
+            value = protect_via_deepcopy(value)
         for attr, attr_transform in attr_transforms.items():
             transformed_value = attr_transform(getattr(value, attr, MISSING))
             if transformed_value is not MISSING:

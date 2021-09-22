@@ -11,7 +11,11 @@ from spec_classes.errors import FrozenInstanceError
 from spec_classes.methods.scalar import WithAttrMethod
 from spec_classes.types import Attr, MISSING
 from spec_classes.utils.method_builder import MethodBuilder
-from spec_classes.utils.mutation import invalidate_attrs, mutate_attr
+from spec_classes.utils.mutation import (
+    invalidate_attrs,
+    mutate_attr,
+    protect_via_deepcopy,
+)
 
 from .base import MethodDescriptor
 
@@ -96,10 +100,8 @@ class InitMethod(MethodDescriptor):
                 copy_required = False
 
             if value is not MISSING:
-                if copy_required and not isinstance(
-                    value, (bool, int, float, str, bytes, tuple)
-                ):
-                    value = copy.deepcopy(value)
+                if copy_required:
+                    value = protect_via_deepcopy(value)
                 setattr(self, attr, value)
 
         # Finalize initialisation by storing overflow attrs and restoring frozen
@@ -257,7 +259,7 @@ class DelAttrMethod(MethodDescriptor):
             return mutate_attr(
                 obj=self,
                 attr=attr,
-                value=copy.deepcopy(attr_spec.default),  # handle default factory
+                value=protect_via_deepcopy(attr_spec.default),  # handle default factory
                 inplace=True,
                 force=True,
             )

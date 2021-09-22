@@ -7,7 +7,12 @@ import pytest
 from lazy_object_proxy import Proxy
 
 from spec_classes import MISSING, spec_class
-from spec_classes.utils.mutation import _get_function_args, mutate_attr, mutate_value
+from spec_classes.utils.mutation import (
+    _get_function_args,
+    mutate_attr,
+    mutate_value,
+    protect_via_deepcopy,
+)
 
 
 @spec_class(key="key")
@@ -20,6 +25,17 @@ class Spec:
 @spec_class(init_overflow_attr="kwargs")
 class OverflowSpec:
     pass
+
+
+def test_protect_via_deepcopy():
+    a = 1
+    b = (1, 2, 3)
+    c = [1, 2, 3]
+    assert protect_via_deepcopy(a) is a
+    assert protect_via_deepcopy(b) is b
+    assert protect_via_deepcopy(c) is not c
+    assert protect_via_deepcopy(object) is object
+    assert protect_via_deepcopy(sys) is sys
 
 
 def test_mutate_attr():

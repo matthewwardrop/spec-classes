@@ -258,6 +258,8 @@ class Attr:
         Returns:
             The default value to use for the nominated class.
         """
+        from spec_classes.utils.mutation import protect_via_deepcopy
+
         for cls in spec_cls.mro():
             if cls is self.owner:
                 return self.default_value
@@ -265,7 +267,7 @@ class Attr:
                 value = cls.__dict__[self.name]
                 if inspect.isfunction(value) or inspect.isdatadescriptor(value):
                     return MISSING  # Default is masked.
-                return copy.deepcopy(value)
+                return protect_via_deepcopy(value)
         return MISSING  # pragma: no cover; this should never happen... but you can't be too careful.
 
     @property
@@ -275,11 +277,13 @@ class Attr:
         necessary. It will always be mutate-safe, so you can use it without
         further copying.
         """
+        from spec_classes.utils.mutation import protect_via_deepcopy
+
         if self.is_masked:
             return MISSING
         if self.default_factory:
             return self.default_factory()
-        return copy.deepcopy(self.default)
+        return protect_via_deepcopy(self.default)
 
     @property
     def has_default(self) -> bool:
