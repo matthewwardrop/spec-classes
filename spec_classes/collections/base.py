@@ -134,7 +134,7 @@ class CollectionAttrMutator(metaclass=ABCMeta):
             transform=transform,
             attr_transforms=attr_transforms,
             replace=replace,
-            inplace=True,  # We've already copied!
+            inplace=False,  # Although we've already copied, index lookups may depend on the old value.
         )
         inserter(index, new_item)
         return self

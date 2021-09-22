@@ -18,7 +18,7 @@ class SetMutator(CollectionAttrMutator):
     HELPER_METHODS = SET_METHODS
 
     def _prepare_items(self):
-        for value in self.collection:
+        for value in set(self.collection):
             self.transform_item(value, self.prepare_item)
 
     def _extractor(self, value_or_index, raise_if_missing=False):

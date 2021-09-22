@@ -172,6 +172,11 @@ class TestSpecSetAttribute:
             "a", nested_scalar=100, _if=False
         ).keyed_spec_set_items["a"].nested_scalar == 1
 
+        # Check that mutations in key work fine
+        assert set(
+            spec.update_keyed_spec_set_item("b", key="c").keyed_spec_set_items.keys()
+        ) == {"a", "c"}
+
         # Check that new items are not created when missing
         with pytest.raises(ValueError):
             spec.update_keyed_spec_set_item("c")

@@ -279,6 +279,11 @@ class TestSpecListAttribute:
             == 100
         )
 
+        # Check that mutations in key work fine
+        assert set(
+            spec.update_keyed_spec_list_item("b", key="c").keyed_spec_list_items.keys()
+        ) == {"a", "c"}
+
         # Check that new items are not created when missing
         with pytest.raises(IndexError):
             spec.update_keyed_spec_list_item(10)
