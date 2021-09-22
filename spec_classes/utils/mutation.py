@@ -1,7 +1,9 @@
 import builtins
 import copy
+import copyreg
 import functools
 import inspect
+from contextlib import contextmanager
 from types import ModuleType
 from typing import Any, Callable, Dict, Optional, Set, Type, Union
 
@@ -32,7 +34,18 @@ def protect_via_deepcopy(obj: Any, memo: Any = None) -> Any:
     """
     if isinstance(obj, (bool, int, float, str, bytes, type, ModuleType)):
         return obj
-    return copy.deepcopy(obj, memo)
+    with _modules_copyable():
+        return copy.deepcopy(obj, memo)
+
+
+@contextmanager
+def _modules_copyable():
+    module_reductor = copyreg.dispatch_table.get(ModuleType, MISSING)
+    if module_reductor is MISSING:
+        copyreg.dispatch_table[ModuleType] = lambda module: "passthrough"
+    yield
+    if module_reductor is MISSING:
+        del copyreg.dispatch_table[ModuleType]
 
 
 def mutate_attr(

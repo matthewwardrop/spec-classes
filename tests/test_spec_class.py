@@ -3,7 +3,9 @@ from __future__ import annotations
 import copy
 import inspect
 import re
+import sys
 import textwrap
+from types import ModuleType
 from typing import Any, Callable, Dict, List
 
 import pytest
@@ -407,6 +409,21 @@ class TestFramework:
 
             def method(self):
                 pass
+
+        copy.deepcopy(
+            MyClass()
+        )  # If the instance method value causes recursion, we'd catch it here.
+
+    def test_deepcopy_with_module_values(self):
+        @spec_class
+        class MyClass:
+            module: ModuleType = sys
+
+            module_items: List[ModuleType] = [sys]
+
+        assert MyClass().module is sys
+        assert MyClass().module_items == [sys]
+        assert MyClass().with_module_item(sys).module_items == [sys, sys]
 
         copy.deepcopy(
             MyClass()

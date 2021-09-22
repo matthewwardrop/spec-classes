@@ -1,11 +1,10 @@
-import copy
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from typing import Any, Callable, Dict, List, Type
 
 from spec_classes.methods.base import AttrMethodDescriptor
 from spec_classes.types import Attr, MISSING
-from spec_classes.utils.mutation import mutate_value
+from spec_classes.utils.mutation import mutate_value, protect_via_deepcopy
 from spec_classes.utils.type_checking import (
     check_type,
     type_instantiate,
@@ -62,7 +61,7 @@ class CollectionAttrMutator(metaclass=ABCMeta):
         if collection is MISSING_COLLECTION:
             collection = getattr(instance, self.attr_spec.name, MISSING)
         if collection is not MISSING and not inplace:
-            collection = copy.deepcopy(collection)
+            collection = protect_via_deepcopy(collection)
         self.collection = collection
 
     def prepare_item(self, new_item: Any) -> Any:

@@ -1,6 +1,5 @@
 # pylint: disable=bad-staticmethod-argument
 
-import copy
 import functools
 import inspect
 import textwrap
@@ -90,10 +89,10 @@ class InitMethod(MethodDescriptor):
 
             value = kwargs.get(attr, MISSING)
             if value is not MISSING:
+                # If owner is not spec-class, we have already looked up and
+                # handled copying.
                 copy_required = (
-                    instance_metadata.owner
-                    is spec_cls  # Otherwise values are already looked up and passed as kwargs.
-                    or not attr_spec.do_not_copy
+                    instance_metadata.owner is spec_cls or not attr_spec.do_not_copy
                 )
             else:
                 value = attr_spec.lookup_default_value(self.__class__)
