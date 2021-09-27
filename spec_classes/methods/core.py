@@ -92,7 +92,7 @@ class InitMethod(MethodDescriptor):
                 # If owner is not spec-class, we have already looked up and
                 # handled copying.
                 copy_required = (
-                    instance_metadata.owner is spec_cls or not attr_spec.do_not_copy
+                    instance_metadata.owner is spec_cls and not attr_spec.do_not_copy
                 )
             else:
                 value = attr_spec.lookup_default_value(self.__class__)
