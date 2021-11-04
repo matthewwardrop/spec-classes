@@ -1,6 +1,7 @@
 <img alt="Spec Classes Logo" src="https://raw.githubusercontent.com/matthewwardrop/spec-classes/main/docsite/docs/assets/images/logo-with-text.png" style="max-width: 500px"/>
 
 [![PyPI - Version](https://img.shields.io/pypi/v/spec-classes.svg)](https://pypi.org/project/spec-classes/)
+[![Conda Forge - Version](https://img.shields.io/conda/vn/conda-forge/spec-classes.svg)](https://anaconda.org/conda-forge/spec-classes)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/spec-classes.svg)
 ![PyPI - Status](https://img.shields.io/pypi/status/spec-classes.svg)
 [![build](https://img.shields.io/github/workflow/status/matthewwardrop/spec-classes/Run%20Tox%20Tests)](https://github.com/matthewwardrop/spec-classes/actions?query=workflow%3A%22Run+Tox+Tests%22)
