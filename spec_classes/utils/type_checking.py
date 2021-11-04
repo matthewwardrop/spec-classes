@@ -122,6 +122,8 @@ def type_label(attr_type: Type) -> str:
                 f"{label}[{', '.join(type_label(arg) for arg in attr_type.__args__)}]"
             )
         return label
+    if str(attr_type).startswith("typing."):
+        return str(attr_type).replace("typing.", "", 1)
     if not inspect.isclass(attr_type):
         if hasattr(attr_type, "__orig_class__"):
             return type_label(attr_type.__orig_class__)

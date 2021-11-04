@@ -86,6 +86,8 @@ class TestTypeChecking:
         assert type_label(KeyedSet[KeyedSpec, str]) == "KeyedSet[KeyedSpec, str]"
         assert type_label("") == "str"
         assert type_label(KeyedList[KeyedSpec, str]()) == "KeyedList[KeyedSpec, str]"
+        assert type_label(Any) == "Any"
+        assert type_label(Union[Any, Dict[str, int]]) == "Union[Any, dict[str, int]]"
 
     def test_type_instantiate(self):
         assert type_instantiate(str) == ""
