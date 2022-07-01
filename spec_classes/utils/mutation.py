@@ -89,7 +89,10 @@ def mutate_attr(
     try:
         getattr(obj.__setattr__, "__raw__", setattr)(obj, attr, value)
     except AttributeError as e:
-        if e.args == ("can't set attribute",):  # Let's make this error less obtuse.
+        if e.args in (  # Let's make this error less obtuse.
+            ("can't set attribute",),  # Python <3.10
+            ("can't set attribute 'x'",),  # Python >=3.10
+        ):
             raise AttributeError(
                 f"Cannot set `{obj.__class__.__name__}.{attr}` to `{value}`. Is this a property without a setter?"
             ) from e
