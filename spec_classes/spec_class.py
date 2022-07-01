@@ -187,6 +187,9 @@ class spec_class:
             spec_cls.__spec_class__ = _SpecClassMetadataPlaceholder(
                 lambda: self.bootstrap(spec_cls)
             )
+            spec_cls.__dataclass_fields__ = property(
+                lambda self: self.__spec_class__.attrs
+            )
             orig_new = spec_cls.__new__ if "__new__" in spec_cls.__dict__ else None
 
             def __new__(cls, *args, **kwargs):
@@ -347,6 +350,7 @@ class spec_class:
 
         # Finalize metadata and remove bootstrapper from class.
         spec_cls.__spec_class__ = metadata
+        spec_cls.__dataclass_fields__ = metadata.attrs
 
         # Register class-level methods and validate constructor/etc.
         methods = self.get_methods_for_spec_class(
@@ -371,22 +375,19 @@ class spec_class:
         helpers=True,
     ):
         owner = owner or spec_cls
-        if hasattr(spec_cls, attr):
-            attr_value = getattr(spec_cls, attr, MISSING)
-            if isinstance(attr_value, (Attr, dataclasses.Field)):
-                setattr(
-                    spec_cls,
-                    attr,
-                    attr_value.default_value,
-                )
-                owner = spec_cls  # If an Attr was declared, this spec-class should own the attribute.
-            attr_spec = Attr.from_attr_value(
-                attr, attr_value, type=attr_type, do_not_copy=do_not_copy, owner=owner
+        attr_value = getattr(spec_cls, attr, MISSING)
+        if isinstance(attr_value, (Attr, dataclasses.Field)):
+            setattr(  # Set default on class.
+                spec_cls,
+                attr,
+                attr_value.default
+                if attr_value.default is not dataclasses.MISSING
+                else MISSING,
             )
-        else:
-            attr_spec = Attr.from_attr_value(
-                attr, MISSING, type=attr_type, do_not_copy=do_not_copy, owner=owner
-            )
+            owner = spec_cls  # If an Attr or Field was declared, this spec-class should own the attribute.
+        attr_spec = Attr.from_attr_value(
+            attr, attr_value, type=attr_type, do_not_copy=do_not_copy, owner=owner
+        )
 
         # Add helper methods
         if helpers:

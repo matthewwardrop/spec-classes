@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import dataclasses
 import inspect
 import re
 import sys
@@ -844,3 +845,11 @@ class TestFramework:
 
         assert Spec().b == 20
         assert Spec(a=50).b == 100
+
+    def test_dataclasses_compatibility(self):
+        @spec_class
+        class MySpec:
+            a: int = dataclasses.field(default_factory=lambda: 0)
+
+        assert MySpec().a == 0
+        assert dataclasses.replace(MySpec(), a=10).a == 10

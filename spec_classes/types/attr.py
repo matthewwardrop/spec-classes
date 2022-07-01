@@ -302,3 +302,8 @@ class Attr:
     def item_preparer(self, fitem_preparer: Optional[Callable[[Any], Any]]) -> Attr:
         self.prepare_item = fitem_preparer
         return self
+
+    # Dataclasses compatibility
+    @property
+    def _field_type(self):
+        return dataclasses._FIELD  # pragma: no cover
