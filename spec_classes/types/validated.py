@@ -1,5 +1,5 @@
 import numbers
-from abc import ABCMeta, abstractclassmethod
+from abc import ABCMeta, abstractmethod
 from typing import Any, Callable, Type
 
 from spec_classes.utils.type_checking import check_type, type_label
@@ -33,7 +33,8 @@ class ValidatedType(metaclass=ValidatedTypeMeta):
             f"`{type_label(cls)}` is intended to be used as a type annotation, and should not be instantiated."
         )
 
-    @abstractclassmethod
+    @classmethod
+    @abstractmethod
     def validate(cls, obj: Any) -> bool:
         ...  # pragma: no cover
 

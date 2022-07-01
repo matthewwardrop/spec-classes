@@ -1,5 +1,5 @@
 import types
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractmethod
 from typing import Any, Callable, Type
 
 from cached_property import cached_property
@@ -62,7 +62,8 @@ class MethodDescriptor(metaclass=ABCMeta):
     def method(self) -> Callable:
         return self.build_method()
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def method_name(self) -> str:
         ...  # pragma: no cover
 

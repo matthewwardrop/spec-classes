@@ -69,7 +69,7 @@ class SetMutator(CollectionAttrMutator):
 
     def transform_item(
         self, item, transform, *, attr_transforms=None
-    ):  # pylint: disable=arguments-differ
+    ):  # pylint: disable=arguments-renamed,arguments-differ
         return self._mutate_collection(
             value_or_index=item,
             extractor=self._extractor,
@@ -79,7 +79,7 @@ class SetMutator(CollectionAttrMutator):
             require_pre_existent=True,
         )
 
-    def remove_item(self, item):  # pylint: disable=arguments-differ
+    def remove_item(self, item):  # pylint: disable=arguments-renamed,arguments-differ
         key, _ = self._extractor(item, raise_if_missing=True)
         self.collection.remove(key)
         return self
