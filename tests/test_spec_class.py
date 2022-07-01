@@ -183,20 +183,7 @@ class TestFramework:
             keyed_spec_list_items=MISSING,
             keyed_spec_dict_items=MISSING,
             keyed_spec_set_items=MISSING,
-            recursive=Spec(
-                key='nested',
-                scalar=MISSING,
-                list_values=MISSING,
-                dict_values=MISSING,
-                set_values=MISSING,
-                spec=MISSING,
-                spec_list_items=MISSING,
-                spec_dict_items=MISSING,
-                keyed_spec_list_items=MISSING,
-                keyed_spec_dict_items=MISSING,
-                keyed_spec_set_items=MISSING,
-                recursive=MISSING
-            )
+            recursive=Spec(key='nested', ...)
         )
         """
             ).strip()
@@ -213,9 +200,7 @@ class TestFramework:
         ).__repr__(indent=False) == (
             "Spec(key='key', scalar=MISSING, list_values=[1, 2, 3], dict_values={'a': 1, 'b': 2}, set_values={'a'}, "
             "spec=MISSING, spec_list_items=MISSING, spec_dict_items=MISSING, keyed_spec_list_items=MISSING, keyed_spec_dict_items=MISSING, "
-            "keyed_spec_set_items=MISSING, recursive=Spec(key='nested', scalar=MISSING, list_values=MISSING, dict_values=MISSING, "
-            "set_values=MISSING, spec=MISSING, spec_list_items=MISSING, spec_dict_items=MISSING, keyed_spec_list_items=MISSING, "
-            "keyed_spec_dict_items=MISSING, keyed_spec_set_items=MISSING, recursive=MISSING))"
+            "keyed_spec_set_items=MISSING, recursive=Spec(key='nested', ...))"
         )
 
         with pytest.raises(

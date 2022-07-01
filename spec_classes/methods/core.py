@@ -318,6 +318,8 @@ class ReprMethod(MethodDescriptor):
         exclude_attrs: Iterable[str] = None,
         indent: Optional[bool] = None,
         indent_threshold: int = 100,
+        compact: bool = False,
+        compact_children: bool = True,
     ) -> str:
         """
         Args:
@@ -332,6 +334,12 @@ class ReprMethod(MethodDescriptor):
             indent_threshold: The threshold at which to switch to indented
                 representations (see above).
         """
+        if compact:
+            attrs = ""
+            if self.__spec_class__.key:
+                attrs = f"{self.__spec_class__.key}={repr(getattr(self, self.__spec_class__.key, MISSING))}, "
+            return f"{self.__class__.__name__}({attrs}...)"
+
         ambiguous_attrs = set(include_attrs or []).intersection(exclude_attrs or [])
         if ambiguous_attrs:
             raise ValueError(
@@ -359,11 +367,14 @@ class ReprMethod(MethodDescriptor):
         def object_repr(obj, indent=False):
             if obj is self:
                 return "<self>"
-            if inspect.ismethod(obj) and obj.__self__ is self:
-                return f"<bound method {obj.__name__} of self>"
+            if inspect.ismethod(obj):
+                obj_parent_name = (
+                    "self" if obj.__self__ is self else object_repr(obj.__self__)
+                )
+                return f"<bound method {obj.__name__} of {obj_parent_name}>"
             if hasattr(obj, "__repr__"):
                 try:
-                    return obj.__repr__(indent=indent)
+                    return obj.__repr__(indent=indent, compact=compact_children)
                 except TypeError:
                     pass
 
