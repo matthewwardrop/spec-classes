@@ -74,7 +74,9 @@ class InitMethod(MethodDescriptor):
                                 parent_kwargs[attr] = instance_default
                     if parent_metadata.key and parent_metadata.key not in parent_kwargs:
                         parent_kwargs[parent_metadata.key] = MISSING
-                    parent.__init__(self, **parent_kwargs)
+                    parent.__init__(  # pylint: disable=unnecessary-dunder-call
+                        self, **parent_kwargs
+                    )
 
         # For each attribute owned by this spec_cls in `instance_metadata`,
         # initalize the attribute.
@@ -374,7 +376,9 @@ class ReprMethod(MethodDescriptor):
                 return f"<bound method {obj.__name__} of {obj_parent_name}>"
             if hasattr(obj, "__repr__"):
                 try:
-                    return obj.__repr__(indent=indent, compact=compact_children)
+                    return obj.__repr__(  # pylint: disable=unnecessary-dunder-call
+                        indent=indent, compact=compact_children
+                    )
                 except TypeError:
                     pass
 

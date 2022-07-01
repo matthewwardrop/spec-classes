@@ -271,7 +271,7 @@ class ResetAttrMethod(AttrMethodDescriptor):
             return self
         if not _inplace:
             self = copy.deepcopy(self)
-        self.__delattr__(attr_spec.name)
+        delattr(self, attr_spec.name)
         return self
 
     def build_method(self) -> Callable:

@@ -544,7 +544,7 @@ class MethodBuilder:
             elif p.kind is Parameter.KEYWORD_ONLY and not done_kw_only:
                 done_kw_only = True
                 out.append("*")
-            param = str(p).split(":")[0]
+            param = str(p).split(":", maxsplit=1)[0]
             if p.default is not Parameter.empty:
                 param = param.split("=")[0]
                 out.append(f'{param}=DEFAULTS["{p.name}"]')
