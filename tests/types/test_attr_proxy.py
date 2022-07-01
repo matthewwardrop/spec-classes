@@ -10,7 +10,7 @@ def test_attr_proxy():
     class Item:
         x: int
         y: int = AttrProxy("x")
-        z: int = AttrProxy("x", transform=lambda x: x ** 2)
+        z: int = AttrProxy("x", transform=lambda x: x**2)
         w: int = AttrProxy("x", fallback=2)
         v: int = AttrProxy("x", passthrough=True, fallback=2)
         u: int = AttrProxy("u")

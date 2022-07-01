@@ -234,20 +234,17 @@ class TestMethodBuilder:
         )
 
     def test__method_signature_to_definition_str(self):
-        assert (
-            MethodBuilder._method_signature_to_definition_str(
-                Signature(
-                    [
-                        Parameter("a", kind=Parameter.POSITIONAL_ONLY),
-                        Parameter("b", kind=Parameter.POSITIONAL_OR_KEYWORD),
-                        Parameter("c", kind=Parameter.VAR_POSITIONAL),
-                        Parameter("d", kind=Parameter.KEYWORD_ONLY, default=None),
-                        Parameter("e", kind=Parameter.VAR_KEYWORD),
-                    ]
-                )
+        assert MethodBuilder._method_signature_to_definition_str(
+            Signature(
+                [
+                    Parameter("a", kind=Parameter.POSITIONAL_ONLY),
+                    Parameter("b", kind=Parameter.POSITIONAL_OR_KEYWORD),
+                    Parameter("c", kind=Parameter.VAR_POSITIONAL),
+                    Parameter("d", kind=Parameter.KEYWORD_ONLY, default=None),
+                    Parameter("e", kind=Parameter.VAR_KEYWORD),
+                ]
             )
-            == ('(a, b, *c, d=DEFAULTS["d"], **e)', {"d": None})
-        )
+        ) == ('(a, b, *c, d=DEFAULTS["d"], **e)', {"d": None})
 
     def test__method_signature_to_implementation_call(self):
         assert (

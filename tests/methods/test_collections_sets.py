@@ -107,24 +107,18 @@ class TestSpecSetAttribute:
         assert keyed in spec.with_keyed_spec_set_item(keyed).keyed_spec_set_items
 
         # Insert
-        assert (
-            sorted(
-                spec.with_keyed_spec_set_item(keyed)
-                .with_keyed_spec_set_item("b", nested_scalar=3)
-                .keyed_spec_set_items,
-                key=lambda x: x.key,
-            )
-            == [keyed_spec_cls("b", nested_scalar=3), keyed]
-        )
-        assert (
-            sorted(
-                spec.with_keyed_spec_set_item("b", nested_scalar=3)
-                .with_keyed_spec_set_item("b", nested_scalar=10)
-                .keyed_spec_set_items,
-                key=lambda x: x.key,
-            )
-            == [keyed_spec_cls("b", nested_scalar=10)]
-        )
+        assert sorted(
+            spec.with_keyed_spec_set_item(keyed)
+            .with_keyed_spec_set_item("b", nested_scalar=3)
+            .keyed_spec_set_items,
+            key=lambda x: x.key,
+        ) == [keyed_spec_cls("b", nested_scalar=3), keyed]
+        assert sorted(
+            spec.with_keyed_spec_set_item("b", nested_scalar=3)
+            .with_keyed_spec_set_item("b", nested_scalar=10)
+            .keyed_spec_set_items,
+            key=lambda x: x.key,
+        ) == [keyed_spec_cls("b", nested_scalar=10)]
 
     def test_update(self, spec_cls, keyed_spec_cls):
         spec = spec_cls(
