@@ -87,7 +87,7 @@ def bounded(
         raise ValueError("Can only specify at most one of `lt` or `le`.")
 
     # Generate name of type
-    type_str = getattr(numeric_type, "__name__", repr(numeric_type))
+    type_str = type_label(numeric_type)
     upper_bound_str = "∞)"
     lower_bound_str = "(-∞"
     if le is not None:

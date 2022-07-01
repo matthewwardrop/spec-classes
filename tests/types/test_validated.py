@@ -56,7 +56,7 @@ class TestValidatedType:
         assert isinstance(1.5, b3)
         assert not isinstance(0, b3)
         assert not isinstance(5, b3)
-        assert b3.__name__ == "typing.Union[float, int]∊(1,3)"
+        assert b3.__name__ == "Union[float, int]∊(1,3)"
 
         with pytest.raises(
             ValueError, match=r"Can only specify at most one of `gt` or `ge`\."
