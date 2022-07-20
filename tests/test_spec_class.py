@@ -21,8 +21,12 @@ class TestFramework:
         class MyClass:
             a: int
 
-        @spec_class(bootstrap=True)
+        @spec_class
         class MyClass2:
+            a: int
+
+        @spec_class(bootstrap=True)
+        class MyClass3:
             a: int
 
         assert isinstance(
@@ -35,9 +39,12 @@ class TestFramework:
         assert isinstance(MyClass.__dict__["__spec_class__"], SpecClassMetadata)
         assert isinstance(MyClass.__dict__["__dataclass_fields__"], dict)
 
-        assert isinstance(MyClass.__dict__["__spec_class__"], SpecClassMetadata)
-        assert isinstance(MyClass.__dict__["__dataclass_fields__"], dict)
-        assert MyClass2(a=1).a == 1
+        # Test auto-bootstrapping by __dataclass_fields__ (in addition to __spec_class__)
+        assert isinstance(MyClass2.__dataclass_fields__, dict)
+
+        assert isinstance(MyClass3.__dict__["__spec_class__"], SpecClassMetadata)
+        assert isinstance(MyClass3.__dict__["__dataclass_fields__"], dict)
+        assert MyClass3(a=1).a == 1
 
     def test_key(self, spec_cls):
         assert spec_cls.__spec_class__.key == "key"
