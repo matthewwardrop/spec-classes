@@ -1,6 +1,6 @@
 import dataclasses
 import re
-from typing import Any, List
+from typing import Any, List, Optional
 
 import pytest
 
@@ -88,42 +88,80 @@ class TestAttr:
         class MyClass:
             attr1: MySpec = Attr()
             attr2: List[MySpec] = Attr(default_factory=[])
+            attr3: Optional[MySpec] = Attr()
+            attr4: List[Optional[MySpec]] = Attr(default_factory=[])
 
         a1 = MyClass.attr1
         a2 = MyClass.attr2
+        a3 = MyClass.attr3
+        a4 = MyClass.attr4
 
         # Qualified name
         a2.owner = None
         assert a1.qualified_name == "MyClass.attr1"
         assert a2.qualified_name == "attr2"
+        assert a3.qualified_name == "MyClass.attr3"
+        assert a4.qualified_name == "MyClass.attr4"
 
         # Spec Type
         assert a1.spec_type is MySpec
         assert a2.spec_type is None
+        assert a3.spec_type is None
+        assert a4.spec_type is None
+
+        # Spec Type (polymorphic)
+        assert a1.spec_type_polymorphic is MySpec
+        assert a2.spec_type_polymorphic is None
+        assert a3.spec_type_polymorphic is MySpec
+        assert a4.spec_type_polymorphic is None
 
         # Is Collection
         assert a1.is_collection is False
         assert a2.is_collection is True
+        assert a3.is_collection is False
+        assert a4.is_collection is True
 
         # Collection Mutator Type
         assert a1.collection_mutator_type is None
         assert a2.collection_mutator_type is SequenceMutator
+        assert a3.collection_mutator_type is None
+        assert a4.collection_mutator_type is SequenceMutator
 
         # Item Name
         assert a1.item_name == "attr1_item"
         assert a2.item_name == "attr2_item"
+        assert a3.item_name == "attr3_item"
+        assert a4.item_name == "attr4_item"
 
         # Item type
         assert a1.item_type is Any
         assert a2.item_type is MySpec
+        assert a3.item_type is Any
+        assert a4.item_type is Optional[MySpec]
 
         # Item spec type
         assert a1.item_spec_type is None
         assert a2.item_spec_type is MySpec
+        assert a3.item_spec_type is None
+        assert a4.item_spec_type is None
+
+        # Item spec type (polymorphic)
+        assert a1.item_spec_type_polymorphic is None
+        assert a2.item_spec_type_polymorphic is MySpec
+        assert a3.item_spec_type_polymorphic is None
+        assert a4.item_spec_type_polymorphic is MySpec
 
         # Item spec key type
         assert a1.item_spec_key_type is None
         assert a2.item_spec_key_type is str
+        assert a3.item_spec_key_type is None
+        assert a4.item_spec_key_type is None
+
+        # Item spec key type (polymorphic)
+        assert a1.item_spec_polymorphic_key_type is None
+        assert a2.item_spec_polymorphic_key_type is str
+        assert a3.item_spec_polymorphic_key_type is None
+        assert a4.item_spec_polymorphic_key_type is str
 
     def test_decorators(self):
         class MyClass:

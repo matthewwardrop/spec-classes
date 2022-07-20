@@ -198,6 +198,10 @@ class Attr:
     def spec_type(self) -> Optional[Type]:
         return get_spec_class_for_type(self.type)
 
+    @cached_property
+    def spec_type_polymorphic(self) -> Optional[Type]:
+        return get_spec_class_for_type(self.type, allow_polymorphic=True)
+
     # Collection attributes
 
     @cached_property
@@ -241,6 +245,21 @@ class Attr:
         if self.item_spec_type and self.item_spec_type.__spec_class__.key:
             return self.item_spec_type.__spec_class__.annotations[
                 self.item_spec_type.__spec_class__.key
+            ]
+        return None
+
+    @cached_property
+    def item_spec_type_polymorphic(self) -> Optional[Type]:
+        return get_spec_class_for_type(self.item_type, allow_polymorphic=True)
+
+    @cached_property
+    def item_spec_polymorphic_key_type(self) -> Optional[Type]:
+        if (
+            self.item_spec_type_polymorphic
+            and self.item_spec_type_polymorphic.__spec_class__.key
+        ):
+            return self.item_spec_type_polymorphic.__spec_class__.annotations[
+                self.item_spec_type_polymorphic.__spec_class__.key
             ]
         return None
 
