@@ -39,6 +39,7 @@ python = "^3.7.2"
 cached-property = "^1.5.2"
 inflect = "^5.0.0"
 lazy-object-proxy = "^1.5.0"
+typing-extensions = ">=3.10"
 
 [tool.poetry.dev-dependencies]
 black = "^22.6.0"

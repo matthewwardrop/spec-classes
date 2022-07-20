@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Set, TypeVar, Union
+from typing import Any, Callable, Dict, List, Literal, Set, TypeVar, Union
 
 from spec_classes import spec_class
 from spec_classes.types import KeyedList, KeyedSet
@@ -9,6 +9,8 @@ from spec_classes.utils.type_checking import (
     type_instantiate,
     type_label,
 )
+
+from typing_extensions import Literal
 
 
 @spec_class
@@ -51,6 +53,9 @@ class TestTypeChecking:
         assert check_type(lambda x: x, Callable)
 
         assert check_type([1, "a"], List[Union[str, int]])
+
+        assert check_type("hi", Literal["hi"])
+        assert not check_type(1, Literal["hi"])
 
     def test_get_collection_item_type(self):
         assert get_collection_item_type(list) is Any

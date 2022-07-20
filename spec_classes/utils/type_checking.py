@@ -11,6 +11,7 @@ from typing import (
     Union,
     _GenericAlias,
 )  # pylint: disable=protected-access
+from typing_extensions import Literal
 
 
 def type_match(type_input: Type, type_reference: type) -> bool:
@@ -35,6 +36,9 @@ def check_type(value: Any, attr_type: Type) -> bool:
 
         if attr_type.__origin__ is Union:
             return any(check_type(value, type_) for type_ in attr_type.__args__)
+
+        if attr_type.__origin__ is Literal:
+            return value in attr_type.__args__
 
         if isinstance(attr_type, _GenericAlias):
             if not isinstance(value, attr_type.__origin__):
