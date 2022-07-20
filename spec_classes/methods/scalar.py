@@ -121,7 +121,8 @@ class UpdateAttrMethod(AttrMethodDescriptor):
             _new_value=mutate_value(
                 old_value=Proxy(lambda: getattr(self, attr_spec.name, MISSING)),
                 new_value=_new_value,
-                constructor=attr_spec.type,
+                constructor=attr_spec.constructor,
+                expected_type=attr_spec.type,
                 attrs=attrs,
             ),
             _inplace=_inplace,
@@ -202,7 +203,8 @@ class TransformAttrMethod(AttrMethodDescriptor):
             _new_value=mutate_value(
                 old_value=Proxy(lambda: getattr(self, attr_spec.name, MISSING)),
                 transform=_transform,
-                constructor=attr_spec.type,
+                constructor=attr_spec.constructor,
+                expected_type=attr_spec.type,
                 attr_transforms=attr_transforms,
             ),
             _inplace=_inplace,

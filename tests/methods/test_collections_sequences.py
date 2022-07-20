@@ -157,6 +157,12 @@ class TestSpecListAttribute:
         assert isinstance(
             spec.with_spec_list_item().spec_list_items[0], unkeyed_spec_cls
         )
+        assert (
+            spec.with_spec_list_item({"nested_scalar": 10})
+            .spec_list_items[0]
+            .nested_scalar
+            == 10
+        )
 
         # append
         assert (

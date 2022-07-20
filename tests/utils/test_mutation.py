@@ -71,6 +71,15 @@ def test_mutate_value():
     assert mutate_value(MISSING, constructor=str) == ""
     assert mutate_value(MISSING, constructor=list) == []
 
+    # Via attr_spec spec-class initialization
+    @spec_class
+    class MySpec:
+        a: int
+
+    assert mutate_value(
+        MISSING, new_value={"a": 10}, constructor=MySpec, expected_type=MySpec
+    ) == MySpec(a=10)
+
     # Via proxy
     obj = object()
     assert mutate_value(Proxy(lambda: obj)) is obj

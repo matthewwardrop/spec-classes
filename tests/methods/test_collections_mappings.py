@@ -106,6 +106,12 @@ class TestSpecDictAttribute:
         assert isinstance(
             spec.with_spec_dict_item("a").spec_dict_items["a"], unkeyed_spec_cls
         )
+        assert (
+            spec.with_spec_dict_item("a", {"nested_scalar": 10})
+            .spec_dict_items["a"]
+            .nested_scalar
+            == 10
+        )
 
         # Insert
         assert spec.with_spec_dict_item("a", unkeyed).with_spec_dict_item(

@@ -74,6 +74,13 @@ class TestSpecAttribute:
             TypeError, match=r"Attempt to set `Spec\.spec` with an invalid type"
         ):
             spec.with_spec(None)
+        assert spec.with_spec({"nested_scalar": 10}).spec.nested_scalar == 10
+        assert (
+            spec.with_spec_list_items([{"nested_scalar": 10}])
+            .spec_list_items[0]
+            .nested_scalar
+            == 10
+        )
 
         # Assignments
         nested_spec = unkeyed_spec_cls()

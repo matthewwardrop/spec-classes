@@ -202,6 +202,10 @@ class Attr:
     def spec_type_polymorphic(self) -> Optional[Type]:
         return get_spec_class_for_type(self.type, allow_polymorphic=True)
 
+    @cached_property
+    def constructor(self) -> Optional[Type]:
+        return self.spec_type_polymorphic or self.type
+
     # Collection attributes
 
     @cached_property
@@ -262,6 +266,10 @@ class Attr:
                 self.item_spec_type_polymorphic.__spec_class__.key
             ]
         return None
+
+    @cached_property
+    def item_constructor(self) -> Optional[Type]:
+        return self.item_spec_type_polymorphic or self.item_type
 
     # Helpers
     def lookup_default_value(self, spec_cls: Type) -> Any:

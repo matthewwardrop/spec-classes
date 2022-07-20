@@ -129,6 +129,7 @@ def mutate_value(
     prepare: Callable[[Any], Any] = None,
     attrs: Dict[str, Any] = None,
     constructor: Union[Type, Callable] = None,
+    expected_type: Type = None,
     transform: Callable = None,
     attr_transforms: Dict[str, Callable] = None,
     inplace: bool = False,
@@ -140,13 +141,16 @@ def mutate_value(
         the current value; otherwise take `old_value`.
     2) If a `prepare` callable is provided, and the `new_value` above was chose,
         run the value through the `prepare` method.
-    3) If the value is `MISSING`, use the provided constructor to build a new
+    3) If `constructor` and `expected_type` are both provided and `value` is not
+        of the type expected and is a dictionary, interpret `value` as a
+        dictionary of arguments to pass to the constructor.
+    4) If the value is `MISSING`, use the provided constructor to build a new
         instance (using as many of the `attrs` as is possible).
-    4) Set any remaining attributes on current value.
-    5) Transform the value under `transform`, if provided.
-    5) Transform the attributes of the current value with the transforms
+    5) Set any remaining attributes on current value.
+    6) Transform the value under `transform`, if provided.
+    7) Transform the attributes of the current value with the transforms
         provided in `attr_transforms`.
-    5) Return whatever value results from the above steps.
+    8) Return whatever value results from the above steps.
 
     Note: `old_value` is never mutated in place, and will be copied if necessary
     to prevent such mutation unless `inplace` is `True`.
@@ -190,10 +194,27 @@ def mutate_value(
     if prepare is not None:
         value = prepare(value)
 
+    # Check whether value should be interpreted as constructor arguments, and
+    # construct objects if so.
+    # Note: We do not merge this into the below because this construction is
+    # more strict (all attributes must be handled by the constructor).
+    if (
+        constructor
+        and expected_type
+        and isinstance(value, dict)
+        and not check_type(value, expected_type)
+    ):
+        value = constructor(
+            **{
+                **(attrs or {}),
+                **value,
+            }
+        )
+
     # If `value` is `MISSING`, or `replace` is True, and we have a
     # constructor, create a new instance with existing attrs. Any attrs not
     # found in the constructor will be assigned later.
-    if value is MISSING and constructor is not None:
+    elif value is MISSING and constructor is not None:
         mutate_safe = True
         while hasattr(constructor, "__origin__"):
             constructor = constructor.__origin__
@@ -267,7 +288,8 @@ def prepare_attr_value(
             if attr_spec.prepare
             else None
         ),
-        constructor=attr_spec.type,
+        constructor=attr_spec.constructor,
+        expected_type=attr_spec.type,
         attrs=attrs,
     )
     if attr_spec.is_collection:
