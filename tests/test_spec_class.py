@@ -28,10 +28,15 @@ class TestFramework:
         assert isinstance(
             MyClass.__dict__["__spec_class__"], _SpecClassMetadataPlaceholder
         )
+        assert isinstance(
+            MyClass.__dict__["__dataclass_fields__"], _SpecClassMetadataPlaceholder
+        )
         assert MyClass(a=1).a == 1
         assert isinstance(MyClass.__dict__["__spec_class__"], SpecClassMetadata)
+        assert isinstance(MyClass.__dict__["__dataclass_fields__"], dict)
 
         assert isinstance(MyClass.__dict__["__spec_class__"], SpecClassMetadata)
+        assert isinstance(MyClass.__dict__["__dataclass_fields__"], dict)
         assert MyClass2(a=1).a == 1
 
     def test_key(self, spec_cls):

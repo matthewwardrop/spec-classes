@@ -187,8 +187,8 @@ class spec_class:
             spec_cls.__spec_class__ = _SpecClassMetadataPlaceholder(
                 lambda: self.bootstrap(spec_cls)
             )
-            spec_cls.__dataclass_fields__ = property(
-                lambda self: self.__spec_class__.attrs
+            spec_cls.__dataclass_fields__ = _SpecClassMetadataPlaceholder(
+                lambda: self.bootstrap(spec_cls), return_attr="attrs"
             )
             orig_new = spec_cls.__new__ if "__new__" in spec_cls.__dict__ else None
 
@@ -645,6 +645,7 @@ class _SpecClassMetadataPlaceholder:
     """
 
     bootstrapper: Callable[[], None]
+    return_attr: Optional[str] = None
 
     def __get__(self, instance, owner):
         """
@@ -652,4 +653,6 @@ class _SpecClassMetadataPlaceholder:
         looked up on the class.
         """
         self.bootstrapper()
-        return owner.__spec_class__
+        if not self.return_attr:
+            return owner.__spec_class__
+        return getattr(owner.__spec_class__, self.return_attr)
