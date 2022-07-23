@@ -202,7 +202,7 @@ def mutate_value(
         constructor
         and expected_type
         and isinstance(value, dict)
-        and not check_type(value, expected_type)
+        and not check_type({}, expected_type)
     ):
         value = constructor(
             **{

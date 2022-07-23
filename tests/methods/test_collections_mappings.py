@@ -2,6 +2,8 @@ import inspect
 
 import pytest
 
+from tests.conftest import UnkeyedSpec
+
 
 class TestDictAttribute:
     def test_with(self, spec_cls):
@@ -98,6 +100,15 @@ class TestSpecDictAttribute:
             "nested_scalar",
             "nested_scalar2",
         }
+
+        # Test scalar insertion (testing possible conflation with constructor arguments)
+        assert spec.with_spec_dict_items({}).spec_dict_items == {}
+        assert spec.with_spec_dict_items({"a": UnkeyedSpec()}).spec_dict_items == {
+            "a": UnkeyedSpec()
+        }
+        assert spec.with_spec_dict_items(
+            {"a": {"nested_scalar": 1}}
+        ).spec_dict_items == {"a": UnkeyedSpec(nested_scalar=1)}
 
         # Constructors
         assert "spec_dict_items" not in spec.__dict__
