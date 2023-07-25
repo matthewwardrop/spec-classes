@@ -81,7 +81,6 @@ class InitMethod(MethodDescriptor):
         # For each attribute owned by this spec_cls in `instance_metadata`,
         # initalize the attribute.
         for attr, attr_spec in instance_metadata.attrs.items():
-
             if (
                 not attr_spec.init
                 or attr_spec.owner is not spec_cls
@@ -108,7 +107,6 @@ class InitMethod(MethodDescriptor):
         # Finalize initialisation by storing overflow attrs and restoring frozen
         # status.
         if instance_metadata.owner is spec_cls:
-
             if instance_metadata.init_overflow_attr:
                 getattr(
                     self, f"with_{instance_metadata.init_overflow_attr}"
@@ -129,7 +127,6 @@ class InitMethod(MethodDescriptor):
                 instance_metadata.frozen = True
 
     def build_method(self) -> Callable:
-
         spec_class_key = self.spec_cls.__spec_class__.key
         key_default = inspect.Parameter.empty
         if spec_class_key:

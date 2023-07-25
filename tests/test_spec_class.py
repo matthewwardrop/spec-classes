@@ -127,7 +127,6 @@ class TestFramework:
             Item().x = "invalid type"
 
     def test_spec_methods(self, spec_cls):
-
         assert hasattr(spec_cls, "__init__")
         assert hasattr(spec_cls, "__repr__")
         assert hasattr(spec_cls, "__eq__")
@@ -707,7 +706,6 @@ class TestFramework:
     def test_annotation_types(self):
         @spec_class(bootstrap=True)
         class MySpec:
-
             ANNOTATION_TYPES = {"my_str": str}
 
             a: my_str  # noqa: F821; type defined by ANNOTATION_TYPES

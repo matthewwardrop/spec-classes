@@ -17,7 +17,6 @@ class TestListAttribute:
         return ListSpec(list_values=[1, 2, 3], list_str_values=["a", "b", "c"])
 
     def test_with(self, spec_cls):
-
         spec = spec_cls()
         assert set(
             inspect.Signature.from_callable(spec.with_list_value).parameters
@@ -62,7 +61,6 @@ class TestListAttribute:
         assert spec.list_values == [1, 2, 3, 4]
 
     def test_transform(self, list_spec):
-
         spec = list_spec.with_list_values([1]).with_list_str_values(["a"])
         assert set(
             inspect.Signature.from_callable(spec.transform_list_value).parameters
@@ -135,7 +133,6 @@ class TestListAttribute:
 
 class TestSpecListAttribute:
     def test_with(self, spec_cls, unkeyed_spec_cls):
-
         spec = spec_cls()
         assert set(
             inspect.Signature.from_callable(spec.with_spec_list_item).parameters
@@ -299,7 +296,6 @@ class TestSpecListAttribute:
             spec.update_keyed_spec_list_item(keyed_spec_cls("c"))
 
     def test_transform(self, spec_cls, unkeyed_spec_cls):
-
         spec = spec_cls(spec_list_items=[unkeyed_spec_cls(), unkeyed_spec_cls()])
         assert set(
             inspect.Signature.from_callable(spec.transform_spec_list_item).parameters
@@ -348,7 +344,6 @@ class TestSpecListAttribute:
         ]
 
     def test_without(self, spec_cls, unkeyed_spec_cls):
-
         spec = spec_cls(
             spec_list_items=[
                 unkeyed_spec_cls(nested_scalar=1),

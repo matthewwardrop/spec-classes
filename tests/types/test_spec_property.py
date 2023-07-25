@@ -11,7 +11,6 @@ class TestSpecProperty:
     def spec_cls(self):
         @spec_class
         class MySpecClass:
-
             overridable_int: int
             static_str: str
             cached_time: float
@@ -174,7 +173,6 @@ class TestSpecProperty:
         assert spec_cls.always_invalidated_obj is not aobj
 
     def test_attribute_error_handling(self, spec_cls):
-
         with pytest.raises(
             NestedAttributeError, match=re.escape("I will be swallowed!")
         ):

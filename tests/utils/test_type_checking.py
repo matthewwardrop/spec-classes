@@ -29,7 +29,6 @@ class KeyedSpec:
 
 class TestTypeChecking:
     def test_type_checking(self):
-
         assert check_type("string", str)
         assert check_type([], list)
 

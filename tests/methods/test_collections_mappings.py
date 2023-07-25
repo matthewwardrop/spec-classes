@@ -7,7 +7,6 @@ from tests.conftest import UnkeyedSpec
 
 class TestDictAttribute:
     def test_with(self, spec_cls):
-
         spec = spec_cls()
         assert set(
             inspect.Signature.from_callable(spec.with_dict_value).parameters
@@ -88,7 +87,6 @@ class TestDictAttribute:
 
 class TestSpecDictAttribute:
     def test_with(self, spec_cls, unkeyed_spec_cls, keyed_spec_cls):
-
         spec = spec_cls()
         assert set(
             inspect.Signature.from_callable(spec.with_spec_dict_item).parameters
@@ -181,7 +179,6 @@ class TestSpecDictAttribute:
             spec.update_spec_dict_item("d")
 
     def test_transform(self, spec_cls, unkeyed_spec_cls):
-
         spec = spec_cls(
             spec_dict_items={
                 "a": unkeyed_spec_cls(nested_scalar=1),
@@ -221,7 +218,6 @@ class TestSpecDictAttribute:
             spec.transform_spec_dict_item("c", nested_scalar=lambda x: 3)
 
     def test_without(self, spec_cls, unkeyed_spec_cls):
-
         spec = spec_cls(
             spec_dict_items={
                 "a": unkeyed_spec_cls(nested_scalar=1),

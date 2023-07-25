@@ -33,7 +33,6 @@ def check_type(value: Any, attr_type: Type) -> bool:
         return True
 
     if hasattr(attr_type, "__origin__"):  # we are dealing with a `typing` object.
-
         if attr_type.__origin__ is Union:
             return any(check_type(value, type_) for type_ in attr_type.__args__)
 

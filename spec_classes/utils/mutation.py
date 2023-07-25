@@ -67,7 +67,6 @@ def mutate_attr(
     metadata = getattr(obj, "__spec_class__", None)
 
     if metadata:
-
         # Abort if class is frozen.
         if not force and inplace and metadata.frozen:
             raise FrozenInstanceError(
@@ -317,7 +316,9 @@ def _get_function_args(function, attrs):
         except AttributeError:
             try:
                 parameters = inspect.signature(function).parameters
-            except ValueError:  # pragma: no cover; Python 3.7 and newer raise a ValueError for C functions
+            except (
+                ValueError
+            ):  # pragma: no cover; Python 3.7 and newer raise a ValueError for C functions
                 parameters = {}
         if (
             parameters
@@ -326,6 +327,8 @@ def _get_function_args(function, attrs):
             return set(attrs or {})
         try:
             function.__spec_class_args__ = set(parameters)
-        except AttributeError:  # pragma: no cover; this is a *very* rare edge-case affecting functions defined in C.
+        except (
+            AttributeError
+        ):  # pragma: no cover; this is a *very* rare edge-case affecting functions defined in C.
             return set(parameters)
     return function.__spec_class_args__

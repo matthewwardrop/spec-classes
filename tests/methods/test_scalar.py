@@ -56,7 +56,6 @@ class TestSpecAttribute:
             spec.scalar
 
     def test_with(self, spec_cls, unkeyed_spec_cls):
-
         spec = spec_cls()
         assert set(inspect.Signature.from_callable(spec.with_spec).parameters) == {
             "_new_value",

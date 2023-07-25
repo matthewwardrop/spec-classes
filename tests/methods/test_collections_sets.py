@@ -5,7 +5,6 @@ import pytest
 
 class TestSetAttribute:
     def test_with(self, spec_cls):
-
         spec = spec_cls()
         assert set(inspect.Signature.from_callable(spec.with_set_value).parameters) == {
             "_item",
@@ -88,7 +87,6 @@ class TestSetAttribute:
 
 class TestSpecSetAttribute:
     def test_with(self, spec_cls, keyed_spec_cls):
-
         spec = spec_cls()
         assert set(
             inspect.Signature.from_callable(spec.with_keyed_spec_set_item).parameters

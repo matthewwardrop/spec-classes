@@ -1,12 +1,15 @@
-[tool.poetry]
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
 name = "spec-classes"
-version = "0.0.0"
 description = "Represent type-checked specifications as Python classes and incrementally build them."
-authors = ["Matthew Wardrop <mpwardrop@gmail.com>"]
+authors = [
+    {name = "Matthew Wardrop", email = "mpwardrop@gmail.com"},
+]
 license = "MIT"
 readme = "docsite/docs/index.md"
-repository = "https://github.com/matthewwardrop/spec-classes"
-documentation = "https://matthewwardrop.github.io/spec-classes"
 classifiers=[
     "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
@@ -18,40 +21,117 @@ classifiers=[
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
 ]
+requires-python = ">=3.7.2"
+dependencies = [
+    "cached-property>=1.5.2",
+    "inflect>=5.0.0",
+    "lazy-object-proxy>=1.5.0",
+    "typing-extensions>=3.10",
+]
+dynamic = ["version"]
 
+[project.urls]
+repository = "https://github.com/matthewwardrop/spec-classes"
+documentation = "https://matthewwardrop.github.io/spec-classes"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "spec_classes/_version.py"
+
+# Build target configuration
+
+[tool.hatch.build.targets.sdist]
 include = [
-    { path = "docsite", format = "sdist" },
-    { path = "tests", format = "sdist" },
-    { path = "poetry.lock", format = "sdist" },
-    { path = "tox.ini", format = "sdist" },
-    { path = ".pylintrc", format = "sdist" },
+    "docsite",
+    "spec_classes",
+    "tests",
+    "LICENSE",
+    "pyproject.toml",
+    "README.md",
 ]
 
-[tool.poetry-dynamic-versioning]
-enable = true
+# Testing configuration
 
-[tool.poetry.build]
-generate-setup-file = false
+[tool.hatch.envs.default]
+dependencies = [
+    "black==23.3.0",
+    "flake8-docstrings==1.7.0",
+    "flake8-pyproject",
+    "flake8==5.0.4",
+    "pylint==2.14.5",
+    "pytest-cov==4.0.0",
+    "pytest==7.2.0",
+]
 
-[tool.poetry.dependencies]
-python = "^3.7.2"
-cached-property = "^1.5.2"
-inflect = "^5.0.0"
-lazy-object-proxy = "^1.5.0"
-typing-extensions = ">=3.10"
+[tool.hatch.envs.default.scripts]
+tests = ["unit-tests", "linters"]
+unit-tests = "pytest --cov=spec_classes --cov-report=term-missing --cov-report=xml -vv {args} tests"
+linters = [
+    "flake8 spec_classes tests",
+    "pylint spec_classes",
+    "black --check spec_classes tests",
+]
+format = "black spec_classes tests"
 
-[tool.poetry.dev-dependencies]
-black = "^22.6.0"
-flake8 = "^4.0.1"
-flake8-docstrings = "^1.6.0"
-pydocstyle = "^6.1.1"
-pyflakes = "^2.4.0"
-pylint = "^2.14.4"
-pytest = "^7.1.2"
-pytest-cov = "^3.0.0"
-tox = "^3.25.1"
+[[tool.hatch.envs.test.matrix]]
+python = ["37", "38", "39", "310"]
 
-[build-system]
-requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
-build-backend = "poetry.core.masonry.api"
+# Linting configuration
+
+[tool.flake8]
+ignore = [
+    "C901",
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D107",
+    "D200",
+    "D205",
+    "D400",
+    "D401",
+    "D413",
+    "E128",
+    "E501",
+    "F405",
+    "W503",
+    "W504",
+]
+max-complexity = 10
+application-import-names = "spec_classes"
+
+[tool.pylint."MESSAGES CONTROL"]
+disable = [
+  "assignment-from-no-return",
+  "cyclic-import",
+  "duplicate-code",
+  "exec-used",
+  "fixme",
+  "import-outside-toplevel",
+  "invalid-name",
+  "invalid-overridden-method",
+  "line-too-long",
+  "missing-docstring",
+  "no-member",
+  "protected-access",
+  "too-few-public-methods",
+  "too-many-arguments",
+  "too-many-branches",
+  "too-many-instance-attributes",
+  "too-many-lines",
+  "too-many-locals",
+  "too-many-nested-blocks",
+  "too-many-public-methods",
+  "too-many-return-statements",
+  "too-many-statements",
+  "ungrouped-imports",
+  "unused-argument",
+  "unused-wildcard-import",
+  "wildcard-import",
+]
