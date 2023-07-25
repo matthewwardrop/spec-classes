@@ -4,7 +4,7 @@
 [![Conda Forge - Version](https://img.shields.io/conda/vn/conda-forge/spec-classes.svg)](https://anaconda.org/conda-forge/spec-classes)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/spec-classes.svg)
 ![PyPI - Status](https://img.shields.io/pypi/status/spec-classes.svg)
-[![build](https://img.shields.io/github/workflow/status/matthewwardrop/spec-classes/Run%20Tox%20Tests)](https://github.com/matthewwardrop/spec-classes/actions?query=workflow%3A%22Run+Tox+Tests%22)
+[![build](https://img.shields.io/github/actions/workflow/status/matthewwardrop/spec-classes/tests.yml)](https://github.com/matthewwardrop/spec-classes/actions?query=workflow%3A%22Run+Tox+Tests%22)
 [![codecov](https://codecov.io/gh/matthewwardrop/spec-classes/branch/main/graph/badge.svg)](https://codecov.io/gh/matthewwardrop/spec-classes)
 [![Code Style](https://img.shields.io/badge/code%20style-black-black)](https://github.com/psf/black)
 
