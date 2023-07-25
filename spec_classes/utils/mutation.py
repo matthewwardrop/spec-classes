@@ -55,6 +55,7 @@ def mutate_attr(
     inplace: bool = False,
     type_check: bool = True,
     force: bool = False,
+    mutation_flag: Optional[bool] = None,
 ) -> Any:
     """
     Set attribute `attr` of `obj` to `value`, and return the mutated
@@ -87,6 +88,13 @@ def mutate_attr(
     # Perform actual mutation
     try:
         getattr(obj.__setattr__, "__raw__", setattr)(obj, attr, value)
+        if mutation_flag is not None:
+            if "__spec_class_mutated_attrs__" not in obj.__dict__:
+                obj.__spec_class_mutated_attrs__ = set()
+            if mutation_flag:
+                obj.__spec_class_mutated_attrs__.add(attr)
+            else:
+                obj.__spec_class_mutated_attrs__.discard(attr)
     except AttributeError as e:
         if e.args in (  # Let's make this error less obtuse.
             ("can't set attribute",),  # Python <3.10

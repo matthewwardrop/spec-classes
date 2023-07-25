@@ -71,6 +71,7 @@ class WithMappingItemMethod(AttrMethodDescriptor):
             ),
             inplace=_inplace,
             type_check=False,
+            mutation_flag=True,
         )
 
     def build_method(self) -> Callable:
@@ -165,6 +166,7 @@ class UpdateMappingItemMethod(AttrMethodDescriptor):
             ),
             inplace=_inplace,
             type_check=False,
+            mutation_flag=True,
         )
 
     def build_method(self) -> Callable:
@@ -259,6 +261,7 @@ class TransformMappingItemMethod(AttrMethodDescriptor):
             ),
             inplace=_inplace,
             type_check=False,
+            mutation_flag=True,
         )
 
     def build_method(self) -> Callable:
@@ -341,6 +344,7 @@ class WithoutMappingItemMethod(AttrMethodDescriptor):
             ),
             inplace=_inplace,
             type_check=False,
+            mutation_flag=True,
         )
 
     def build_method(self) -> Callable:

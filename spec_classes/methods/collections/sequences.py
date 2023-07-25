@@ -71,6 +71,7 @@ class WithSequenceItemMethod(AttrMethodDescriptor):
             ),
             inplace=_inplace,
             type_check=False,
+            mutation_flag=True,
         )
 
     def build_method(self) -> Callable:
@@ -177,6 +178,7 @@ class UpdateSequenceItemMethod(AttrMethodDescriptor):
             ),
             inplace=_inplace,
             type_check=False,
+            mutation_flag=True,
         )
 
     def build_method(self) -> Callable:
@@ -280,6 +282,7 @@ class TransformSequenceItemMethod(AttrMethodDescriptor):
             ),
             inplace=_inplace,
             type_check=False,
+            mutation_flag=True,
         )
 
     def build_method(self) -> Callable:
@@ -378,6 +381,7 @@ class WithoutSequenceItemMethod(AttrMethodDescriptor):
             ),
             inplace=_inplace,
             type_check=False,
+            mutation_flag=True,
         )
 
     def build_method(self) -> Callable:

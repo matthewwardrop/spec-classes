@@ -48,6 +48,10 @@ class InitMethod(MethodDescriptor):
         if instance_metadata.owner is spec_cls and instance_metadata.frozen:
             instance_metadata.frozen = False
 
+        # Prepare the mutated attribute state checks
+        if "__spec_class_set_attrs__" not in self.__dict__:
+            self.__spec_class_mutated_attrs__ = set()
+
         # Initialise any non-local spec attributes via parent constructors
         if instance_metadata.owner is spec_cls:
             for parent in reversed(spec_cls.mro()[1:]):
@@ -60,7 +64,7 @@ class InitMethod(MethodDescriptor):
                             continue
                         if attr in kwargs:
                             parent_kwargs[attr] = kwargs.pop(attr)
-                        else:
+                        elif attr not in self.__spec_class_mutated_attrs__:
                             # Parent constructor may may be overridden, and not pick up
                             # subclass defaults. We pre-emptively solve this here.
                             # If the constructor was not overridden, then no harm is
@@ -72,7 +76,7 @@ class InitMethod(MethodDescriptor):
                             )
                             if instance_default is not MISSING:
                                 parent_kwargs[attr] = instance_default
-                    if parent_metadata.key and parent_metadata.key not in parent_kwargs:
+                    if parent_metadata.key and parent_metadata.key not in parent_kwargs and parent_metadata.key not in self.__spec_class_mutated_attrs__:
                         parent_kwargs[parent_metadata.key] = MISSING
                     parent.__init__(  # pylint: disable=unnecessary-dunder-call
                         self, **parent_kwargs
@@ -95,9 +99,11 @@ class InitMethod(MethodDescriptor):
                 copy_required = (
                     instance_metadata.owner is spec_cls and not attr_spec.do_not_copy
                 )
-            else:
+            elif attr not in self.__spec_class_mutated_attrs__:
                 value = attr_spec.lookup_default_value(self.__class__)
                 copy_required = False
+            else:
+                continue
 
             if value is not MISSING:
                 if copy_required:
@@ -260,6 +266,7 @@ class DelAttrMethod(MethodDescriptor):
                 value=protect_via_deepcopy(attr_spec.default),  # handle default factory
                 inplace=True,
                 force=True,
+                mutation_flag=False,
             )
 
         # Add reference to original __delattr__

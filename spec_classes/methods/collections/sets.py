@@ -63,6 +63,7 @@ class WithSetItemMethod(AttrMethodDescriptor):
             ),
             inplace=_inplace,
             type_check=False,
+            mutation_flag=True,
         )
 
     def build_method(self) -> Callable:
@@ -152,6 +153,7 @@ class UpdateSetItemMethod(AttrMethodDescriptor):
             ),
             inplace=_inplace,
             type_check=False,
+            mutation_flag=True,
         )
 
     def build_method(self) -> Callable:
@@ -244,6 +246,7 @@ class TransformSetItemMethod(AttrMethodDescriptor):
             ),
             inplace=_inplace,
             type_check=False,
+            mutation_flag=True,
         )
 
     def build_method(self) -> Callable:
@@ -324,6 +327,7 @@ class WithoutSetItemMethod(AttrMethodDescriptor):
             ),
             inplace=_inplace,
             type_check=False,
+            mutation_flag=True,
         )
 
     def build_method(self) -> Callable:

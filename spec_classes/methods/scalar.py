@@ -48,6 +48,7 @@ class WithAttrMethod(AttrMethodDescriptor):
                 attr_spec=attr_spec, instance=self, value=_new_value, attrs=attrs
             ),
             inplace=_inplace,
+            mutation_flag=True,
         )
 
     def build_method(self) -> Callable:
