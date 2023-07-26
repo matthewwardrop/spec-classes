@@ -55,6 +55,9 @@ class TestTypeChecking:
         assert check_type("hi", Literal["hi"])
         assert not check_type(1, Literal["hi"])
 
+        assert check_type(1, float)
+        assert not check_type(1.0, int)
+
     def test_get_collection_item_type(self):
         assert get_collection_item_type(list) is Any
         assert get_collection_item_type(List) is Any

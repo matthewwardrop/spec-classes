@@ -1,4 +1,5 @@
 import inspect
+import numbers
 from collections.abc import Sequence as SequenceMutator
 from collections.abc import Set as SetMutator
 from typing import (
@@ -11,7 +12,12 @@ from typing import (
     Union,
     _GenericAlias,
 )  # pylint: disable=protected-access
-from typing_extensions import Literal
+from typing_extensions import Literal as LiteralExtension
+
+try:
+    from typing import Literal
+except ImportError:  # pragma: no cover
+    from typing_extensions import Literal  # pylint: disable=reimported
 
 
 def type_match(type_input: Type, type_reference: type) -> bool:
@@ -32,11 +38,14 @@ def check_type(value: Any, attr_type: Type) -> bool:
     if attr_type is Any:
         return True
 
+    if attr_type is float:
+        attr_type = numbers.Real
+
     if hasattr(attr_type, "__origin__"):  # we are dealing with a `typing` object.
         if attr_type.__origin__ is Union:
             return any(check_type(value, type_) for type_ in attr_type.__args__)
 
-        if attr_type.__origin__ is Literal:
+        if attr_type.__origin__ in (Literal, LiteralExtension):
             return value in attr_type.__args__
 
         if isinstance(attr_type, _GenericAlias):

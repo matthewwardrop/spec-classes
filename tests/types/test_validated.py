@@ -44,7 +44,7 @@ class TestValidatedType:
         assert not isinstance(1.0, b2)
         assert isinstance(2.0, b2)
         assert isinstance(1.5, b2)
-        assert not isinstance(2, b2)
+        assert isinstance(2, b2)
         assert not isinstance(0.0, b2)
         assert not isinstance(5, b2)
         assert b2.__name__ == "float∊(1,2]"

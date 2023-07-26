@@ -343,7 +343,7 @@ class spec_class:
         # Update __annotations__ attribute to be consistent with spec_class
         # typings (unless already defined on the class contrarily)
         if not hasattr(spec_cls, "__annotations__"):
-            spec_cls.__annotations__ = {}
+            spec_cls.__annotations__ = {}  # pragma: no cover
         for attr, attr_spec in metadata.attrs.items():
             if attr_spec.owner is spec_cls and attr not in spec_cls.__annotations__:
                 spec_cls.__annotations__[attr] = attr_spec.type
