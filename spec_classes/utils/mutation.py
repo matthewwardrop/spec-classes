@@ -51,6 +51,14 @@ class _modules_copyable:
     context switches.
     """
 
+    def __new__(cls, *args, **kwargs):
+        """
+        Make this class a singleton (there exists at most one instance).
+        """
+        if not hasattr(cls, "__instance__"):
+            cls.__instance__ = super().__new__(cls, *args, **kwargs)
+        return cls.__instance__
+
     def __init__(self):
         self.lock = RLock()
         self.refcount = 0
@@ -69,6 +77,7 @@ class _modules_copyable:
             self.refcount -= 1
             if self.patched_table and self.refcount == 0:
                 del copyreg.dispatch_table[ModuleType]
+                self.patched_table = False
 
 
 def mutate_attr(
