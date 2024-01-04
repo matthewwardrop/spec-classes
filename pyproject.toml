@@ -22,6 +22,7 @@ classifiers=[
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
 requires-python = ">=3.7.2"
 dependencies = [
@@ -78,7 +79,7 @@ linters = [
 format = "black spec_classes tests"
 
 [[tool.hatch.envs.test.matrix]]
-python = ["37", "38", "39", "310"]
+python = ["37", "38", "39", "310", "311", "312"]
 
 # Linting configuration
 
