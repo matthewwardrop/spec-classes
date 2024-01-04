@@ -4,6 +4,7 @@ import dataclasses
 import typing
 from collections import defaultdict
 from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Type, Union
+from typing_extensions import dataclass_transform
 
 from cached_property import cached_property
 
@@ -12,6 +13,7 @@ from spec_classes.methods import core as core_methods, SCALAR_METHODS, TOPLEVEL_
 from .types import Attr, MISSING
 
 
+@dataclass_transform()
 class spec_class:
     """
     A class decorator that converts an ordinary class into a spec-class.
