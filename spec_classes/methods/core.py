@@ -8,7 +8,7 @@ from typing import Any, Callable, Iterable, Optional
 
 from spec_classes.errors import FrozenInstanceError
 from spec_classes.methods.scalar import WithAttrMethod
-from spec_classes.types import Attr, MISSING
+from spec_classes.types import Attr, MISSING, UNSPECIFIED
 from spec_classes.utils.method_builder import MethodBuilder
 from spec_classes.utils.mutation import (
     invalidate_attrs,
@@ -16,8 +16,10 @@ from spec_classes.utils.mutation import (
     protect_via_deepcopy,
 )
 
-from .base import MethodDescriptor
+from spec_classes.methods.base import MethodDescriptor
 
+
+MISSING_FINAL = object()
 
 class InitMethod(MethodDescriptor):
     """
@@ -39,92 +41,96 @@ class InitMethod(MethodDescriptor):
 
     method_name = "__init__"
 
+
     @staticmethod
-    def init(spec_cls, self, **kwargs):
-        instance_metadata = self.__spec_class__
+    def build_init_method_body(spec_cls):
+        metadata = spec_cls.__spec_class__
+        body = [
+            "metadata = self.__spec_class__",
+        ]
+
+        for attr, attr_spec in metadata.attrs.items():
+            body.append(f"""
+                if {attr} is UNSPECIFIED:
+                    {attr} = metadata.attrs['{attr}'].get_value(self.__class__, {attr}, copy={not attr_spec.do_not_copy})
+            """)
 
         # Unlock the class for mutation during initialization.
-        is_frozen = instance_metadata.frozen
-        if instance_metadata.owner is spec_cls and instance_metadata.frozen:
-            instance_metadata.frozen = False
+        is_frozen = metadata.frozen
+        if metadata.owner is spec_cls and metadata.frozen:
+            body.append("metadata.frozen = False")
 
         # Initialise any non-local spec attributes via parent constructors
-        if instance_metadata.owner is spec_cls:
-            for parent in reversed(spec_cls.mro()[1:]):
+        if metadata.owner is spec_cls:
+            for parent_index, parent in enumerate(reversed(spec_cls.mro()[1:])):
                 parent_metadata = getattr(parent, "__spec_class__", None)
                 if parent_metadata:
-                    parent_kwargs = {}
+                    parent_args = []
                     for attr in parent_metadata.attrs:
-                        instance_attr_spec = instance_metadata.attrs[attr]
-                        if instance_attr_spec.owner is not parent:
+                        attr_spec = metadata.attrs[attr]
+                        if attr_spec.owner is not parent:
                             continue
-                        if attr in kwargs:
-                            parent_kwargs[attr] = kwargs.pop(attr)
-                        else:
-                            # Parent constructor may may be overridden, and not pick up
-                            # subclass defaults. We pre-emptively solve this here.
-                            # If the constructor was not overridden, then no harm is
-                            # done (we just looked it up earlier than we had to).
-                            # We don't pass missing values in case overridden constructor
-                            # has defaults in the signature.
-                            instance_default = instance_attr_spec.lookup_default_value(
-                                self.__class__
-                            )
-                            if instance_default is not MISSING:
-                                parent_kwargs[attr] = instance_default
-                    if parent_metadata.key and parent_metadata.key not in parent_kwargs:
-                        parent_kwargs[parent_metadata.key] = MISSING
-                    parent.__init__(  # pylint: disable=unnecessary-dunder-call
-                        self, **parent_kwargs
-                    )
+                        parent_args.append(f""""{attr}": {attr},""")
+                    if parent_metadata.key and parent_metadata.key not in parent_args:
+                        parent_args.append(f""""{parent_metadata.key}": MISSING if {parent_metadata.key} is UNSPECIFIED else MISSING""")
+                    parent_args = "".join(parent_args)
+                    body.append(f"""
+                        self.__class__.mro()[-{parent_index+1}].__init__(self, **{{k: v for k, v in {{{parent_args}}}.items() if v is not UNSPECIFIED }})
+                    """)
 
-        # For each attribute owned by this spec_cls in `instance_metadata`,
+        # For each attribute owned by this spec_cls in `metadata`,
         # initalize the attribute.
-        for attr, attr_spec in instance_metadata.attrs.items():
+        for attr, attr_spec in metadata.attrs.items():
+
             if (
                 not attr_spec.init
                 or attr_spec.owner is not spec_cls
-                or attr == instance_metadata.init_overflow_attr
+                or attr == metadata.init_overflow_attr
             ):
                 continue
 
-            value = kwargs.get(attr, MISSING)
-            if value is not MISSING:
-                # If owner is not spec-class, we have already looked up and
-                # handled copying.
-                copy_required = (
-                    instance_metadata.owner is spec_cls and not attr_spec.do_not_copy
-                )
-            else:
-                value = attr_spec.lookup_default_value(self.__class__)
-                copy_required = False
+            copy_required = metadata.owner is spec_cls and not attr_spec.do_not_copy
 
-            if value is not MISSING:
-                if copy_required:
-                    value = protect_via_deepcopy(value)
-                setattr(self, attr, value)
+            body.append(f"""
+                # Assign `{attr}`
+                # {attr} = metadata.attrs['{attr}'].get_value(self.__class__, {attr}, copy={copy_required})
+                if {attr} not in (MISSING, UNSPECIFIED):
+                    self.{attr} = {attr}
+            """)
+            # if copy_required:
+            #     body.append(f"""
+            #     if {attr} is not MISSING:
+            #         {attr} = protect_via_deepcopy({attr})
+            #     """)
+
+            # body.append(f"""
+            #     if {attr} is MISSING:
+            #         {attr} = metadata.attrs['{attr}'].lookup_default_value(self.__class__)
+            #     if {attr} is not MISSING:
+            #         self.{attr} = {attr}
+            # """)
 
         # Finalize initialisation by storing overflow attrs and restoring frozen
         # status.
-        if instance_metadata.owner is spec_cls:
-            if instance_metadata.init_overflow_attr:
-                getattr(
-                    self, f"with_{instance_metadata.init_overflow_attr}"
-                )(  # TODO: avoid this
-                    {
-                        key: value
-                        for key, value in kwargs.items()
-                        if key not in instance_metadata.annotations
-                        or key == instance_metadata.init_overflow_attr
-                    },
-                    _inplace=True,
-                )
+        if metadata.owner is spec_cls:
+            if metadata.init_overflow_attr:
+                body.append(f"""
+                    self.with_{metadata.init_overflow_attr}({{ key: value for key, value in {metadata.init_overflow_attr}.items()
+                        if key not in metadata.annotations
+                        or key == metadata.init_overflow_attr }}, _inplace=True)
+                """)
 
-            if instance_metadata.post_init:
-                instance_metadata.post_init(self)
+            if metadata.post_init:
+                body.append("metadata.post_init(self)")
 
             if is_frozen:
-                instance_metadata.frozen = True
+                body.append("metadata.frozen = True")
+
+        return "\n".join(
+            textwrap.dedent(s)
+            for s in body
+        )
+
 
     def build_method(self) -> Callable:
         spec_class_key = self.spec_cls.__spec_class__.key
@@ -136,11 +142,11 @@ class InitMethod(MethodDescriptor):
             # If the key has a default, don't require it to be set during
             # construction.
             key_default = (
-                MISSING if spec_class_key_spec.has_default else inspect.Parameter.empty
+                UNSPECIFIED if spec_class_key_spec.has_default else inspect.Parameter.empty
             )
 
         return (
-            MethodBuilder("__init__", functools.partial(self.init, self.spec_cls))
+            MethodBuilder("__init__", self.build_init_method_body(self.spec_cls), {"UNSPECIFIED": UNSPECIFIED, "MISSING": MISSING, "protect_via_deepcopy": protect_via_deepcopy})
             .with_preamble(f"Initialise this `{self.spec_cls.__name__}` instance.")
             .with_arg(
                 spec_class_key,

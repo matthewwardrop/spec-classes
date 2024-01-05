@@ -754,7 +754,7 @@ class TestFramework:
         with pytest.raises(
             TypeError,
             match=re.escape(
-                "__init__() got unexpected keyword arguments: {'hidden_attr'}."
+                "__init__() got an unexpected keyword argument 'hidden_attr'"
             ),
         ):
             Spec(hidden_attr="Not here")

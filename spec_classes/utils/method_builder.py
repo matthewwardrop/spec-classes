@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import inspect
+import linecache
 import textwrap
 from inspect import Parameter, Signature, cleandoc
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
-from spec_classes.types import MISSING
+from spec_classes.types import MISSING, UNSPECIFIED
 from spec_classes.utils.type_checking import type_label
 
 
@@ -60,9 +61,10 @@ class MethodBuilder:
 
     """
 
-    def __init__(self, name: str, implementation: Callable):
+    def __init__(self, name: str, implementation: Union[str, Callable], exec_context: Optional[Dict[str, Any]] = None):
         self.name = name
         self.implementation = implementation
+        self.exec_context = exec_context
 
         # Documentation attributes
         self.doc_preamble: str = ""
@@ -231,7 +233,7 @@ class MethodBuilder:
                 name,
                 desc=desc,
                 annotation=(annotations or {}).get(name, Parameter.empty),
-                default=(defaults or {}).get(name, MISSING),
+                default=(defaults or {}).get(name, UNSPECIFIED),
                 kind=Parameter.KEYWORD_ONLY,
                 virtual=virtual,
             )
@@ -285,7 +287,7 @@ class MethodBuilder:
                 else attr_spec.desc
             )
             annotations[attr] = attr_spec.type
-            defaults[attr] = MISSING if attr_spec.is_masked else attr_spec.default
+            defaults[attr] = UNSPECIFIED if attr_spec.is_masked else attr_spec.lookup_default_value(spec_cls)
 
         self.with_args(
             args=args,
@@ -388,48 +390,90 @@ class MethodBuilder:
         namespace = {}
 
         signature = self._signature
-        impl_signature = Signature.from_callable(self.implementation)
         signature_advertised = (
             self._signature_virtual if self.method_args_virtual else signature
         )
+        str_signature, defaults = self._method_signature_to_definition_str(
+            signature_advertised
+            if isinstance(self.implementation, str)
+            else signature
+        )
 
-        if not self._check_signature_compatible_with_implementation(
-            signature, impl_signature
-        ):
-            raise RuntimeError(
-                f"Proposed method signature `{self.name}{signature}` is not compatible with implementation signature `implementation{impl_signature}`."
+        if not isinstance(self.implementation, str):
+            impl_signature = Signature.from_callable(self.implementation)
+            if not self._check_signature_compatible_with_implementation(
+                signature, impl_signature
+            ):
+                raise RuntimeError(
+                    f"Proposed method signature `{self.name}{signature}` is not compatible with implementation signature `implementation{impl_signature}`."
+                )
+
+            VALID_KWARGS = {p.name for p in self.method_args_virtual}
+
+            def validate_attrs(attrs):
+                for attr in attrs:
+                    if attr not in VALID_KWARGS:
+                        extra_attrs = set(attrs)
+                        extra_attrs.difference_update(VALID_KWARGS)
+                        raise TypeError(
+                            f"{self.name}() got unexpected keyword arguments: {repr(extra_attrs)}."
+                        )
+
+            exec(
+                textwrap.dedent(
+                    f"""
+                from __future__ import annotations
+                def {self.name}{str_signature} { '-> ' + repr(type_label(self.method_return_type)) if self.method_return_type is not None else ""}:
+                    {"validate_attrs(kwargs)" if self.method_args_virtual and self.check_attrs_match_sig else ""}
+                    return implementation({self._method_signature_to_implementation_call(self._signature)})
+            """
+                ),
+                {
+                    "implementation": self.implementation,
+                    "MISSING": MISSING,
+                    "UNSPECIFIED": UNSPECIFIED,
+                    "validate_attrs": validate_attrs,
+                    "DEFAULTS": defaults,
+                },
+                namespace,
             )
-
-        VALID_KWARGS = {p.name for p in self.method_args_virtual}
-
-        def validate_attrs(attrs):
-            for attr in attrs:
-                if attr not in VALID_KWARGS:
-                    extra_attrs = set(attrs)
-                    extra_attrs.difference_update(VALID_KWARGS)
-                    raise TypeError(
-                        f"{self.name}() got unexpected keyword arguments: {repr(extra_attrs)}."
-                    )
-
-        str_signature, defaults = self._method_signature_to_definition_str(signature)
-
-        exec(
-            textwrap.dedent(
+        else:
+            import hashlib
+            function_source = textwrap.dedent(
                 f"""
             from __future__ import annotations
-            def {self.name}{str_signature} { '-> ' + repr(type_label(self.method_return_type)) if self.method_return_type is not None else ""}:
-                {"validate_attrs(kwargs)" if self.method_args_virtual and self.check_attrs_match_sig else ""}
-                return implementation({self._method_signature_to_implementation_call(self._signature)})
+            def {self.name}{self._signature_without_annotations} { '-> ' + repr(type_label(self.method_return_type)) if self.method_return_type is not None else ""}:
+{textwrap.indent(self.implementation, "                ")}
         """
-            ),
-            {
-                "implementation": self.implementation,
-                "MISSING": MISSING,
-                "validate_attrs": validate_attrs,
-                "DEFAULTS": defaults,
-            },
-            namespace,
-        )
+            )
+            source_hash = hashlib.sha256(function_source.encode()).hexdigest()
+            fake_source_file = f"spec_classes/{source_hash}.py"
+            print(function_source, defaults)
+
+            # In order of debuggers like PDB being able to step through the code,
+            # we add a fake linecache entry.
+            count = 1
+            filename = fake_source_file
+            while True:
+                linecache_tuple = (
+                    len(function_source),
+                    None,
+                    function_source.splitlines(True),
+                    filename,
+                )
+                old_val = linecache.cache.setdefault(fake_source_file, linecache_tuple)
+                if old_val == linecache_tuple:
+                    break
+                else:
+                    filename = f"{filename[:-1]}-{count}>"
+                    count += 1
+
+            code = compile(function_source, filename, "exec")
+            exec(code,  {
+                    **self.exec_context,
+                    "DEFAULTS": defaults,
+                },
+                namespace,)
 
         method = namespace[self.name]
         method.__doc__ = self._docstring
@@ -457,6 +501,19 @@ class MethodBuilder:
         return (
             self._signature
         )  # pragma: no cover; we avoid this case in the code to running this twice
+
+    @property
+    def _signature_without_annotations(self) -> str:
+        args = []
+        for arg in (self.method_args[:-1] if self.method_args_virtual else self.method_args):
+            arg_str = str(Parameter(arg.name, kind=arg.kind))
+            if arg.default is not Parameter.empty:
+                arg_str += f" = DEFAULTS['{arg.name}']"
+            args.append(arg_str)
+        if self.method_args_virtual:
+            for arg in self.method_args_virtual:
+                args.append(str(Parameter(arg.name, kind=arg.kind)) + (" = UNSPECIFIED" if arg.default is not Parameter.empty else ""))
+        return f"""({", ".join(args)})"""
 
     @property
     def _docstring(self) -> str:

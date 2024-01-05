@@ -17,7 +17,7 @@ from spec_classes.utils.type_checking import (
     type_match,
 )
 
-from .missing import MISSING
+from .missing import MISSING, UNSPECIFIED
 
 if TYPE_CHECKING:  # pragma: no cover
     from spec_classes.collections.base import CollectionAttrMutator
@@ -272,6 +272,21 @@ class Attr:
         return self.item_spec_type_polymorphic or self.item_type
 
     # Helpers
+
+    def get_value(self, spec_cls: Type, value: Any = UNSPECIFIED, copy: bool = True) -> Any:
+        from spec_classes.utils.mutation import protect_via_deepcopy
+
+        if value is MISSING:
+            return value
+        if value is UNSPECIFIED:
+            value = self.lookup_default_value(spec_cls)
+            if value is MISSING:
+                return UNSPECIFIED
+            return value
+        return protect_via_deepcopy(value) if copy else value
+
+
+
     def lookup_default_value(self, spec_cls: Type) -> Any:
         """
         Look up the correct default value for this attribute for `instance`.

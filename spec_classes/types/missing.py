@@ -1,17 +1,20 @@
 # Sentinel for unset inputs to spec_class methods
 class _MissingType:
-    __instance__ = None
+    __instances__ = {}
 
-    def __new__(cls):
-        if cls.__instance__ is None:
-            cls.__instance__ = super(_MissingType, cls).__new__(cls)
-        return cls.__instance__
+    def __new__(cls, name="MISSING"):
+        if name not in cls.__instances__:
+            cls.__instances__[name] = super(_MissingType, cls).__new__(cls)
+        return cls.__instances__[name]
+
+    def __init__(self, name="MISSING"):
+        self.name = name
 
     def __bool__(self):
         return False
 
     def __repr__(self):
-        return "MISSING"
+        return self.name
 
     def __copy__(self):
         return self
@@ -21,3 +24,4 @@ class _MissingType:
 
 
 MISSING = _MissingType()
+UNSPECIFIED = _MissingType("UNSPECIFIED")
