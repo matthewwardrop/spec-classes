@@ -5,6 +5,7 @@ import pytest
 from spec_classes import AttrProxy, MISSING, spec_class
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_attr_proxy():
     @spec_class
     class Item:
