@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import typing
+import warnings
 from collections import defaultdict
 from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Type, Union
 from typing_extensions import dataclass_transform
@@ -377,7 +378,9 @@ class spec_class:
         helpers=True,
     ):
         owner = owner or spec_cls
-        attr_value = getattr(spec_cls, attr, MISSING)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            attr_value = getattr(spec_cls, attr, MISSING)
         if isinstance(attr_value, (Attr, dataclasses.Field)):
             setattr(  # Set default on class.
                 spec_cls,
