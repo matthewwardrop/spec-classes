@@ -119,25 +119,31 @@ class CollectionAttrMutator(metaclass=ABCMeta):
         be the same `index` as that output by the extractor, and is not otherwise
         interpreted.
         """
-        if self.collection is MISSING:
-            self.collection = self._create_collection()
-        index, old_item = extractor(
-            value_or_index, raise_if_missing=require_pre_existent
-        )
-        new_item = mutate_value(
-            old_value=old_item,
-            new_value=new_item,
-            prepare=self.prepare_item,
-            attrs=attrs,
-            constructor=self.attr_spec.item_constructor,
-            expected_type=self.attr_spec.item_type,
-            transform=transform,
-            attr_transforms=attr_transforms,
-            replace=replace,
-            inplace=False,  # Although we've already copied, index lookups may depend on the old value.
-        )
-        inserter(index, new_item)
-        return self
+        try:
+            if self.collection is MISSING:
+                self.collection = self._create_collection()
+            index, old_item = extractor(
+                value_or_index, raise_if_missing=require_pre_existent
+            )
+            new_item = mutate_value(
+                old_value=old_item,
+                new_value=new_item,
+                prepare=self.prepare_item,
+                attrs=attrs,
+                constructor=self.attr_spec.item_constructor,
+                expected_type=self.attr_spec.item_type,
+                transform=transform,
+                attr_transforms=attr_transforms,
+                replace=replace,
+                inplace=False,  # Although we've already copied, index lookups may depend on the old value.
+            )
+            inserter(index, new_item)
+            return self
+        except (TypeError, IndexError, KeyError, ValueError) as e:
+            e.args = (
+                f"Error while mutating collection `{self.attr_spec.qualified_name}`: {e}",
+            )
+            raise
 
     def __repr__(self):
         return f"<{self.__class__.__name__}: {self.collection}>"  # pragma: no cover
