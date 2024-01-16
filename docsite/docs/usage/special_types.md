@@ -304,6 +304,7 @@ class MyClass:
         overridable=True,  # Whether to allow overriding by default.
         cache=False,  # Whether to cache the result after first evaluation.
         invalidated_by=None,  # An iterable of attributes which when mutated invalidate the cache (only supported when used with spec-classes)
+        allow_attribute_error=True,  # Whether to allow properties to raise `AttributeErrors` which are often masked during attribute lookup.
     )
     def method(self):
         ...
@@ -315,6 +316,33 @@ class MyClass:
 ```
 
 As always you can refer to the inline `help(spec_property)` for more details.
+
+
+### `classproperty`
+
+`classproperty` is implemented in `spec_classes.types.classproperty`, and
+behaves exactly like `spec_property` except that it acts on classmethods, and
+does not offer inbuilt access to spec-class state. You can use `classproperty`
+as follows:
+
+```python
+class MyClass:
+    @classproperty(
+        overridable=True,  # Whether to allow overriding by default.
+        cache=False,  # Whether to cache the result after first evaluation.
+        cache_per_subclass=False,  # Whether cache should be stored per subclass
+            # rather than once for all classes.
+        allow_attribute_error=True,  # Whether to allow properties to raise `AttributeErrors` which are often masked during attribute lookup.
+    )
+    def method(cls):
+        ...
+
+    # And of course you can override the setters as you would with regular properties
+    @method.setter
+    def method(cls, value):
+        ...
+```
+
 
 ### `AttrProxy`
 

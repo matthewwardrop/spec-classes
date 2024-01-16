@@ -1,19 +1,159 @@
+import inspect
+from abc import abstractmethod
+from typing import Tuple
+
+from cached_property import cached_property
+
 from spec_classes.errors import NestedAttributeError
 from spec_classes.utils.mutation import prepare_attr_value
 from spec_classes.utils.type_checking import check_type, type_label
 
 
-class spec_property:
+class _spec_property_base:
+    """
+    Basic abstract implementation of the the descriptor protocol for properties.
+    """
+
+    ALLOWED_ATTRS: Tuple[str, ...] = ()
+
+    def __new__(cls, *args, **kwargs):
+        if not args:
+
+            def decorator(func):
+                return cls(func, **kwargs)
+
+            return decorator
+        return super().__new__(cls)
+
+    def __init__(
+        self,
+        fget=None,
+        fset=None,
+        fdel=None,
+        *,
+        doc=None,
+        overridable=True,
+        cache=False,
+        allow_attribute_error=True,
+        owner=None,
+        attr_name=None,
+        **attrs,
+    ):
+        """
+        Args:
+            fget: The getter function.
+            fset: The setter function.
+            fdel: The deleter function.
+            doc: An override for attribute docstrings (otherwise it is lifted
+                from the getter function).
+            overridable: Whether the property value should be overridable by
+                users (in which case the override is stored as a cache).
+            cache: Whether to cache attribute results whenever a cache does not
+                already exist.
+            allow_attribute_error: Whether to allow functions to raise an
+                `AttributeError`. If `False`, such errors will be caught and
+                reraised as `NestedAttributeErrors`, which makes it easier to
+                debug when property methods are failing due to attribute errors.
+            owner: The class that owns this property.
+            attr_name: The attribute of the property on `owner`.
+        """
+        # Standard `property` attributes
+        self.fget = fget
+        self.fset = fset
+        self.fdel = fdel
+        if doc is None and fget is not None:
+            doc = fget.__doc__
+        self.__doc__ = doc
+
+        # Novel attributes
+        self.overridable = overridable
+        self.cache = cache
+        self.allow_attribute_error = allow_attribute_error
+        self.owner = owner
+        self.attr_name = attr_name
+        self.attrs = attrs
+
+    # Standard Python property methods to allow customization of getters, setters and deleters.
+
+    def getter(self, fget):
+        return type(self)(
+            fget,
+            self.fset,
+            self.fdel,
+            doc=self.__doc__,
+            overridable=self.overridable,
+            cache=self.cache,
+            allow_attribute_error=self.allow_attribute_error,
+            owner=self.owner,
+            attr_name=self.attr_name,
+            **self.attrs,
+        )
+
+    def setter(self, fset):
+        return type(self)(
+            self.fget,
+            fset,
+            self.fdel,
+            doc=self.__doc__,
+            overridable=self.overridable,
+            cache=self.cache,
+            allow_attribute_error=self.allow_attribute_error,
+            owner=self.owner,
+            attr_name=self.attr_name,
+            **self.attrs,
+        )
+
+    def deleter(self, fdel):
+        return type(self)(
+            self.fget,
+            self.fset,
+            fdel,
+            doc=self.__doc__,
+            overridable=self.overridable,
+            cache=self.cache,
+            allow_attribute_error=self.allow_attribute_error,
+            owner=self.owner,
+            attr_name=self.attr_name,
+            **self.attrs,
+        )
+
+    # Descriptor protocol implementation
+
+    def __set_name__(self, owner, name):
+        self.owner = owner
+        self.attr_name = name
+
+    @property
+    def _qualified_name(self):
+        return f"{self.owner.__name__ if self.owner else ''}.{self.attr_name or ''}"
+
+    @abstractmethod
+    def __get__(self, obj, objtype=None):
+        ...  # pragma: no cover
+
+    @abstractmethod
+    def __set__(self, obj, value):
+        ...  # pragma: no cover
+
+    @abstractmethod
+    def __delete__(self, obj):
+        ...  # pragma: no cover
+
+
+class spec_property(_spec_property_base):
     """
     An enriched property-like decorator for use by spec-classes (with graceful
     fallbacks for non-spec_class use-cases).
 
     In particular, this decorator extends the builtin `property` API offered by
-    Python by:
-    - Allowing properties to be overridable by default (pass `overridable=False`
+    Python by allowing for:
+    - properties to be overridable by default (pass `overridable=False`
         to `spec_property` during decoration to disable).
-    - Allowing property getters to be cached during first invocation (pass
+    - property getters to be cached during first invocation (pass
         `cache=True` during decoration to enable).
+    - spec-classes attribute invalidation (pass `invalidated_by=['attr', ...]`).
+    - suppression of nested `AttributeErrors`, which can make life difficult
+      during debugging (pass `allow_attribute_error=False`).
 
     Additionally, when used in conjunction with spec-class attributes, it:
     - Applies any transforms provided by `._prepare_<attr_name>()` methods to
@@ -36,97 +176,58 @@ class spec_property:
                 return "string"
     """
 
-    def __new__(cls, *args, **kwargs):
-        if not args:
-
-            def decorator(func):
-                return spec_property(func, **kwargs)
-
-            return decorator
-        return super().__new__(cls)
+    ALLOWED_ATTRS = ("invalidated_by",)
 
     def __init__(
         self,
         fget=None,
         fset=None,
         fdel=None,
+        *,
         doc=None,
         overridable=True,
         cache=False,
         invalidated_by=None,
+        allow_attribute_error=True,
         owner=None,
         attr_name=None,
-        allow_attribute_error=True,
     ):
-        # Standard `property` attributes
-        self.fget = fget
-        self.fset = fset
-        self.fdel = fdel
-        if doc is None and fget is not None:
-            doc = fget.__doc__
-        self.__doc__ = doc
-
-        # Novel attributes
-        self.overridable = overridable
-        self.cache = cache
-        self.invalidated_by = invalidated_by or []
-        self.owner = owner
-        self.attr_name = attr_name
-        self.allow_attribute_error = allow_attribute_error
-
-    # Standard Python property methods to allow customization of getters, setters and deleters.
-
-    def getter(self, fget):
-        return type(self)(
-            fget,
-            self.fset,
-            self.fdel,
-            self.__doc__,
-            self.overridable,
-            self.cache,
-            self.invalidated_by,
-            self.owner,
-            self.attr_name,
-            self.allow_attribute_error,
+        """
+        Args:
+            fget: The getter function.
+            fset: The setter function.
+            fdel: The deleter function.
+            doc: An override for attribute docstrings (otherwise it is lifted
+                from the getter function).
+            overridable: Whether the property value should be overridable by
+                users (in which case the override is stored as a cache).
+            cache: Whether to cache attribute results whenever a cache does not
+                already exist.
+            invalidated_by: When attached to a spec-class, attributes that
+                should trigger the cache to be invalidated.
+            allow_attribute_error: Whether to allow functions to raise an
+                `AttributeError`. If `False`, such errors will be caught and
+                reraised as `NestedAttributeErrors`, which makes it easier to
+                debug when property methods are failing due to attribute errors.
+            owner: The class that owns this property.
+            attr_name: The attribute of the property on `owner`.
+        """
+        super().__init__(
+            fget=fget,
+            fset=fset,
+            fdel=fdel,
+            doc=doc,
+            overridable=overridable,
+            cache=cache,
+            owner=owner,
+            attr_name=attr_name,
+            allow_attribute_error=allow_attribute_error,
+            invalidated_by=invalidated_by,
         )
-
-    def setter(self, fset):
-        return type(self)(
-            self.fget,
-            fset,
-            self.fdel,
-            self.__doc__,
-            self.overridable,
-            self.cache,
-            self.invalidated_by,
-            self.owner,
-            self.attr_name,
-            self.allow_attribute_error,
-        )
-
-    def deleter(self, fdel):
-        return type(self)(
-            self.fget,
-            self.fset,
-            fdel,
-            self.__doc__,
-            self.overridable,
-            self.cache,
-            self.invalidated_by,
-            self.owner,
-            self.attr_name,
-            self.allow_attribute_error,
-        )
-
-    # Descriptor protocol implementation
-
-    def __set_name__(self, owner, name):
-        self.owner = owner
-        self.attr_name = name
 
     @property
-    def _qualified_name(self):
-        return f"{self.owner.__name__ if self.owner else ''}.{self.attr_name or ''}"
+    def invalidated_by(self):
+        return self.attrs.get("invalidated_by") or ()
 
     def __get__(self, instance, owner=None):
         # If lookup occuring on owner class.
@@ -195,3 +296,164 @@ class spec_property:
         if isinstance(self.invalidated_by, str):
             return [self.invalidated_by]
         return self.invalidated_by
+
+
+class classproperty(_spec_property_base):
+    """
+    An analog of `property` for classmethods. It has the same API, but acts on
+    methods which take the class as the first argument. Note, though, that class
+    properties have no access to spec-class state, and invalidation does not
+    make sense and will not occur.
+
+    Methods decorated with this class are transformed into class properties.
+    Just like with regular properties, you can override the property setters and
+    deleters, but note that only getters will be invoked when interacting with
+    the classproperty directly on classes (as compared to instances). If you
+    need these to work for direct class interactions too please explore
+    metaclasses.
+
+    This is primarily useful when it is useful to cache expensive lookups once
+    per class (rather than per-instance).
+    """
+
+    ALLOWED_ATTRS = ("cache_per_subclass",)
+
+    def __init__(
+        self,
+        fget=None,
+        fset=None,
+        fdel=None,
+        *,
+        doc=None,
+        overridable=False,  # Note: different from spec_property
+        cache=False,
+        cache_per_subclass=False,
+        allow_attribute_error=True,
+        owner=None,
+        attr_name=None,
+        **attrs,
+    ):
+        """
+        Args:
+            fget: The getter function.
+            fset: The setter function.
+            fdel: The deleter function.
+            doc: An override for attribute docstrings (otherwise it is lifted
+                from the getter function).
+            overridable: Whether the property value should be overridable by
+                users (in which case the override is stored as a cache).
+            cache: Whether to cache attribute results whenever a cache does not
+                already exist.
+            cache_per_subclass: Whether subclasses should have the property
+                cached cached separately.
+            allow_attribute_error: Whether to allow functions to raise an
+                `AttributeError`. If `False`, such errors will be caught and
+                reraised as `NestedAttributeErrors`, which makes it easier to
+                debug when property methods are failing due to attribute errors.
+            owner: The class that owns this property.
+            attr_name: The attribute of the property on `owner`.
+        """
+        super().__init__(
+            fget=fget,
+            fset=fset,
+            fdel=fdel,
+            doc=doc,
+            overridable=overridable,
+            cache=cache,
+            cache_per_subclass=cache_per_subclass,
+            allow_attribute_error=allow_attribute_error,
+            owner=owner,
+            attr_name=attr_name,
+        )
+
+    @property
+    def cache_per_subclass(self):
+        return self.attrs.get("cache_per_subclass", False)
+
+    @property
+    def fget(self):
+        return self._fget
+
+    @fget.setter
+    def fget(self, fget):
+        if fget and not isinstance(fget, (classmethod, staticmethod)):
+            fget = classmethod(fget)
+        self._fget = fget
+
+    @property
+    def fset(self):
+        return self._fset
+
+    @fset.setter
+    def fset(self, fset):
+        if fset and not isinstance(fset, (classmethod, staticmethod)):
+            fset = classmethod(fset)
+        self._fset = fset
+
+    @property
+    def fdel(self):
+        return self._fdel
+
+    @fdel.setter
+    def fdel(self, fdel):
+        if fdel and not isinstance(fdel, (classmethod, staticmethod)):
+            fdel = classmethod(fdel)
+        self._fdel = fdel
+
+    @cached_property
+    def _cache(self):
+        return {}
+
+    def _cache_key(self, objtype):
+        return objtype if self.cache_per_subclass else None
+
+    def __get__(self, obj, objtype=None):
+        # If value exists in cache or has been overridden
+        cache_key = self._cache_key(objtype)
+        if cache_key in self._cache:
+            return self._cache[cache_key]
+
+        # If there is no assigned getter
+        if self.fget is None:
+            raise AttributeError(
+                f"Class property for `{self._qualified_name}` does not have a getter method."
+            )
+
+        # Get value from getter
+        try:
+            value = self.fget.__get__(obj, objtype)()
+        except AttributeError as e:
+            if self.allow_attribute_error:
+                raise
+            raise NestedAttributeError(e) from e
+
+        # Store value in cache is cache is enabled
+        if self.cache and objtype:
+            self._cache[cache_key] = value
+
+        return value
+
+    def __set__(self, obj, value):
+        if not inspect.isclass(obj):
+            obj = type(obj)
+        if self.fset is None:
+            if self.overridable:
+                self._cache[self._cache_key(obj)] = value
+                return
+            raise AttributeError(
+                f"Class property for `{self._qualified_name}` does not have a setter and/or is not configured to be overridable."
+            )
+        self.fset.__get__(None, obj)(value)
+
+    def __delete__(self, obj):
+        if not inspect.isclass(obj):
+            obj = type(obj)
+        if self.fdel is None:
+            cache_key = self._cache_key(obj)
+            if cache_key in self._cache:
+                del self._cache[cache_key]
+                return
+            raise AttributeError(
+                f"Class property for `{self._qualified_name}` has no cache or override to delete."
+            )
+        self.fdel.__get__(None, obj)()

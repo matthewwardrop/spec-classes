@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from spec_classes import spec_class, spec_property
+from spec_classes import spec_class, spec_property, classproperty
 from spec_classes.errors import NestedAttributeError
 
 
@@ -185,3 +185,143 @@ class TestSpecProperty:
             ),
         ):
             spec_cls.raises_attribute_error
+
+
+class TestSpecClassProperty:
+    def test_basic_usage(self):
+        class A:
+            @classproperty(overridable=True)
+            def a(cls):
+                return 1
+
+            @classproperty(cache=True, overridable=True)
+            def b(cls):
+                return 1
+
+            @classproperty(cache=True, cache_per_subclass=True, overridable=True)
+            def c(cls):
+                return 1
+
+        class B(A):
+            pass
+
+        a = A()
+        b = A()
+        c = B()
+
+        assert A.a == a.a
+        assert a.a == b.a
+        assert a.b == b.b
+        assert a.c == c.c
+        assert A.__dict__["a"]._cache == {}
+        assert A.__dict__["b"]._cache == {None: 1}
+        assert A.__dict__["c"]._cache == {A: 1, B: 1}
+
+        with pytest.raises(AttributeError):
+            del a.a
+        del a.b
+        del a.c
+        assert A.__dict__["a"]._cache == {}
+        assert A.__dict__["b"]._cache == {}
+        assert A.__dict__["c"]._cache == {B: 1}
+
+        a.a = 10
+        a.b = 10
+        a.c = 10
+        assert A.__dict__["a"]._cache == {None: 10}
+        assert A.__dict__["b"]._cache == {None: 10}
+        assert A.__dict__["c"]._cache == {A: 10, B: 1}
+
+    def test_spec_class(self):
+        @spec_class
+        class MySpec:
+            a: int
+
+            @classproperty
+            def a(cls):
+                return "Hello!"
+
+        with pytest.raises(TypeError):
+            MySpec().a
+
+    def test_manual_funcs(self):
+        class A:
+            @classproperty
+            def a(cls):
+                return 1
+
+            @a.setter
+            def a(cls, value):
+                return
+
+            @a.deleter
+            def a(cls):
+                return
+
+        assert A.a == 1
+        assert A().a == 1
+
+        A().a = 10
+        del A().a
+
+    def test_immutable(self):
+        class A:
+            @classproperty
+            def a(cls):
+                return 1
+
+        assert A().a == 1
+
+        with pytest.raises(
+            AttributeError,
+            match=re.escape(
+                "Class property for `A.a` does not have a setter and/or is not configured to be overridable."
+            ),
+        ):
+            A().a = 10
+
+        with pytest.raises(
+            AttributeError,
+            match=re.escape(
+                "Class property for `A.a` has no cache or override to delete."
+            ),
+        ):
+            del A().a
+
+    def test_edge_cases(self):
+        class A:
+            no_methods = classproperty(None, overridable=False)
+
+            @classproperty
+            def raises_attribute_error(cls):
+                raise AttributeError("I will be swallowed!")
+
+            @classproperty(allow_attribute_error=False)
+            def suppresses_attribute_error(cls):
+                raise AttributeError("I will be swallowed!")
+
+            def __getattr__(self, name):
+                if name == "raises_attribute_error":
+                    raise AttributeError(
+                        "I swallowed the attribute error raised by `raises_attribute_error`."
+                    )
+                return object.__getattribute__(self, name)
+
+        with pytest.raises(
+            AttributeError,
+            match=re.escape(
+                "Class property for `A.no_methods` does not have a getter method."
+            ),
+        ):
+            A().no_methods
+
+        with pytest.raises(
+            AttributeError,
+            match="I swallowed the attribute error raised by `raises_attribute_error`.",
+        ):
+            A().raises_attribute_error
+
+        with pytest.raises(
+            NestedAttributeError, match=re.escape("I will be swallowed!")
+        ):
+            A().suppresses_attribute_error

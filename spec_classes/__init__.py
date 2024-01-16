@@ -3,6 +3,7 @@ from .errors import FrozenInstanceError
 from .spec_class import spec_class
 from .types import (
     spec_property,
+    classproperty,
     Alias,
     DeprecatedAlias,
     Attr,
@@ -22,6 +23,7 @@ __all__ = [
     "__author_email__",
     "spec_class",
     "spec_property",
+    "classproperty",
     "FrozenInstanceError",
     "Alias",
     "DeprecatedAlias",
