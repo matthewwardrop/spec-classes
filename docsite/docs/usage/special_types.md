@@ -302,9 +302,15 @@ as shown):
 class MyClass:
     @spec_property(
         overridable=True,  # Whether to allow overriding by default.
+        warn_on_override=False,  # Whether to warn the user when the property getter
+            # is overridden. Can be a boolean, string, or `Warning` instance.
+            # If non-boolean, then it is treated as the message to present to
+            # the user using `warnings.warn`.
         cache=False,  # Whether to cache the result after first evaluation.
-        invalidated_by=None,  # An iterable of attributes which when mutated invalidate the cache (only supported when used with spec-classes)
-        allow_attribute_error=True,  # Whether to allow properties to raise `AttributeErrors` which are often masked during attribute lookup.
+        invalidated_by=None,  # An iterable of attributes which when mutated
+            # invalidate the cache (only supported when used with spec-classes)
+        allow_attribute_error=True,  # Whether to allow properties to raise
+            # `AttributeErrors` which are often masked during attribute lookup.
     )
     def method(self):
         ...
@@ -328,11 +334,16 @@ as follows:
 ```python
 class MyClass:
     @classproperty(
-        overridable=True,  # Whether to allow overriding by default.
+        overridable=False,  # Whether to allow overriding by default.
+        warn_on_override=False,  # Whether to warn the user when the property getter
+            # is overridden. Can be a boolean, string, or `Warning` instance.
+            # If non-boolean, then it is treated as the message to present to
+            # the user using `warnings.warn`.
         cache=False,  # Whether to cache the result after first evaluation.
         cache_per_subclass=False,  # Whether cache should be stored per subclass
             # rather than once for all classes.
-        allow_attribute_error=True,  # Whether to allow properties to raise `AttributeErrors` which are often masked during attribute lookup.
+        allow_attribute_error=True,  # Whether to allow properties to raise
+            # `AttributeErrors` which are often masked during attribute lookup.
     )
     def method(cls):
         ...

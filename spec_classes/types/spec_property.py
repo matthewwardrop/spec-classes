@@ -7,6 +7,7 @@ from cached_property import cached_property
 
 from spec_classes.errors import NestedAttributeError
 from spec_classes.utils.mutation import prepare_attr_value
+from spec_classes.utils.stackdepth import get_spec_classes_depth
 from spec_classes.utils.type_checking import check_type, type_label
 
 
@@ -292,7 +293,7 @@ class spec_property(_spec_property_base):
                         f"Property `{self._qualified_name}` is now overridden and will not update based on instance state."
                         if isinstance(self.warn_on_override, bool)
                         else self.warn_on_override,
-                        stacklevel=2,
+                        stacklevel=get_spec_classes_depth(),
                     )
                 return
             raise AttributeError(
@@ -470,7 +471,7 @@ class classproperty(_spec_property_base):
                         f"Class property `{self._qualified_name}` is now overridden and will not update based on class state."
                         if isinstance(self.warn_on_override, bool)
                         else self.warn_on_override,
-                        stacklevel=2,
+                        stacklevel=get_spec_classes_depth(),
                     )
                 return
             raise AttributeError(
