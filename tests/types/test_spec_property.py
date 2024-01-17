@@ -75,6 +75,14 @@ class TestSpecProperty:
                     )
                 return object.__getattribute__(self, name)
 
+            @spec_property(warn_on_override=True)
+            def set_triggers_generic_warning(self):
+                return 1
+
+            @spec_property(warn_on_override=DeprecationWarning("Custom warning."))
+            def set_triggers_custom_warning(self):
+                return 1
+
         return MySpecClass()
 
     def test_overridable(self, spec_cls):
@@ -185,6 +193,17 @@ class TestSpecProperty:
             ),
         ):
             spec_cls.raises_attribute_error
+
+    def test_warnings(self, spec_cls):
+        with pytest.warns(
+            UserWarning,
+            match=re.escape(
+                "Property `MySpecClass.set_triggers_generic_warning` is now overridden and will not update based on instance state."
+            ),
+        ):
+            spec_cls.set_triggers_generic_warning = 10
+        with pytest.warns(DeprecationWarning, match=re.escape("Custom warning.")):
+            spec_cls.set_triggers_custom_warning = 10
 
 
 class TestSpecClassProperty:
@@ -325,3 +344,25 @@ class TestSpecClassProperty:
             NestedAttributeError, match=re.escape("I will be swallowed!")
         ):
             A().suppresses_attribute_error
+
+    def test_warnings(self):
+        class A:
+            @classproperty(overridable=True, warn_on_override=True)
+            def set_triggers_generic_warning(self):
+                return 1
+
+            @classproperty(
+                overridable=True, warn_on_override=DeprecationWarning("Custom warning.")
+            )
+            def set_triggers_custom_warning(self):
+                return 1
+
+        with pytest.warns(
+            UserWarning,
+            match=re.escape(
+                "Class property `A.set_triggers_generic_warning` is now overridden and will not update based on class state."
+            ),
+        ):
+            A().set_triggers_generic_warning = 10
+        with pytest.warns(DeprecationWarning, match=re.escape("Custom warning.")):
+            A().set_triggers_custom_warning = 10

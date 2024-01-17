@@ -1,4 +1,5 @@
 import inspect
+import warnings
 from abc import abstractmethod
 from typing import Tuple
 
@@ -33,6 +34,7 @@ class _spec_property_base:
         *,
         doc=None,
         overridable=True,
+        warn_on_override=False,
         cache=False,
         allow_attribute_error=True,
         owner=None,
@@ -48,6 +50,10 @@ class _spec_property_base:
                 from the getter function).
             overridable: Whether the property value should be overridable by
                 users (in which case the override is stored as a cache).
+            warn_on_override: Whether to warn the user when the property getter
+                is overridden. Can be a boolean, string, or `Warning` instance.
+                If non-boolean, then it is treated as the message to present to
+                the user using `warnings.warn`.
             cache: Whether to cache attribute results whenever a cache does not
                 already exist.
             allow_attribute_error: Whether to allow functions to raise an
@@ -67,6 +73,7 @@ class _spec_property_base:
 
         # Novel attributes
         self.overridable = overridable
+        self.warn_on_override = warn_on_override
         self.cache = cache
         self.allow_attribute_error = allow_attribute_error
         self.owner = owner
@@ -186,6 +193,7 @@ class spec_property(_spec_property_base):
         *,
         doc=None,
         overridable=True,
+        warn_on_override=False,
         cache=False,
         invalidated_by=None,
         allow_attribute_error=True,
@@ -201,6 +209,10 @@ class spec_property(_spec_property_base):
                 from the getter function).
             overridable: Whether the property value should be overridable by
                 users (in which case the override is stored as a cache).
+            warn_on_override: Whether to warn the user when the property getter
+                is overridden. Can be a boolean, string, or `Warning` instance.
+                If non-boolean, then it is treated as the message to present to
+                the user using `warnings.warn`.
             cache: Whether to cache attribute results whenever a cache does not
                 already exist.
             invalidated_by: When attached to a spec-class, attributes that
@@ -218,6 +230,7 @@ class spec_property(_spec_property_base):
             fdel=fdel,
             doc=doc,
             overridable=overridable,
+            warn_on_override=warn_on_override,
             cache=cache,
             owner=owner,
             attr_name=attr_name,
@@ -274,6 +287,13 @@ class spec_property(_spec_property_base):
         if self.fset is None:
             if self.overridable:
                 instance.__dict__[self.attr_name] = value
+                if self.warn_on_override:
+                    warnings.warn(
+                        f"Property `{self._qualified_name}` is now overridden and will not update based on instance state."
+                        if isinstance(self.warn_on_override, bool)
+                        else self.warn_on_override,
+                        stacklevel=2,
+                    )
                 return
             raise AttributeError(
                 f"Property override for `{self._qualified_name}` does not have a setter and/or is not configured to be overridable."
@@ -326,6 +346,7 @@ class classproperty(_spec_property_base):
         *,
         doc=None,
         overridable=False,  # Note: different from spec_property
+        warn_on_override=False,
         cache=False,
         cache_per_subclass=False,
         allow_attribute_error=True,
@@ -342,6 +363,10 @@ class classproperty(_spec_property_base):
                 from the getter function).
             overridable: Whether the property value should be overridable by
                 users (in which case the override is stored as a cache).
+            warn_on_override: Whether to warn the user when the property getter
+                is overridden. Can be a boolean, string, or `Warning` instance.
+                If non-boolean, then it is treated as the message to present to
+                the user using `warnings.warn`.
             cache: Whether to cache attribute results whenever a cache does not
                 already exist.
             cache_per_subclass: Whether subclasses should have the property
@@ -359,6 +384,7 @@ class classproperty(_spec_property_base):
             fdel=fdel,
             doc=doc,
             overridable=overridable,
+            warn_on_override=warn_on_override,
             cache=cache,
             cache_per_subclass=cache_per_subclass,
             allow_attribute_error=allow_attribute_error,
@@ -439,6 +465,13 @@ class classproperty(_spec_property_base):
         if self.fset is None:
             if self.overridable:
                 self._cache[self._cache_key(obj)] = value
+                if self.warn_on_override:
+                    warnings.warn(
+                        f"Class property `{self._qualified_name}` is now overridden and will not update based on class state."
+                        if isinstance(self.warn_on_override, bool)
+                        else self.warn_on_override,
+                        stacklevel=2,
+                    )
                 return
             raise AttributeError(
                 f"Class property for `{self._qualified_name}` does not have a setter and/or is not configured to be overridable."
