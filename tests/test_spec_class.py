@@ -863,3 +863,19 @@ class TestFramework:
 
         assert MySpec().a == 0
         assert dataclasses.replace(MySpec(), a=10).a == 10
+
+    def test_staticmethod_attributes(self):
+        """
+        Static methods are not directly pickleable, and so need to be accessed
+        via `__get__`. This makes sure this is true when overridden in
+        subclasses.
+        """
+
+        @spec_class
+        class Spec:
+            a: Callable = staticmethod(lambda x: x)
+
+        class SubSpec(Spec):
+            a = staticmethod(lambda x: x)
+
+        SubSpec()  # Would fail if attempting to deepcopy `staticmethod`.

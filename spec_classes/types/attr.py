@@ -291,7 +291,7 @@ class Attr:
             if cls is self.owner:
                 return self.default_value
             if self.name in cls.__dict__:
-                value = cls.__dict__[self.name]
+                value = getattr(cls, self.name)
                 if inspect.isfunction(value) or inspect.isdatadescriptor(value):
                     return MISSING  # Default is masked.
                 return protect_via_deepcopy(value)
