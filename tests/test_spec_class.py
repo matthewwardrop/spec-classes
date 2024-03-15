@@ -879,3 +879,13 @@ class TestFramework:
             a = staticmethod(lambda x: x)
 
         SubSpec()  # Would fail if attempting to deepcopy `staticmethod`.
+
+    def test_nested_type_resolution(self):
+        @spec_class
+        class A:
+            class B:
+                pass
+
+            a: B
+
+        assert A.__spec_class__.attrs["a"].type is A.B
