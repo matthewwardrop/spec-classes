@@ -261,7 +261,7 @@ class spec_class:
         managed_attrs.extend(self.attrs)
 
         # Generate namespace of annotations (in addition to local class context)
-        annotation_namespace = {spec_cls.__name__: spec_cls}
+        annotation_namespace = {spec_cls.__name__: spec_cls, **vars(spec_cls)}
         if hasattr(spec_cls, "ANNOTATION_TYPES"):
             spec_annotation_types = spec_cls.ANNOTATION_TYPES
             if hasattr(spec_annotation_types, "__call__"):
