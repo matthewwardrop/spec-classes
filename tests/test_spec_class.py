@@ -778,19 +778,30 @@ class TestFramework:
                 repr=False,
                 invalidated_by=["attr", "unmanaged_attr"],
             )
+            always_invalidated_property: str
 
             @spec_property(cache=True, invalidated_by=["unmanaged_attr"])
             def invalidated_property(self):
                 return self.unmanaged_attr
 
+            @spec_property(cache=True, invalidated_by="*")
+            def always_invalidated_property(self):
+                return "Invalidated"
+
         assert Spec.__spec_class__.invalidation_map == {
             "attr": {"invalidated_attr"},
             "unmanaged_attr": {"invalidated_attr", "invalidated_property"},
+            "*": {"always_invalidated_property"},
         }
 
-        s = Spec(invalidated_attr="Pre-invalidation")
+        s = Spec(
+            invalidated_attr="Pre-invalidation",
+            always_invalidated_property="Pre-invalidation",
+        )
         assert s.invalidated_attr == "Pre-invalidation"
+        assert s.always_invalidated_property == "Pre-invalidation"
         assert s.with_attr("Hi").invalidated_attr == "Invalidated"
+        assert s.with_attr("Hi").always_invalidated_property == "Invalidated"
 
         @spec_class
         class SubSpec(Spec):
@@ -804,6 +815,7 @@ class TestFramework:
             "attr": {"invalidated_attr"},
             "invalidated_attr": {"sub_invalidated_attr"},
             "unmanaged_attr": {"invalidated_attr", "invalidated_property"},
+            "*": {"always_invalidated_property"},
         }
 
         s = SubSpec(

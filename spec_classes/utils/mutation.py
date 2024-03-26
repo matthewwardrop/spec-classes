@@ -151,6 +151,8 @@ def invalidate_attrs(obj: Any, attr: str, invalidation_map: Dict[str, Set[str]] 
     for invalidatee in invalidation_map.get(attr, set()) | invalidation_map.get(
         "*", set()
     ):
+        if invalidatee == attr:
+            continue
         try:
             delattr(obj, invalidatee)
         except AttributeError:
