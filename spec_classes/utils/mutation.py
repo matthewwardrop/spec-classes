@@ -100,7 +100,7 @@ def mutate_attr(
 
     if metadata:
         # Abort if class is frozen.
-        if not force and inplace and metadata.frozen:
+        if not force and inplace and obj.__spec_class_state__.frozen:
             raise FrozenInstanceError(
                 f"Cannot mutate attribute `{attr}` of frozen spec class `{obj.__class__.__name__}`."
             )
@@ -135,13 +135,19 @@ def mutate_attr(
         raise
 
     # Invalidate any caches depending on this attribute
-    if metadata and metadata.invalidation_map and not metadata.frozen:
+    if (
+        metadata
+        and obj.__spec_class_state__.invalidation_enabled
+        and metadata.invalidation_map
+    ):
         invalidate_attrs(obj, attr, metadata.invalidation_map)
 
     return obj
 
 
 def invalidate_attrs(obj: Any, attr: str, invalidation_map: Dict[str, Set[str]] = None):
+    if not obj.__spec_class_state__.invalidation_enabled:
+        return
     if invalidation_map is None:
         invalidation_map = obj.__spec_class__.invalidation_map
     if not invalidation_map:

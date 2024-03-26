@@ -771,6 +771,7 @@ class TestFramework:
     def test_invalidation(self):
         @spec_class
         class Spec:
+            always_invalidated_property: str
             attr: str = Attr(default="Hello World")
             unmanaged_attr = "Hi"
             invalidated_attr: str = Attr(
@@ -778,7 +779,6 @@ class TestFramework:
                 repr=False,
                 invalidated_by=["attr", "unmanaged_attr"],
             )
-            always_invalidated_property: str
 
             @spec_property(cache=True, invalidated_by=["unmanaged_attr"])
             def invalidated_property(self):

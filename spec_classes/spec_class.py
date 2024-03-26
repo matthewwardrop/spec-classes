@@ -10,6 +10,7 @@ from typing_extensions import dataclass_transform
 from cached_property import cached_property
 
 from spec_classes.methods import core as core_methods, SCALAR_METHODS, TOPLEVEL_METHODS
+from spec_classes.utils.weakref_cache import WeakRefCache
 
 from .types import Attr, MISSING
 
@@ -352,7 +353,14 @@ class spec_class:
                 spec_cls.__annotations__[attr] = attr_spec.type
 
         # Finalize metadata and remove bootstrapper from class.
+        @property
+        def __spec_class_state__(self):
+            if self not in self.__spec_class__.instance_state:
+                self.__spec_class__.instance_state[self] = SpecClassState()
+            return self.__spec_class__.instance_state[self]
+
         spec_cls.__spec_class__ = metadata
+        spec_cls.__spec_class_state__ = __spec_class_state__
         spec_cls.__dataclass_fields__ = metadata.attrs
 
         # Register class-level methods and validate constructor/etc.
@@ -535,6 +543,10 @@ class SpecClassMetadata:
             post_init: An optional callable to call post __init__. Lifted from
                 spec-class `__post_init__`. It should take only a single argument
                 (self).
+            instance_state: A mapping from object id to instance state. We
+                attach it here so that this state does not appear in
+                `spec_cls.__dict__`, where it could be confused attribute
+                values.
 
         Generated (and cached) properties:
             annotations: A mapping from attribute name to type for all of the
@@ -591,6 +603,7 @@ class SpecClassMetadata:
     do_not_copy: bool = False
     attrs: Dict[str, Attr] = dataclasses.field(default_factory=dict)
     post_init: Optional[Callable[[Any], None]] = None
+    instance_state: WeakRefCache = dataclasses.field(default_factory=WeakRefCache)
 
     @cached_property
     def annotations(self):
@@ -630,6 +643,31 @@ class SpecClassMetadata:
                     invalidation_map[invalidator].add(name)
 
         return invalidation_map
+
+
+@dataclasses.dataclass
+class SpecClassState:
+    """
+    A container for the instance state of a spec-class. It is used to control
+    certain runtime behaviors, like whether a spec-class should be treated as
+    frozen and/or whether invalidation should be applied.
+
+    Attributes:
+        spec_class: The spec-class instance.
+        initialized: Whether the spec-class has finished initialization.
+        frozen: Whether the spec-class should be treated as frozen.
+    """
+
+    initialized: bool = False
+    frozen: bool = False
+
+    @property
+    def invalidation_enabled(self) -> bool:
+        """
+        Whether invalidation logic should be applied at this stage in the
+        spec-class instance's life-cycle.
+        """
+        return self.initialized and not self.frozen
 
 
 @dataclasses.dataclass
