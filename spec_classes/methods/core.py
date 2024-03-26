@@ -43,11 +43,6 @@ class InitMethod(MethodDescriptor):
     def init(spec_cls, self, **kwargs):
         instance_metadata = self.__spec_class__
 
-        # Unlock the class for mutation during initialization.
-        is_frozen = instance_metadata.frozen
-        if instance_metadata.owner is spec_cls and instance_metadata.frozen:
-            instance_metadata.frozen = False
-
         # Initialise any non-local spec attributes via parent constructors
         if instance_metadata.owner is spec_cls:
             for parent in reversed(spec_cls.mro()[1:]):
@@ -123,8 +118,8 @@ class InitMethod(MethodDescriptor):
             if instance_metadata.post_init:
                 instance_metadata.post_init(self)
 
-            if is_frozen:
-                instance_metadata.frozen = True
+            self.__spec_class_state__.initialized = True
+            self.__spec_class_state__.frozen = instance_metadata.frozen
 
     def build_method(self) -> Callable:
         spec_class_key = self.spec_cls.__spec_class__.key
@@ -237,7 +232,7 @@ class DelAttrMethod(MethodDescriptor):
 
     def build_method(self) -> Callable:
         def __delattr__(self, attr, force=False):
-            if self.__spec_class__.frozen:
+            if self.__spec_class_state__.frozen:
                 raise FrozenInstanceError(
                     f"Cannot mutate attribute `{attr}` of frozen spec class `{self.__class__.__name__}`."
                 )
@@ -463,6 +458,9 @@ class DeepCopyMethod(MethodDescriptor):
                 new.__dict__[attr] = value
             else:
                 new.__dict__[attr] = protect_via_deepcopy(value, memo)
+        self.__spec_class__.instance_state[new] = self.__spec_class__.instance_state[
+            self
+        ]
         return new
 
     def build_method(self) -> Callable:
