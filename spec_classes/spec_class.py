@@ -353,12 +353,6 @@ class spec_class:
                 spec_cls.__annotations__[attr] = attr_spec.type
 
         # Finalize metadata and remove bootstrapper from class.
-        @property
-        def __spec_class_state__(self):
-            if self not in self.__spec_class__.instance_state:
-                self.__spec_class__.instance_state[self] = SpecClassState()
-            return self.__spec_class__.instance_state[self]
-
         spec_cls.__spec_class__ = metadata
         spec_cls.__spec_class_state__ = __spec_class_state__
         spec_cls.__dataclass_fields__ = metadata.attrs
@@ -658,8 +652,15 @@ class SpecClassState:
         frozen: Whether the spec-class should be treated as frozen.
     """
 
-    initialized: bool = False
-    frozen: bool = False
+    metadata: SpecClassMetadata
+    initialized: Optional[bool] = None
+    frozen: Optional[bool] = None
+
+    def __post_init__(self):
+        if self.initialized is None:
+            self.initialized = True
+        if self.frozen is None:
+            return self.metadata.frozen
 
     @property
     def invalidation_enabled(self) -> bool:
@@ -668,6 +669,19 @@ class SpecClassState:
         spec-class instance's life-cycle.
         """
         return self.initialized and not self.frozen
+
+
+@property
+def __spec_class_state__(self):
+    """
+    The Spec Class instance state. This is primarily used to distinguish between
+    pre- and post-initialisation phases. Objects sent across process boundaries
+    (or otherwise deserialized) will not persist this object. It should not
+    contain anything critical to class function.
+    """
+    if self not in self.__spec_class__.instance_state:
+        self.__spec_class__.instance_state[self] = SpecClassState(self.__spec_class__)
+    return self.__spec_class__.instance_state[self]
 
 
 @dataclasses.dataclass

@@ -45,6 +45,9 @@ class InitMethod(MethodDescriptor):
 
         # Initialise any non-local spec attributes via parent constructors
         if instance_metadata.owner is spec_cls:
+            self.__spec_class_state__.initialized = False
+            self.__spec_class_state__.frozen = False
+
             for parent in reversed(spec_cls.mro()[1:]):
                 parent_metadata = getattr(parent, "__spec_class__", None)
                 if parent_metadata:
@@ -458,9 +461,7 @@ class DeepCopyMethod(MethodDescriptor):
                 new.__dict__[attr] = value
             else:
                 new.__dict__[attr] = protect_via_deepcopy(value, memo)
-        self.__spec_class__.instance_state[new] = self.__spec_class__.instance_state[
-            self
-        ]
+        self.__spec_class__.instance_state[new] = self.__spec_class_state__
         return new
 
     def build_method(self) -> Callable:
