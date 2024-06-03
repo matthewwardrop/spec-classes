@@ -4,7 +4,7 @@ from typing import Any, List, Optional
 
 import pytest
 
-from spec_classes import Attr, MISSING, spec_class
+from spec_classes import MISSING, Attr, spec_class
 from spec_classes.collections import SequenceMutator
 
 
@@ -30,7 +30,7 @@ class TestAttr:
         )
         a = Attr.from_attr_value("attr", f)
         assert a.name == "attr"
-        for attr in {
+        for attr in (
             "default",
             "default_factory",
             "init",
@@ -38,7 +38,7 @@ class TestAttr:
             "compare",
             "hash",
             "metadata",
-        }:
+        ):
             a_value = getattr(a, attr)
             f_value = getattr(f, attr)
             assert (

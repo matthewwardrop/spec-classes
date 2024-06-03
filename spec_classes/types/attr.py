@@ -5,7 +5,7 @@ import dataclasses
 import functools
 import inspect
 from collections.abc import MutableMapping, MutableSequence, MutableSet
-from typing import Any, Callable, Iterable, Optional, TYPE_CHECKING, Type
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, Type
 
 from cached_property import cached_property
 

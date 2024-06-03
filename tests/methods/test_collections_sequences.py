@@ -198,16 +198,12 @@ class TestSpecListAttribute:
             [unkeyed, unkeyed, unkeyed]
         ).without_spec_list_item(unkeyed).without_spec_list_item(
             -1
-        ).spec_list_items == [
-            unkeyed
-        ]
+        ).spec_list_items == [unkeyed]
         assert spec.with_spec_list_items(
             [unkeyed, unkeyed, unkeyed]
         ).without_spec_list_item(unkeyed).without_spec_list_item(
             -1, _by_index=True
-        ).spec_list_items == [
-            unkeyed
-        ]
+        ).spec_list_items == [unkeyed]
 
     def test_update(self, spec_cls, unkeyed_spec_cls, keyed_spec_cls):
         spec = spec_cls(

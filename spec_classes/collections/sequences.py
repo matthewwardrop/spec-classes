@@ -107,9 +107,7 @@ class SequenceMutator(CollectionAttrMutator):
             require_pre_existent=True,
         )
 
-    def remove_item(
-        self, value_or_index, *, by_index=MISSING
-    ):  # pylint: disable=arguments-differ
+    def remove_item(self, value_or_index, *, by_index=MISSING):  # pylint: disable=arguments-differ
         index, _ = self._extractor(
             value_or_index, by_index=by_index, raise_if_missing=True
         )

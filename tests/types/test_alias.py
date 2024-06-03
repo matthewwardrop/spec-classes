@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from spec_classes import Alias, DeprecatedAlias, MISSING, spec_class
+from spec_classes import MISSING, Alias, DeprecatedAlias, spec_class
 
 
 def test_alias():

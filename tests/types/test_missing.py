@@ -1,6 +1,6 @@
 import copy
 
-from spec_classes.types.missing import MISSING, EMPTY, SENTINEL
+from spec_classes.types.missing import EMPTY, MISSING, SENTINEL
 
 
 def test_missing():

@@ -3,7 +3,7 @@ from typing import Set
 
 import pytest
 
-from spec_classes import Attr, MISSING, spec_class
+from spec_classes import MISSING, Attr, spec_class
 from spec_classes.collections import SetMutator
 from spec_classes.types import KeyedSet
 

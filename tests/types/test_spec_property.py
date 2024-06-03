@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from spec_classes import spec_class, spec_property, classproperty
+from spec_classes import classproperty, spec_class, spec_property
 from spec_classes.errors import NestedAttributeError
 
 

@@ -136,16 +136,13 @@ class _spec_property_base:
         return f"{self.owner.__name__ if self.owner else ''}.{self.attr_name or ''}"
 
     @abstractmethod
-    def __get__(self, obj, objtype=None):
-        ...  # pragma: no cover
+    def __get__(self, obj, objtype=None): ...  # pragma: no cover
 
     @abstractmethod
-    def __set__(self, obj, value):
-        ...  # pragma: no cover
+    def __set__(self, obj, value): ...  # pragma: no cover
 
     @abstractmethod
-    def __delete__(self, obj):
-        ...  # pragma: no cover
+    def __delete__(self, obj): ...  # pragma: no cover
 
 
 class spec_property(_spec_property_base):

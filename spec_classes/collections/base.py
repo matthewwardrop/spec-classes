@@ -3,7 +3,7 @@ from collections import namedtuple
 from typing import Any, Callable, Dict, List, Type
 
 from spec_classes.methods.base import AttrMethodDescriptor
-from spec_classes.types import Attr, MISSING
+from spec_classes.types import MISSING, Attr
 from spec_classes.utils.mutation import mutate_value, protect_via_deepcopy
 from spec_classes.utils.type_checking import (
     check_type,
@@ -164,25 +164,21 @@ class CollectionAttrMutator(metaclass=ABCMeta):
         return self
 
     @abstractmethod
-    def _prepare_items(self):
-        ...  # pragma: no cover
+    def _prepare_items(self): ...  # pragma: no cover
 
     @abstractmethod
-    def _extractor(self, value_or_index, raise_if_missing=False) -> IndexedItem:
-        ...  # pragma: no cover
+    def _extractor(
+        self, value_or_index, raise_if_missing=False
+    ) -> IndexedItem: ...  # pragma: no cover
 
     @abstractmethod
-    def _inserter(self, index, item):
-        ...  # pragma: no cover
+    def _inserter(self, index, item): ...  # pragma: no cover
 
     @abstractmethod
-    def add_item(self, item):
-        ...  # pragma: no cover
+    def add_item(self, item): ...  # pragma: no cover
 
     @abstractmethod
-    def transform_item(self, value_or_index, transform):
-        ...  # pragma: no cover
+    def transform_item(self, value_or_index, transform): ...  # pragma: no cover
 
     @abstractmethod
-    def remove_item(self, value_or_index):
-        ...  # pragma: no cover
+    def remove_item(self, value_or_index): ...  # pragma: no cover

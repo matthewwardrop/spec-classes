@@ -8,7 +8,7 @@ from typing import Any, Callable, Iterable, Optional
 
 from spec_classes.errors import FrozenInstanceError
 from spec_classes.methods.scalar import WithAttrMethod
-from spec_classes.types import Attr, MISSING
+from spec_classes.types import MISSING, Attr
 from spec_classes.utils.method_builder import MethodBuilder
 from spec_classes.utils.mutation import (
     invalidate_attrs,

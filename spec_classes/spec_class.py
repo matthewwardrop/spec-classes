@@ -5,14 +5,15 @@ import typing
 import warnings
 from collections import defaultdict
 from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Type, Union
-from typing_extensions import dataclass_transform
 
 from cached_property import cached_property
+from typing_extensions import dataclass_transform
 
-from spec_classes.methods import core as core_methods, SCALAR_METHODS, TOPLEVEL_METHODS
+from spec_classes.methods import SCALAR_METHODS, TOPLEVEL_METHODS
+from spec_classes.methods import core as core_methods
 from spec_classes.utils.weakref_cache import WeakRefCache
 
-from .types import Attr, MISSING
+from .types import MISSING, Attr
 
 
 @dataclass_transform()
@@ -265,7 +266,7 @@ class spec_class:
         annotation_namespace = {spec_cls.__name__: spec_cls, **vars(spec_cls)}
         if hasattr(spec_cls, "ANNOTATION_TYPES"):
             spec_annotation_types = spec_cls.ANNOTATION_TYPES
-            if hasattr(spec_annotation_types, "__call__"):
+            if callable(spec_annotation_types):
                 spec_annotation_types = spec_cls.ANNOTATION_TYPES()
             if isinstance(spec_annotation_types, Mapping):
                 annotation_namespace.update(spec_annotation_types)

@@ -171,9 +171,8 @@ def test_mutate_value():
 
 def test__get_function_args():
     attrs = {"key": "value", "extra": "value"}
-    _get_function_args(int, attrs) == set()
-    _get_function_args(lambda key, missing: 1, attrs) == {"key"}
-    _get_function_args(lambda **kwargs: 1, attrs) == {"key", "extra"}
-    _get_function_args(Spec, attrs) == {"key"}
-    _get_function_args(OverflowSpec, attrs) == {"key", "extra"}
-    _get_function_args(sys.exit, attrs) == set()
+    assert _get_function_args(int, attrs) == set()
+    assert _get_function_args(lambda key, missing: 1, attrs) == {"key", "missing"}
+    assert _get_function_args(lambda **kwargs: 1, attrs) == {"key", "extra"}
+    assert _get_function_args(Spec, attrs) == {"key", "scalar", "list_values", "self"}
+    assert _get_function_args(OverflowSpec, attrs) == set()

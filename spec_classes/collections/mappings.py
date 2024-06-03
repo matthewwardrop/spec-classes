@@ -61,9 +61,7 @@ class MappingMutator(CollectionAttrMutator):
             self.add_item(k, v)
         return self
 
-    def transform_item(
-        self, key, transform, *, attr_transforms=None
-    ):  # pylint: disable=arguments-renamed,arguments-differ
+    def transform_item(self, key, transform, *, attr_transforms=None):  # pylint: disable=arguments-renamed,arguments-differ
         return self._mutate_collection(
             value_or_index=key,
             extractor=self._extractor,

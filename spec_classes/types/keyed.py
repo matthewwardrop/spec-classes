@@ -93,9 +93,7 @@ class KeyedBase:
         return True
 
 
-class KeyedList(
-    Generic[ItemType, KeyType], MutableSequence, KeyedBase
-):  # pylint: disable=too-many-ancestors
+class KeyedList(Generic[ItemType, KeyType], MutableSequence, KeyedBase):  # pylint: disable=too-many-ancestors
     """
     A list-like object that can also look up items by key. The computational
     complexity for list-like operations is the same as the base `list` class,
@@ -221,9 +219,7 @@ class KeyedList(
         return f"{type_label(self._type)}({repr(self._list)})"
 
 
-class KeyedSet(
-    Generic[ItemType, KeyType], MutableSet, KeyedBase
-):  # pylint: disable=too-many-ancestors
+class KeyedSet(Generic[ItemType, KeyType], MutableSet, KeyedBase):  # pylint: disable=too-many-ancestors
     """
     A set-like object that can also look up items by key. The computational
     complexity for set-like operations is the same as the base `set` class,

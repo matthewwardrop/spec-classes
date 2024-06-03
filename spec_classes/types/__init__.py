@@ -2,8 +2,8 @@ from .alias import Alias, DeprecatedAlias
 from .attr import Attr
 from .attr_proxy import AttrProxy
 from .keyed import KeyedList, KeyedSet
-from .missing import MISSING, EMPTY, SENTINEL
-from .spec_property import spec_property, classproperty
+from .missing import EMPTY, MISSING, SENTINEL
+from .spec_property import classproperty, spec_property
 from .validated import ValidatedType, bounded, validated
 
 __all__ = (

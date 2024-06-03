@@ -8,7 +8,7 @@ from typing import Callable
 from cached_property import cached_property
 from lazy_object_proxy import Proxy
 
-from spec_classes.types import Attr, MISSING
+from spec_classes.types import MISSING, Attr
 from spec_classes.utils.method_builder import MethodBuilder
 from spec_classes.utils.mutation import mutate_attr, mutate_value, prepare_attr_value
 
