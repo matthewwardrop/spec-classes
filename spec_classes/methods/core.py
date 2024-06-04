@@ -7,12 +7,12 @@ from collections.abc import MutableMapping, MutableSequence, MutableSet
 from typing import Any, Callable, Iterable, Optional
 
 from spec_classes.errors import FrozenInstanceError
-from spec_classes.methods.scalar import WithAttrMethod
 from spec_classes.types import MISSING, Attr
 from spec_classes.utils.method_builder import MethodBuilder
 from spec_classes.utils.mutation import (
     invalidate_attrs,
     mutate_attr,
+    prepare_attr_value,
     protect_via_deepcopy,
 )
 
@@ -45,9 +45,9 @@ class InitMethod(MethodDescriptor):
 
         # Initialise any non-local spec attributes via parent constructors
         if instance_metadata.owner is spec_cls:
-            self.__spec_class_state__.initialized = False
-            self.__spec_class_state__.frozen = False
-
+            self.__setattr__(
+                "__spec_class_initializing__", True, force=True, skip_invalidation=True
+            )
             for parent in reversed(spec_cls.mro()[1:]):
                 parent_metadata = getattr(parent, "__spec_class__", None)
                 if parent_metadata:
@@ -77,7 +77,7 @@ class InitMethod(MethodDescriptor):
                     )
 
         # For each attribute owned by this spec_cls in `instance_metadata`,
-        # initalize the attribute.
+        # initialize the attribute.
         for attr, attr_spec in instance_metadata.attrs.items():
             if (
                 not attr_spec.init
@@ -100,7 +100,7 @@ class InitMethod(MethodDescriptor):
             if value is not MISSING:
                 if copy_required:
                     value = protect_via_deepcopy(value)
-                setattr(self, attr, value)
+                self.__setattr__(attr, value, force=True, skip_invalidation=True)
 
         # Finalize initialisation by storing overflow attrs and restoring frozen
         # status.
@@ -121,8 +121,9 @@ class InitMethod(MethodDescriptor):
             if instance_metadata.post_init:
                 instance_metadata.post_init(self)
 
-            self.__spec_class_state__.initialized = True
-            self.__spec_class_state__.frozen = instance_metadata.frozen
+            self.__delattr__(
+                "__spec_class_initializing__", force=True, skip_invalidation=True
+            )
 
     def build_method(self) -> Callable:
         spec_class_key = self.spec_cls.__spec_class__.key
@@ -203,12 +204,20 @@ class SetAttrMethod(MethodDescriptor):
     method_name = "__setattr__"
 
     def build_method(self) -> Callable:
-        def __setattr__(self, attr, value, force=False):
+        def __setattr__(self, attr, value, force=False, skip_invalidation=False):
             attr_spec = self.__spec_class__.attrs.get(attr)
-            if attr_spec:
-                WithAttrMethod.with_attr(attr_spec, self, value, _inplace=True)
-                return
-            mutate_attr(self, attr=attr, value=value, inplace=True, force=force)
+            mutate_attr(
+                obj=self,
+                attr=attr,
+                value=prepare_attr_value(
+                    attr_spec=attr_spec, instance=self, value=value
+                )
+                if attr_spec
+                else value,
+                inplace=True,
+                force=force,
+                skip_invalidation=skip_invalidation,
+            )
 
         # Add reference to original __setattr__.
         __setattr__.__raw__ = getattr(
@@ -234,8 +243,11 @@ class DelAttrMethod(MethodDescriptor):
     method_name = "__delattr__"
 
     def build_method(self) -> Callable:
-        def __delattr__(self, attr, force=False):
-            if self.__spec_class_state__.frozen:
+        def __delattr__(self, attr, force=False, skip_invalidation=False):
+            if (
+                not (force or getattr(self, "__spec_class_initializing__", False))
+                and self.__spec_class__.frozen
+            ):
                 raise FrozenInstanceError(
                     f"Cannot mutate attribute `{attr}` of frozen spec class `{self.__class__.__name__}`."
                 )
@@ -249,7 +261,8 @@ class DelAttrMethod(MethodDescriptor):
                 or attr_spec.is_masked
             ):
                 self.__delattr__.__raw__(self, attr)
-                invalidate_attrs(self, attr)
+                if not skip_invalidation:
+                    invalidate_attrs(self, attr)
                 return None
 
             return mutate_attr(
@@ -258,6 +271,7 @@ class DelAttrMethod(MethodDescriptor):
                 value=protect_via_deepcopy(attr_spec.default),  # handle default factory
                 inplace=True,
                 force=True,
+                skip_invalidation=skip_invalidation,
             )
 
         # Add reference to original __delattr__
@@ -461,7 +475,6 @@ class DeepCopyMethod(MethodDescriptor):
                 new.__dict__[attr] = value
             else:
                 new.__dict__[attr] = protect_via_deepcopy(value, memo)
-        self.__spec_class__.instance_state[new] = self.__spec_class_state__
         return new
 
     def build_method(self) -> Callable:
