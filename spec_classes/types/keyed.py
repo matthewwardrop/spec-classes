@@ -1,6 +1,8 @@
+import sys
 from collections.abc import MutableSequence, MutableSet, Sequence
 from typing import Any, Callable, Generic, Iterable, Optional, Tuple, Type, TypeVar
 
+from spec_classes.errors import BaseTypeError
 from spec_classes.utils.type_checking import check_type, type_label
 
 ItemType = TypeVar("ItemType")
@@ -67,8 +69,17 @@ class KeyedBase:
     @__orig_class__.setter
     def __orig_class__(self, type_):
         self._type = type_
-        for item in self:
-            self._validate_item(item)
+        if getattr(self._type, "__args__", None):
+            try:
+                for item in self:
+                    self._validate_item(item)
+            except Exception as e:
+                if sys.version_info >= (3, 11):
+                    # Python 3.11+ suppresses errors associated with setting
+                    # __orig_class__. We bypass this because we want to enforce
+                    # typing at runtime.
+                    raise BaseTypeError(*e.args) from e
+                raise
 
     @classmethod
     def __spec_class_check_type__(cls, instance: Any, type_: Type) -> bool:
