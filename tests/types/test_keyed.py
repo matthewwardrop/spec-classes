@@ -1,10 +1,12 @@
 # flake8: noqa: E741; Short names are fine here in the tests.
 
+import sys
 from typing import Set
 
 import pytest
 
 from spec_classes import spec_class
+from spec_classes.errors import BaseTypeError
 from spec_classes.types import KeyedList, KeyedSet
 
 
@@ -134,11 +136,12 @@ class TestKeyedList:
         assert KeyedList[int, str]([1, 2, 3], key=str) == [1, 2, 3]
 
         with pytest.raises(
-            TypeError, match="Invalid item type. Got: `1`; Expected instance of: `str`."
+            TypeError if sys.version_info < (3, 11) else BaseTypeError,
+            match="Invalid item type. Got: `1`; Expected instance of: `str`.",
         ):
             KeyedList[str, str]([1, 2, 3], key=str)
         with pytest.raises(
-            TypeError,
+            TypeError if sys.version_info < (3, 11) else BaseTypeError,
             match="Invalid key type. Got: `'1'`; Expected instance of: `int`.",
         ):
             KeyedList[int, int]([1, 2, 3], key=str)

@@ -1,5 +1,7 @@
 from typing import Any, Callable, Dict, List, Set, TypeVar, Union
 
+from typing_extensions import Literal
+
 from spec_classes import spec_class
 from spec_classes.types import KeyedList, KeyedSet
 from spec_classes.utils.type_checking import (
@@ -9,7 +11,6 @@ from spec_classes.utils.type_checking import (
     type_instantiate,
     type_label,
 )
-from typing_extensions import Literal
 
 
 @spec_class

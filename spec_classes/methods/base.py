@@ -64,12 +64,10 @@ class MethodDescriptor(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def method_name(self) -> str:
-        ...  # pragma: no cover
+    def method_name(self) -> str: ...  # pragma: no cover
 
     @abstractmethod
-    def build_method(self) -> Callable:
-        ...  # pragma: no cover
+    def build_method(self) -> Callable: ...  # pragma: no cover
 
 
 class AttrMethodDescriptor(MethodDescriptor):  # pylint: disable=abstract-method

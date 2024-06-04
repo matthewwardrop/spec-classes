@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from spec_classes import AttrProxy, MISSING, spec_class
+from spec_classes import MISSING, AttrProxy, spec_class
 
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")

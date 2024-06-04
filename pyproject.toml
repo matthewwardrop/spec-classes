@@ -59,31 +59,27 @@ include = [
 
 [tool.hatch.envs.default]
 dependencies = [
-    "black==23.3.0",
-    "flake8-docstrings==1.7.0",
-    "flake8-pyproject",
-    "flake8==5.0.4",
-    "pylint==2.14.5",
+    "ruff==0.4.7",
     "pytest-cov==4.0.0",
     "pytest==7.2.0",
 ]
 
 [tool.hatch.envs.default.scripts]
 tests = ["unit-tests", "linters"]
-unit-tests = "pytest --cov=spec_classes --cov-report=term-missing --cov-report=xml -vv {args} tests"
+unit-tests = "pytest --cov=spec_classes --cov-report=term-missing --cov-report=xml -vv {args:tests}"
 linters = [
-    "flake8 spec_classes tests",
-    "pylint spec_classes",
-    "black --check spec_classes tests",
+    "ruff check",
+    "ruff format --check",
 ]
-format = "black spec_classes tests"
+format = "ruff format spec_classes tests"
 
 [[tool.hatch.envs.test.matrix]]
 python = ["37", "38", "39", "310", "311", "312"]
 
 # Linting configuration
 
-[tool.flake8]
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "PL"]
 ignore = [
     "C901",
     "D100",
@@ -98,41 +94,8 @@ ignore = [
     "D400",
     "D401",
     "D413",
-    "E128",
     "E501",
     "F405",
-    "W503",
-    "W504",
-]
-max-complexity = 10
-application-import-names = "spec_classes"
-
-[tool.pylint."MESSAGES CONTROL"]
-disable = [
-  "assignment-from-no-return",
-  "cyclic-import",
-  "duplicate-code",
-  "exec-used",
-  "fixme",
-  "import-outside-toplevel",
-  "invalid-name",
-  "invalid-overridden-method",
-  "line-too-long",
-  "missing-docstring",
-  "no-member",
-  "protected-access",
-  "too-few-public-methods",
-  "too-many-arguments",
-  "too-many-branches",
-  "too-many-instance-attributes",
-  "too-many-lines",
-  "too-many-locals",
-  "too-many-nested-blocks",
-  "too-many-public-methods",
-  "too-many-return-statements",
-  "too-many-statements",
-  "ungrouped-imports",
-  "unused-argument",
-  "unused-wildcard-import",
-  "wildcard-import",
+    "PLR09",
+    "PLR2004",
 ]

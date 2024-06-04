@@ -11,7 +11,7 @@ from typing import Any, Callable, Dict, List
 
 import pytest
 
-from spec_classes import Attr, FrozenInstanceError, MISSING, spec_class, spec_property
+from spec_classes import MISSING, Attr, FrozenInstanceError, spec_class, spec_property
 from spec_classes.spec_class import SpecClassMetadata, _SpecClassMetadataPlaceholder
 
 
@@ -201,18 +201,21 @@ class TestFramework:
             ).strip()
         )
 
-        assert spec_cls(
-            key="key",
-            list_values=[1, 2, 3],
-            dict_values={"a": 1, "b": 2},
-            recursive=spec_cls(key="nested"),
-            set_values={
-                "a"
-            },  # sets are unordered, so we use one item to guarantee order
-        ).__repr__(indent=False) == (
-            "Spec(key='key', scalar=MISSING, list_values=[1, 2, 3], dict_values={'a': 1, 'b': 2}, set_values={'a'}, "
-            "spec=MISSING, spec_list_items=MISSING, spec_dict_items=MISSING, keyed_spec_list_items=MISSING, keyed_spec_dict_items=MISSING, "
-            "keyed_spec_set_items=MISSING, recursive=Spec(key='nested', ...))"
+        assert (
+            spec_cls(
+                key="key",
+                list_values=[1, 2, 3],
+                dict_values={"a": 1, "b": 2},
+                recursive=spec_cls(key="nested"),
+                set_values={
+                    "a"
+                },  # sets are unordered, so we use one item to guarantee order
+            ).__repr__(indent=False)
+            == (
+                "Spec(key='key', scalar=MISSING, list_values=[1, 2, 3], dict_values={'a': 1, 'b': 2}, set_values={'a'}, "
+                "spec=MISSING, spec_list_items=MISSING, spec_dict_items=MISSING, keyed_spec_list_items=MISSING, keyed_spec_dict_items=MISSING, "
+                "keyed_spec_set_items=MISSING, recursive=Spec(key='nested', ...))"
+            )
         )
 
         with pytest.raises(

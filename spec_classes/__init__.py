@@ -2,15 +2,15 @@ from ._version import __version__, __version_tuple__
 from .errors import FrozenInstanceError
 from .spec_class import spec_class
 from .types import (
-    spec_property,
-    classproperty,
+    EMPTY,
+    MISSING,
+    SENTINEL,
     Alias,
-    DeprecatedAlias,
     Attr,
     AttrProxy,
-    MISSING,
-    EMPTY,
-    SENTINEL,
+    DeprecatedAlias,
+    classproperty,
+    spec_property,
 )
 
 __author__ = "Matthew Wardrop"

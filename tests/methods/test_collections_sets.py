@@ -157,12 +157,18 @@ class TestSpecSetAttribute:
             spec.update_keyed_spec_set_item(
                 "a", keyed_spec_cls("c")
             ).keyed_spec_set_items["a"]
-        spec.update_keyed_spec_set_item("a", nested_scalar=100).keyed_spec_set_items[
-            "a"
-        ].nested_scalar == 100
-        spec.update_keyed_spec_set_item(
-            "a", nested_scalar=100, _if=False
-        ).keyed_spec_set_items["a"].nested_scalar == 1
+        assert (
+            spec.update_keyed_spec_set_item("a", nested_scalar=100)
+            .keyed_spec_set_items["a"]
+            .nested_scalar
+            == 100
+        )
+        assert (
+            spec.update_keyed_spec_set_item("a", nested_scalar=100, _if=False)
+            .keyed_spec_set_items["a"]
+            .nested_scalar
+            == 1
+        )
 
         # Check that mutations in key work fine
         assert set(

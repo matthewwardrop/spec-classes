@@ -45,9 +45,7 @@ class SetMutator(CollectionAttrMutator):
             self.collection.discard(index)
         self.collection.add(item)
 
-    def add_item(
-        self, item, *, value_or_index=MISSING, replace=True, attrs=None
-    ):  # pylint: disable=arguments-differ
+    def add_item(self, item, *, value_or_index=MISSING, replace=True, attrs=None):  # pylint: disable=arguments-differ
         return self._mutate_collection(
             value_or_index=value_or_index,
             extractor=self._extractor,
@@ -67,9 +65,7 @@ class SetMutator(CollectionAttrMutator):
             self.add_item(item)
         return self
 
-    def transform_item(
-        self, item, transform, *, attr_transforms=None
-    ):  # pylint: disable=arguments-renamed,arguments-differ
+    def transform_item(self, item, transform, *, attr_transforms=None):  # pylint: disable=arguments-renamed,arguments-differ
         return self._mutate_collection(
             value_or_index=item,
             extractor=self._extractor,

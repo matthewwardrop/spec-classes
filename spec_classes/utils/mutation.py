@@ -10,7 +10,7 @@ from typing import Any, Callable, Dict, Optional, Set, Type, Union
 from lazy_object_proxy import Proxy
 
 from spec_classes.errors import FrozenInstanceError
-from spec_classes.types import Attr, MISSING
+from spec_classes.types import MISSING, Attr
 
 from .type_checking import check_type, type_label
 
@@ -351,7 +351,8 @@ def _get_function_args(function, attrs):
         builtins, function.__name__, None
     ):
         return set()
-    function = getattr(function, "__init__", function)
+    if not inspect.isfunction(function) and not inspect.ismethod(function):
+        function = getattr(function, "__init__", function)
     if function is object.__init__:
         return set()
     # Otherwise, lookup signature and annotate function with args.
@@ -361,9 +362,7 @@ def _get_function_args(function, attrs):
         except AttributeError:
             try:
                 parameters = inspect.signature(function).parameters
-            except (
-                ValueError
-            ):  # pragma: no cover; Python 3.7 and newer raise a ValueError for C functions
+            except ValueError:  # pragma: no cover; Python 3.7 and newer raise a ValueError for C functions
                 parameters = {}
         if (
             parameters
@@ -372,8 +371,6 @@ def _get_function_args(function, attrs):
             return set(attrs or {})
         try:
             function.__spec_class_args__ = set(parameters)
-        except (
-            AttributeError
-        ):  # pragma: no cover; this is a *very* rare edge-case affecting functions defined in C.
+        except AttributeError:  # pragma: no cover; this is a *very* rare edge-case affecting functions defined in C.
             return set(parameters)
     return function.__spec_class_args__

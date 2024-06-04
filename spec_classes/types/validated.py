@@ -35,8 +35,7 @@ class ValidatedType(metaclass=ValidatedTypeMeta):
 
     @classmethod
     @abstractmethod
-    def validate(cls, obj: Any) -> bool:
-        ...  # pragma: no cover
+    def validate(cls, obj: Any) -> bool: ...  # pragma: no cover
 
 
 def validated(

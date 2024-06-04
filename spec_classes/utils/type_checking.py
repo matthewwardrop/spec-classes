@@ -11,7 +11,9 @@ from typing import (
     TypeVar,
     Union,
     _GenericAlias,
-)  # pylint: disable=protected-access
+)
+
+# pylint: disable=protected-access
 from typing_extensions import Literal as LiteralExtension
 
 try:

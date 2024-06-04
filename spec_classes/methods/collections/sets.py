@@ -2,7 +2,7 @@ import functools
 from inspect import Parameter
 from typing import Any, Callable, Dict, Union
 
-from spec_classes.types import Attr, MISSING
+from spec_classes.types import MISSING, Attr
 from spec_classes.utils.method_builder import MethodBuilder
 from spec_classes.utils.mutation import mutate_attr
 from spec_classes.utils.type_checking import type_label
