@@ -1,4 +1,5 @@
-from typing import Any, Callable, Dict, List, Set, TypeVar, Union
+import sys
+from typing import Any, Callable, Dict, List, Set, Tuple, Type, TypeVar, Union
 
 from typing_extensions import Literal
 
@@ -38,6 +39,11 @@ class TestTypeChecking:
         assert check_type(["a", "b"], List[str])
         assert not check_type([1, 2], List[str])
 
+        assert check_type((), Tuple)
+        assert check_type((1, "a"), Tuple[int, str])
+        assert not check_type((1,), Tuple[str])
+        assert not check_type(("1", 2), Tuple[str, ...])
+
         assert check_type({}, Dict)
         assert not check_type("a", Dict)
         assert check_type({"a": 1, "b": 2}, Dict[str, int])
@@ -56,8 +62,29 @@ class TestTypeChecking:
         assert check_type("hi", Literal["hi"])
         assert not check_type(1, Literal["hi"])
 
+        class MyType:
+            pass
+
+        class SubType(MyType):
+            pass
+
+        assert check_type(MyType, Type[MyType])
+        assert check_type(SubType, Type[MyType])
+
         assert check_type(1, float)
         assert not check_type(1.0, int)
+
+        if sys.version_info >= (3, 9):
+            assert check_type(["a", "b"], list[str])
+            assert check_type((1, 2, 3, 4), tuple[int, ...])
+            assert check_type((1, 2, 3), tuple[int, int, float])
+            assert not check_type((1, 2, 3), tuple[int, int])
+            assert not check_type({1: "a", 2: "b"}, dict[str, int])
+            assert not check_type({1, 2}, set[str])
+            assert not check_type(str, type[MyType])
+
+        if sys.version_info >= (3, 10):
+            assert check_type([1, "a"], list[str | int])
 
     def test_get_collection_item_type(self):
         assert get_collection_item_type(list) is Any

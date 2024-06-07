@@ -1,5 +1,7 @@
 import inspect
 import numbers
+import sys
+import types
 from collections.abc import Sequence as SequenceMutator
 from collections.abc import Set as SetMutator
 from typing import (
@@ -37,11 +39,14 @@ def check_type(value: Any, attr_type: Type) -> bool:
     """
     Check whether a given object `value` matches the provided `attr_type`.
     """
-    if attr_type is Any:
+    if attr_type is Any or isinstance(attr_type, TypeVar):
         return True
 
     if attr_type is float:
         attr_type = numbers.Real
+
+    if sys.version_info >= (3, 10) and isinstance(attr_type, types.UnionType):
+        return any(check_type(value, type_) for type_ in attr_type.__args__)
 
     if hasattr(attr_type, "__origin__"):  # we are dealing with a `typing` object.
         if attr_type.__origin__ is Union:
@@ -50,23 +55,38 @@ def check_type(value: Any, attr_type: Type) -> bool:
         if attr_type.__origin__ in (Literal, LiteralExtension):
             return value in attr_type.__args__
 
-        if isinstance(attr_type, _GenericAlias):
+        if (
+            isinstance(attr_type, _GenericAlias)
+            or sys.version_info >= (3, 9)
+            and isinstance(attr_type, types.GenericAlias)
+        ):
             if not isinstance(value, attr_type.__origin__):
                 return False
-            if attr_type._name in ("List", "Set") and not isinstance(
-                attr_type.__args__[0], TypeVar
-            ):  # pylint: disable=protected-access
+            if attr_type.__origin__ in (list, set):
                 for item in value:
                     if not check_type(item, attr_type.__args__[0]):
                         return False
-            elif attr_type._name == "Dict" and not isinstance(
-                attr_type.__args__[0], TypeVar
-            ):  # pylint: disable=protected-access
+            elif attr_type.__origin__ == dict:
                 for k, v in value.items():
                     if not check_type(k, attr_type.__args__[0]):
                         return False
                     if not check_type(v, attr_type.__args__[1]):
                         return False
+            elif attr_type.__origin__ == tuple:
+                if len(attr_type.__args__) == 2 and attr_type.__args__[1] is Ellipsis:
+                    for item in value:
+                        if not check_type(item, attr_type.__args__[0]):
+                            return False
+                else:
+                    if len(value) != len(attr_type.__args__):
+                        return False
+                    for i, item in enumerate(value):
+                        if not check_type(item, attr_type.__args__[i]):
+                            return False
+            elif attr_type.__origin__ == type:
+                if not issubclass(value, attr_type.__args__[0]):
+                    return False
+
             return True
 
         return isinstance(
