@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import re
 
 import pytest
 
-from spec_classes import MISSING, Alias, DeprecatedAlias, spec_class
+from spec_classes import MISSING, Alias, DeprecatedAlias, spec_class, spec_property
 
 
 def test_alias():
@@ -14,6 +16,17 @@ def test_alias():
         w: int = Alias("x", fallback=2)
         v: int = Alias("x", passthrough=True, fallback=2)
         u: int = Alias("u")
+
+        subitem: Item
+        data: dict = {"Hello": "World"}
+
+        @spec_property(cache=True)
+        def subitem(self) -> Item:
+            return Item(x=10)
+
+        r: str = Alias("data['Hello']", passthrough=True)
+        s: int = Alias("subitem.x", passthrough=True)
+        t: int = Alias("subitem.x")
 
     assert Item(x=2).y == 2
     assert Item(x=2).z == 4
@@ -58,15 +71,45 @@ def test_alias():
     ):
         Item().y
 
-    assert Alias("attr").override_attr is None
+    with pytest.raises(
+        RuntimeError,
+        match=re.escape(
+            "`Alias` instances must be assigned to a class attribute before they can be used."
+        ),
+    ):
+        Alias("attr").override_attr
 
     with pytest.raises(
         RuntimeError,
         match=re.escape(
-            "Attempting to set the value of an `Alias` instance that is not properly associated with a class."
+            "`Alias` instances must be assigned to a class attribute before they can be used."
         ),
     ):
         Alias("attr").__set__(None, "Hi")
+
+    for path in ["a.", ".b", "c[]", "c[[", "c.['d']"]:
+        with pytest.raises(
+            ValueError, match=re.escape(f"Invalid attribute path: {path}")
+        ):
+            Alias(path)
+
+    # Test Subitems
+    assert Item().s == 10
+    assert Item().t == 10
+    item = Item()
+    item.t = 20
+    assert item.subitem.x == 10
+    assert item.t == 20
+    assert item.s == 10
+    item.s = 20
+    assert item.subitem.x == 20
+    assert item.r == "World"
+    item.r = "World!"
+    assert item.data["Hello"] == "World!"
+    del item.r
+    assert "Hello" not in item.data
+
+    assert Item.r.override_attr is None
 
 
 def test_deprecated_alias():

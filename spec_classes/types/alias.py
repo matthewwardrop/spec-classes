@@ -1,5 +1,10 @@
+import ast
+import functools
+import re
 import warnings
 from typing import Any, Callable, Optional, Type
+
+from cached_property import cached_property
 
 from .missing import MISSING
 
@@ -27,7 +32,11 @@ class Alias:
     retrieve it.
 
     Attributes:
-        attr: The name of the attribute to be aliased.
+        attr: The name of the attribute to be aliased. If `attr` has periods in
+            it (e.g. `foo.bar`), then the attribute will be looked up
+            transitively (e.g. `self.foo.bar`). This also works through
+            mappings, so if `attr` is `foo["bar"]`, than bar will be looked up
+            using `self.foo["bar"]`.
         passthrough: Whether to pass through mutations of the `Alias`
             attribute through to the aliased attribute. (default: False)
         transform: An optional unary transform to apply to the value of the
@@ -37,6 +46,10 @@ class Alias:
             aliased does not yet have a value (otherwise any errors retrieving
             the underlying aliased attribute value are passed through).
     """
+
+    ATTR_PARSER = re.compile(
+        r"(?:(?<!^)\.)?(?P<lookup>(?<!\.)\[\"(?:[^\"\\]|\\.)*\"\](?!\.)|(?<!\.)\['(?:[^'\\](?!\.)|\\.)*'\]|\w+)"
+    )
 
     def __init__(
         self,
@@ -54,23 +67,62 @@ class Alias:
         self._owner = None
         self._owner_attr = None
 
+    def __setattr__(self, attr, value):
+        # Ensure that the _attr_path is kept up to date.
+        super().__setattr__(attr, value)
+        if attr == "attr":
+            self.__dict__.pop("_attr_path", None)
+            self._attr_path
+
+    @cached_property
+    def _attr_path(self):
+        if self.attr.isidentifier():
+            return [self.attr]
+        matches = list(self.ATTR_PARSER.finditer(self.attr))
+        if not "".join(match.group(0) for match in matches) == self.attr:
+            raise ValueError(f"Invalid attribute path: {self.attr}")
+        return [match.group("lookup") for match in matches]
+
     @property
     def override_attr(self):
-        if not self._owner_attr and not self.passthrough:
+        if self.passthrough:
             return None
-        return (
-            self.attr
-            if self.passthrough
-            else f"__spec_classes_Alias_{self._owner_attr}_override"
-        )
+        if not self._owner_attr:
+            raise RuntimeError(
+                f"`{self.__class__.__name__}` instances must be assigned to a "
+                "class attribute before they can be used."
+            )
+        return f"__spec_classes_Alias_{self._owner_attr}_override"
+
+    def __lookup_attr_path(self, instance, attr_path):
+        try:
+            return functools.reduce(
+                lambda obj, attr: (
+                    obj[ast.literal_eval(attr[1:-1])]
+                    if attr.startswith("[")
+                    else getattr(obj, attr)
+                ),
+                attr_path,
+                instance,
+            )
+        except (AttributeError, KeyError) as e:
+            raise AttributeError(
+                f"`{instance.__class__.__name__}{'' if self.attr.startswith('[') else '.'}{self.attr}` [Caused by: {e}]"
+            ) from e
 
     def __get__(self, instance: Any, owner=None):
         if instance is None:
             return self
-        if self._owner_attr and hasattr(instance, self.override_attr):
+        if (
+            self._owner_attr
+            and not self.passthrough
+            and hasattr(instance, self.override_attr)
+        ):
             return getattr(instance, self.override_attr)
         try:
-            return (self.transform or (lambda x: x))(getattr(instance, self.attr))
+            return (self.transform or (lambda x: x))(
+                self.__lookup_attr_path(instance, self._attr_path)
+            )
         except AttributeError:
             if self.fallback is not MISSING:
                 return self.fallback
@@ -83,15 +135,24 @@ class Alias:
             ) from e
 
     def __set__(self, instance, value):
-        if not self.override_attr:
-            raise RuntimeError(
-                f"Attempting to set the value of an `{self.__class__.__name__}` "
-                "instance that is not properly associated with a class."
-            )
-        setattr(instance, self.override_attr, value)
+        if self.passthrough:
+            obj = self.__lookup_attr_path(instance, self._attr_path[:-1])
+            if self._attr_path[-1].startswith("["):
+                obj[ast.literal_eval(self._attr_path[-1][1:-1])] = value
+            else:
+                setattr(obj, self._attr_path[-1], value)
+        else:
+            setattr(instance, self.override_attr, value)
 
     def __delete__(self, instance):
-        delattr(instance, self.override_attr)
+        if self.passthrough:
+            obj = self.__lookup_attr_path(instance, self._attr_path[:-1])
+            if self._attr_path[-1].startswith("["):
+                del obj[ast.literal_eval(self._attr_path[-1][1:-1])]
+            else:
+                delattr(obj, self._attr_path[-1])
+        else:
+            delattr(instance, self.override_attr)
 
     def __set_name__(self, owner, name):
         self._owner = owner
