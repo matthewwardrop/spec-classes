@@ -122,6 +122,7 @@ class TestTypeChecking:
         assert type_label(KeyedList[KeyedSpec, str]()) == "KeyedList[KeyedSpec, str]"
         assert type_label(Any) == "Any"
         assert type_label(Union[Any, Dict[str, int]]) == "Union[Any, dict[str, int]]"
+        assert type_label(Literal["a", True, 3, b"c"]) == "Literal['a', True, 3, b'c']"
 
     def test_type_instantiate(self):
         assert type_instantiate(str) == ""
