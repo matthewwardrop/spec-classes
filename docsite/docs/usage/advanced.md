@@ -1,3 +1,20 @@
+## Post init or copy hooks
+
+If you want to run some code immediately after instantiation or after you 
+spec-class is (deep-)copied, you can implement the `__post_init__()` and 
+`__post_copy()__` methods respectively.
+
+```python
+@spec_class
+class MySpec:
+
+    def __post_init__(self):
+        self.__copy_count = 0
+    
+    def __post_copy__(self):
+        self.__copy_count += 1
+```
+
 ## Typecasting/preparation
 
 While preparation of attribute values can still be done using custom

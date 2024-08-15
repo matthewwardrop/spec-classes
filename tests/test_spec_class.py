@@ -695,6 +695,14 @@ class TestFramework:
             ["b"], _inplace=True
         ).values == ["b"]
 
+        @spec_class
+        class PostCopy:
+            def __post_copy__(self):
+                raise RuntimeError("Post copy!")
+
+        with pytest.raises(RuntimeError, match="Post copy!"):
+            copy.deepcopy(PostCopy())
+
     def test_respect_new(self):
         @spec_class
         class MySpec:

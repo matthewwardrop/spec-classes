@@ -475,6 +475,9 @@ class DeepCopyMethod(MethodDescriptor):
                 new.__dict__[attr] = value
             else:
                 new.__dict__[attr] = protect_via_deepcopy(value, memo)
+        __post_copy__ = getattr(new, "__post_copy__", None)
+        if __post_copy__:
+            __post_copy__()
         return new
 
     def build_method(self) -> Callable:
