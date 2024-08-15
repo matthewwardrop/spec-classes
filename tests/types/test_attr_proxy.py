@@ -59,12 +59,18 @@ def test_attr_proxy():
     ):
         Item().y
 
-    assert AttrProxy("attr").override_attr is None
+    with pytest.raises(
+        RuntimeError,
+        match=re.escape(
+            "`AttrProxy` instances must be assigned to a class attribute before they can be used."
+        ),
+    ):
+        AttrProxy("attr").override_attr
 
     with pytest.raises(
         RuntimeError,
         match=re.escape(
-            "Attempting to set the value of an `AttrProxy` instance that is not properly associated with a class."
+            "`AttrProxy` instances must be assigned to a class attribute before they can be used."
         ),
     ):
         AttrProxy("attr").__set__(None, "Hi")
