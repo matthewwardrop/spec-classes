@@ -148,7 +148,7 @@ def type_label(attr_type: Type) -> str:
     method general.
     """
     if hasattr(attr_type, "__origin__"):  # Generics
-        if attr_type.__origin__ is Literal:
+        if str(attr_type.__origin__).rsplit(".", 1)[-1] == "Literal":
             return f"Literal[{', '.join(repr(arg) for arg in attr_type.__args__)}]"
         label = type_label(attr_type.__origin__)
         if hasattr(attr_type, "__args__") and not any(
