@@ -44,7 +44,9 @@ class Alias:
             attribute.
         fallback: An optional default value to return if the attribute being
             aliased does not yet have a value (otherwise any errors retrieving
-            the underlying aliased attribute value are passed through).
+            the underlying aliased attribute value are passed through). Note
+            that this fallback is deepcopied before being returned to prevent
+            accidental mutations.
     """
 
     ATTR_PARSER = re.compile(
@@ -125,7 +127,9 @@ class Alias:
             )
         except AttributeError:
             if self.fallback is not MISSING:
-                return self.fallback
+                from spec_classes.utils.mutation import protect_via_deepcopy
+
+                return protect_via_deepcopy(self.fallback)
             raise
         except RecursionError as e:
             raise ValueError(
