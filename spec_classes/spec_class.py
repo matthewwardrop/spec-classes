@@ -4,6 +4,7 @@ import dataclasses
 import typing
 import warnings
 from collections import defaultdict
+from threading import RLock
 from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Type, Union
 
 from cached_property import cached_property
@@ -196,6 +197,7 @@ class spec_class:
                 lambda: self.bootstrap(spec_cls), return_attr="attrs"
             )
             orig_new = spec_cls.__new__ if "__new__" in spec_cls.__dict__ else None
+            thread_lock = RLock()
 
             def __new__(cls, *args, **kwargs):
                 # Bootstrap spec class (looking at the __spec_class__ does this automatically)
@@ -204,20 +206,23 @@ class spec_class:
                         "Something has gone wrong! Please report this."
                     )  # pragma: no cover; We should never see this.
 
-                # Chain out to original __new__ implementation if defined on this
-                # spec class, and remove this __new__ wrapper.
-                if orig_new:
-                    spec_cls.__new__ = orig_new
-                elif super(spec_cls, spec_cls).__new__ is object.__new__:
+                with thread_lock:
+                    if getattr(cls.__new__, "__spec_classes_new_wrapper__", False):
+                        # Remove this __new__ wrapper.
+                        if orig_new:
+                            spec_cls.__new__ = orig_new
+                        elif super(spec_cls, spec_cls).__new__ is object.__new__:
 
-                    def __new__(cls, *args, **kwargs):
-                        return object.__new__(cls)
+                            def __new__(cls, *args, **kwargs):
+                                return object.__new__(cls)
 
-                    spec_cls.__new__ = __new__
-                else:
-                    del spec_cls.__new__
+                            spec_cls.__new__ = __new__
+                        else:
+                            del spec_cls.__new__
 
                 return spec_cls.__new__(cls, *args, **kwargs)
+
+            __new__.__spec_classes_new_wrapper__ = True
 
             spec_cls.__new__ = __new__
         return spec_cls
