@@ -1,7 +1,7 @@
 import sys
 from typing import Any, Callable, Dict, List, Set, Tuple, Type, TypeVar, Union
 
-from typing_extensions import Literal
+from typing_extensions import Literal, NotRequired, Required, TypedDict
 
 from spec_classes import spec_class
 from spec_classes.types import KeyedList, KeyedSet
@@ -130,3 +130,40 @@ class TestTypeChecking:
         assert type_instantiate(List[str]) == []
         assert type_instantiate(dict, a=1) == {"a": 1}
         assert type_instantiate(Dict[str, int], a=1) == {"a": 1}
+
+    def test_typed_dict(self):
+        class Movie(TypedDict):
+            name: str
+            year: int
+
+        assert check_type({"name": "The Matrix", "year": 1999}, Movie)
+        assert not check_type({"name": "The Matrix"}, Movie)
+        assert not check_type({"name": "The Matrix", "year": "1999"}, Movie)
+
+        class NonTotalMovie(TypedDict, total=False):
+            name: str
+            year: int
+
+        assert check_type({"name": "The Matrix", "year": 1999}, NonTotalMovie)
+        assert check_type({"name": "The Matrix"}, NonTotalMovie)
+
+        class AnnotatedMovie(TypedDict):
+            name: Required[str]
+            year: NotRequired[int]
+
+        assert check_type({"name": "The Matrix"}, AnnotatedMovie)
+        assert not check_type({"year": 1999}, AnnotatedMovie)
+
+        class PartiallyAnnotatedMovie(TypedDict):
+            name: str
+            year: NotRequired[int]
+
+        assert check_type({"name": "The Matrix"}, PartiallyAnnotatedMovie)
+        assert not check_type({"year": 1999}, PartiallyAnnotatedMovie)
+
+        class PartiallyAnnotatedMovie2(TypedDict, total=False):
+            name: Required[str]
+            year: int
+
+        assert check_type({"name": "The Matrix"}, PartiallyAnnotatedMovie2)
+        assert not check_type({"year": 1999}, PartiallyAnnotatedMovie2)
