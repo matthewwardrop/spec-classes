@@ -10,7 +10,7 @@ from typing import Any, Callable, Dict, Optional, Set, Type, Union
 from lazy_object_proxy import Proxy
 
 from spec_classes.errors import FrozenInstanceError
-from spec_classes.types import MISSING, Attr
+from spec_classes.types import EMPTY, MISSING, UNCHANGED, Attr
 
 from .type_checking import check_type, type_label
 
@@ -94,7 +94,7 @@ def mutate_attr(
     instance. If `inplace` is `False`, copy the instance before assigning
     the new attribute value.
     """
-    if value is MISSING:
+    if value in (MISSING, EMPTY, UNCHANGED):
         return obj
 
     metadata = getattr(obj, "__spec_class__", None)
@@ -217,14 +217,17 @@ def mutate_value(
     Returns:
         The mutated object.
     """
+    if new_value is UNCHANGED:
+        return old_value.__wrapped__ if isinstance(old_value, Proxy) else old_value
+
     mutate_safe = inplace
     used_attrs = set()
 
     # If `new_value` is not `MISSING`, use it; otherwise use `old_value` if not
     # `replace`; otherwise use MISSING.
-    if new_value is not MISSING:
+    if new_value not in (MISSING, EMPTY, UNCHANGED):
         value = new_value
-    elif not replace:
+    elif new_value is UNCHANGED or not replace:
         value = old_value
         prepare = None  # Old values have already been prepared, so we suppress further preparation.
     else:
@@ -275,7 +278,7 @@ def mutate_value(
             value = constructor()
 
     # If there are any left-over attributes to apply to our value, we do so here.
-    if value is not None and value is not MISSING and attrs:
+    if value not in (None, MISSING) and attrs:
         if not mutate_safe:
             value = protect_via_deepcopy(value)
             mutate_safe = True

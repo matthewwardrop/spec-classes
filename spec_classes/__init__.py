@@ -5,6 +5,7 @@ from .types import (
     EMPTY,
     MISSING,
     SENTINEL,
+    UNCHANGED,
     Alias,
     Attr,
     AttrProxy,
@@ -32,4 +33,5 @@ __all__ = [
     "MISSING",
     "EMPTY",
     "SENTINEL",
+    "UNCHANGED",
 ]

@@ -34,3 +34,10 @@ class SENTINEL(metaclass=_MissingType):
     """
     A generic sentinel that can be used to check fallthrough conditions.
     """
+
+
+class UNCHANGED(metaclass=_MissingType):
+    """
+    Can be passed in by user to indicate that whatever value is currently set
+    should remain unchanged.
+    """

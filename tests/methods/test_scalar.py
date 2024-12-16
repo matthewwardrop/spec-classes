@@ -3,7 +3,7 @@ import re
 
 import pytest
 
-from spec_classes import MISSING
+from spec_classes import MISSING, UNCHANGED
 
 
 class TestScalarAttribute:
@@ -19,6 +19,10 @@ class TestScalarAttribute:
         assert spec.with_scalar(4, _if=False).scalar == 3
 
         assert spec.with_scalar(4, _inplace=True) is spec
+        assert spec.scalar == 4
+
+        assert spec.with_scalar(UNCHANGED) is spec
+        assert spec.with_scalar(UNCHANGED, _inplace=True) is spec
         assert spec.scalar == 4
 
     def test_transform(self, spec_cls):
