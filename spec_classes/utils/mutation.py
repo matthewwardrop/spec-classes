@@ -94,7 +94,7 @@ def mutate_attr(
     instance. If `inplace` is `False`, copy the instance before assigning
     the new attribute value.
     """
-    if value in (MISSING, EMPTY, UNCHANGED):
+    if value is MISSING or value is EMPTY or value is UNCHANGED:
         return obj
 
     metadata = getattr(obj, "__spec_class__", None)
@@ -225,7 +225,7 @@ def mutate_value(
 
     # If `new_value` is not `MISSING`, use it; otherwise use `old_value` if not
     # `replace`; otherwise use MISSING.
-    if new_value not in (MISSING, EMPTY, UNCHANGED):
+    if new_value is not MISSING and new_value is not EMPTY:
         value = new_value
     elif not replace:
         value = old_value
@@ -278,7 +278,7 @@ def mutate_value(
             value = constructor()
 
     # If there are any left-over attributes to apply to our value, we do so here.
-    if value not in (None, MISSING) and attrs:
+    if value is not None and value is not MISSING and attrs:
         if not mutate_safe:
             value = protect_via_deepcopy(value)
             mutate_safe = True

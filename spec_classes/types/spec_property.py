@@ -277,7 +277,12 @@ class spec_property(_spec_property_base):
                 )
 
         # Store value in cache is cache is enabled
-        if self.cache and value not in (MISSING, EMPTY, UNCHANGED):
+        if (
+            self.cache
+            and value is not MISSING
+            and value is not EMPTY
+            and value is not UNCHANGED
+        ):
             instance.__dict__[self.attr_name] = value
 
         return value

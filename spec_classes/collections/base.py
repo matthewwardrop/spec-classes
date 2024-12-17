@@ -152,7 +152,7 @@ class CollectionAttrMutator(metaclass=ABCMeta):
         return type_instantiate(self.attr_spec.type)
 
     def prepare(self):
-        if self.collection in (MISSING, None):
+        if self.collection is None or self.collection is MISSING:
             self.collection = self._create_collection()
         if not check_type(self.collection, self.attr_spec.type):
             items = self.collection
