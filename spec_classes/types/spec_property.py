@@ -6,6 +6,7 @@ from typing import Tuple
 from cached_property import cached_property
 
 from spec_classes.errors import NestedAttributeError
+from spec_classes.types.missing import EMPTY, MISSING, UNCHANGED
 from spec_classes.utils.mutation import prepare_attr_value
 from spec_classes.utils.stackdepth import get_spec_classes_depth
 from spec_classes.utils.type_checking import check_type, type_label
@@ -276,7 +277,7 @@ class spec_property(_spec_property_base):
                 )
 
         # Store value in cache is cache is enabled
-        if self.cache:
+        if self.cache and value not in (MISSING, EMPTY, UNCHANGED):
             instance.__dict__[self.attr_name] = value
 
         return value

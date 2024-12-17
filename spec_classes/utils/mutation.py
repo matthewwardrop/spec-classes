@@ -227,7 +227,7 @@ def mutate_value(
     # `replace`; otherwise use MISSING.
     if new_value not in (MISSING, EMPTY, UNCHANGED):
         value = new_value
-    elif new_value is UNCHANGED or not replace:
+    elif not replace:
         value = old_value
         prepare = None  # Old values have already been prepared, so we suppress further preparation.
     else:

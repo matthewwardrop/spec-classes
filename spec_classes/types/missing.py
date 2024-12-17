@@ -16,6 +16,12 @@ class _MissingType(type):
     def __call__(cls):
         return cls
 
+    def __hash__(cls):
+        return id(cls)
+
+    def __eq__(cls, other):
+        return cls is other
+
 
 class MISSING(metaclass=_MissingType):
     """
