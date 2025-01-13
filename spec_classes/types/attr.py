@@ -126,7 +126,11 @@ class Attr:
             )
         else:
             # If attribute is a function or descriptor, we shouldn't interfere with them.
-            if inspect.isfunction(value) or inspect.isdatadescriptor(value):
+            if (
+                inspect.isroutine(value)
+                or inspect.ismethoddescriptor(value)
+                or inspect.isdatadescriptor(value)
+            ):
                 kwargs["is_masked"] = True
             attr_spec = Attr(default=value)
 
