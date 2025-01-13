@@ -147,7 +147,7 @@ def type_label(attr_type: Type) -> str:
     `attr_type` points to a `spec_cls` decorated type, we don't make this
     method general.
     """
-    if attr_type is types.NoneType:
+    if attr_type is type(None):
         return "None"
     if (
         sys.version_info >= (3, 10)
