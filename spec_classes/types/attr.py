@@ -292,7 +292,11 @@ class Attr:
                 return self.default_value
             if self.name in cls.__dict__:
                 value = getattr(cls, self.name)
-                if inspect.isfunction(value) or inspect.isdatadescriptor(value):
+                if (
+                    inspect.isroutine(value)
+                    or inspect.ismethoddescriptor(value)
+                    or inspect.isdatadescriptor(value)
+                ):
                     return MISSING  # Default is masked.
                 return protect_via_deepcopy(value)
         return MISSING  # pragma: no cover; this should never happen... but you can't be too careful.
