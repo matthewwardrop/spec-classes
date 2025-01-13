@@ -147,6 +147,14 @@ def type_label(attr_type: Type) -> str:
     `attr_type` points to a `spec_cls` decorated type, we don't make this
     method general.
     """
+    if attr_type is types.NoneType:
+        return "None"
+    if (
+        sys.version_info >= (3, 10)
+        and isinstance(attr_type, types.UnionType)
+        or getattr(attr_type, "__origin__", None) is Union
+    ):
+        return " | ".join(type_label(arg) for arg in attr_type.__args__)
     if hasattr(attr_type, "__origin__"):  # Generics
         if str(attr_type.__origin__).rsplit(".", 1)[-1] == "Literal":
             return f"Literal[{', '.join(repr(arg) for arg in attr_type.__args__)}]"

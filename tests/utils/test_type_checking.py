@@ -1,5 +1,5 @@
 import sys
-from typing import Any, Callable, Dict, List, Set, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, TypeVar, Union
 
 from typing_extensions import Literal
 
@@ -121,8 +121,13 @@ class TestTypeChecking:
         assert type_label("") == "str"
         assert type_label(KeyedList[KeyedSpec, str]()) == "KeyedList[KeyedSpec, str]"
         assert type_label(Any) == "Any"
-        assert type_label(Union[Any, Dict[str, int]]) == "Union[Any, dict[str, int]]"
+        assert type_label(Union[Any, Dict[str, int]]) == "Any | dict[str, int]"
         assert type_label(Literal["a", True, 3, b"c"]) == "Literal['a', True, 3, b'c']"
+        assert type_label(Union[str, int]) == "str | int"
+        assert type_label(Optional[int]) == "int | None"
+
+        if sys.version_info >= (3, 10):
+            assert type_label(str | int) == "str | int"
 
     def test_type_instantiate(self):
         assert type_instantiate(str) == ""

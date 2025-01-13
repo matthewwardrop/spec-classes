@@ -97,6 +97,8 @@ def bounded(
         lower_bound_str = f"[{ge}"
     if gt is not None:
         lower_bound_str = f"({gt}"
+    if "|" in type_str:
+        type_str = f"({type_str})"
     name = f"{type_str}∊{lower_bound_str},{upper_bound_str}"
 
     # Validator
