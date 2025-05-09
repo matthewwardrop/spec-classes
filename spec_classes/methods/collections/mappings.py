@@ -55,6 +55,7 @@ class WithMappingItemMethod(AttrMethodDescriptor):
         _if: bool = True,
         **attrs,
     ) -> Any:
+        __tracebackhide__ = True
         if not _if:
             return self
         return mutate_attr(
@@ -147,6 +148,7 @@ class UpdateMappingItemMethod(AttrMethodDescriptor):
         _if: bool = True,
         **attrs: Dict[str, Any],
     ) -> Any:
+        __tracebackhide__ = True
         if not _if:
             return self
         return mutate_attr(
@@ -243,6 +245,7 @@ class TransformMappingItemMethod(AttrMethodDescriptor):
         _if: bool = True,
         **attr_transforms: Dict[str, Callable[[Any], Any]],
     ) -> Any:
+        __tracebackhide__ = True
         if not _if:
             return self
         return mutate_attr(
@@ -329,6 +332,7 @@ class WithoutMappingItemMethod(AttrMethodDescriptor):
     def without_mapping_item(
         attr_spec: Attr, self, _key: Any, *, _inplace: bool = False, _if: bool = True
     ) -> Any:
+        __tracebackhide__ = True
         if not _if:
             return self
         return mutate_attr(

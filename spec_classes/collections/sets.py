@@ -18,6 +18,7 @@ class SetMutator(CollectionAttrMutator):
     HELPER_METHODS = SET_METHODS
 
     def _prepare_items(self):
+        __tracebackhide__ = True
         for value in set(self.collection):
             self.transform_item(value, self.prepare_item)
 
@@ -46,6 +47,7 @@ class SetMutator(CollectionAttrMutator):
         self.collection.add(item)
 
     def add_item(self, item, *, value_or_index=MISSING, replace=True, attrs=None):  # pylint: disable=arguments-differ
+        __tracebackhide__ = True
         return self._mutate_collection(
             value_or_index=value_or_index,
             extractor=self._extractor,
@@ -57,6 +59,7 @@ class SetMutator(CollectionAttrMutator):
         )
 
     def add_items(self, items: Iterable):
+        __tracebackhide__ = True
         if not check_type(items, Iterable):
             raise TypeError(
                 f"Incoming collection for `{self.attr_spec.qualified_name}` is not iterable."
@@ -66,6 +69,7 @@ class SetMutator(CollectionAttrMutator):
         return self
 
     def transform_item(self, item, transform, *, attr_transforms=None):  # pylint: disable=arguments-renamed,arguments-differ
+        __tracebackhide__ = True
         return self._mutate_collection(
             value_or_index=item,
             extractor=self._extractor,

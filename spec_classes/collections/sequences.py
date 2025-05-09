@@ -18,6 +18,7 @@ class SequenceMutator(CollectionAttrMutator):
     HELPER_METHODS = SEQUENCE_METHODS
 
     def _prepare_items(self):
+        __tracebackhide__ = True
         for index in range(len(self.collection)):
             self.transform_item(index, self.prepare_item, by_index=True)
 
@@ -76,6 +77,7 @@ class SequenceMutator(CollectionAttrMutator):
         insert=False,
         replace=True,
     ):  # pylint: disable=arguments-differ
+        __tracebackhide__ = True
         return self._mutate_collection(
             value_or_index=value_or_index,
             extractor=functools.partial(self._extractor, by_index=by_index),
@@ -87,6 +89,7 @@ class SequenceMutator(CollectionAttrMutator):
         )
 
     def add_items(self, items: Iterable):
+        __tracebackhide__ = True
         if not check_type(items, Iterable):
             raise TypeError(
                 f"Incoming collection for `{self.attr_spec.qualified_name}` is not iterable."
@@ -98,6 +101,7 @@ class SequenceMutator(CollectionAttrMutator):
     def transform_item(
         self, value_or_index, transform, *, by_index=MISSING, attr_transforms=None
     ):  # pylint: disable=arguments-differ
+        __tracebackhide__ = True
         return self._mutate_collection(
             value_or_index=value_or_index,
             extractor=functools.partial(self._extractor, by_index=by_index),

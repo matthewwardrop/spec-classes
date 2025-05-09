@@ -38,6 +38,7 @@ class WithAttrMethod(AttrMethodDescriptor):
         _if: bool = True,
         **attrs,
     ):
+        __tracebackhide__ = True
         if not _if:
             return self
 
@@ -113,6 +114,7 @@ class UpdateAttrMethod(AttrMethodDescriptor):
         _if: bool = True,
         **attrs,
     ):
+        __tracebackhide__ = True
         if not _if:
             return self
         return WithAttrMethod.with_attr(
@@ -195,6 +197,7 @@ class TransformAttrMethod(AttrMethodDescriptor):
         _if: bool = True,
         **attr_transforms,
     ):
+        __tracebackhide__ = True
         if not _if:
             return self
         return WithAttrMethod.with_attr(
@@ -269,6 +272,7 @@ class ResetAttrMethod(AttrMethodDescriptor):
 
     @staticmethod
     def reset_attr(attr_spec: Attr, self, *, _inplace: bool = False, _if: bool = True):
+        __tracebackhide__ = True
         if not _if:
             return self
         if not _inplace:

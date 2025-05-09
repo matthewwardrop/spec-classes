@@ -53,6 +53,7 @@ class WithSequenceItemMethod(AttrMethodDescriptor):
         _if: bool = True,
         **attrs,
     ) -> Any:
+        __tracebackhide__ = True
         if not _if:
             return self
         return mutate_attr(
@@ -159,6 +160,7 @@ class UpdateSequenceItemMethod(AttrMethodDescriptor):
         _if: bool = True,
         **attrs: Dict[str, Any],
     ) -> Any:
+        __tracebackhide__ = True
         if not _if:
             return self
         return mutate_attr(
@@ -263,6 +265,7 @@ class TransformSequenceItemMethod(AttrMethodDescriptor):
         _if: bool = True,
         **attr_transforms: Dict[str, Callable[[Any], Any]],
     ) -> Any:
+        __tracebackhide__ = True
         if not _if:
             return self
         return mutate_attr(
@@ -363,6 +366,7 @@ class WithoutSequenceItemMethod(AttrMethodDescriptor):
         _inplace: bool = False,
         _if: bool = True,
     ) -> Any:
+        __tracebackhide__ = True
         if not _if:
             return self
         return mutate_attr(

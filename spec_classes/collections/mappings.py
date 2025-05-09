@@ -17,6 +17,7 @@ class MappingMutator(CollectionAttrMutator):
     HELPER_METHODS = MAPPING_METHODS
 
     def _prepare_items(self):
+        __tracebackhide__ = True
         return self.add_items(self.collection)
 
     def _extractor(self, value_or_index, raise_if_missing=False):
@@ -42,6 +43,7 @@ class MappingMutator(CollectionAttrMutator):
         replace=True,
         require_pre_existent=False,
     ):  # pylint: disable=arguments-renamed,arguments-differ
+        __tracebackhide__ = True
         return self._mutate_collection(
             value_or_index=key,
             extractor=self._extractor,
@@ -53,6 +55,7 @@ class MappingMutator(CollectionAttrMutator):
         )
 
     def add_items(self, items: Mapping):
+        __tracebackhide__ = True
         if not check_type(items, Mapping):
             raise TypeError(
                 f"Incoming collection for `{self.attr_spec.qualified_name}` is not a mapping."
@@ -62,6 +65,7 @@ class MappingMutator(CollectionAttrMutator):
         return self
 
     def transform_item(self, key, transform, *, attr_transforms=None):  # pylint: disable=arguments-renamed,arguments-differ
+        __tracebackhide__ = True
         return self._mutate_collection(
             value_or_index=key,
             extractor=self._extractor,

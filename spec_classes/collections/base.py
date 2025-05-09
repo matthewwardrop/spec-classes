@@ -82,6 +82,7 @@ class CollectionAttrMutator(metaclass=ABCMeta):
         but before we fallback to constructors and/or apply passed attributes
         and transforms.
         """
+        __tracebackhide__ = True
         if self.attr_spec.prepare_item:
             new_item = self.attr_spec.prepare_item(self.instance, new_item)
         if (  # Convert to spec-class if key was provided.
@@ -119,6 +120,7 @@ class CollectionAttrMutator(metaclass=ABCMeta):
         be the same `index` as that output by the extractor, and is not otherwise
         interpreted.
         """
+        __tracebackhide__ = True
         try:
             if self.collection is MISSING:
                 self.collection = self._create_collection()
@@ -152,6 +154,7 @@ class CollectionAttrMutator(metaclass=ABCMeta):
         return type_instantiate(self.attr_spec.type)
 
     def prepare(self):
+        __tracebackhide__ = True
         if self.collection is None or self.collection is MISSING:
             self.collection = self._create_collection()
         if not check_type(self.collection, self.attr_spec.type):

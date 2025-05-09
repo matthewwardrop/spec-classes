@@ -242,6 +242,7 @@ class spec_property(_spec_property_base):
         return self.attrs.get("invalidated_by") or ()
 
     def __get__(self, instance, owner=None):
+        __tracebackhide__ = True
         # If lookup occuring on owner class.
         if instance is None:
             return self
@@ -288,6 +289,7 @@ class spec_property(_spec_property_base):
         return value
 
     def __set__(self, instance, value):
+        __tracebackhide__ = True
         if self.fset is None:
             if self.overridable:
                 instance.__dict__[self.attr_name] = value
@@ -305,6 +307,7 @@ class spec_property(_spec_property_base):
         self.fset(instance, value)
 
     def __delete__(self, instance):
+        __tracebackhide__ = True
         if self.fdel is None:
             if (self.overridable or self.cache) and self.attr_name in instance.__dict__:
                 del instance.__dict__[self.attr_name]
@@ -438,6 +441,7 @@ class classproperty(_spec_property_base):
         return objtype if self.cache_per_subclass else None
 
     def __get__(self, obj, objtype=None):
+        __tracebackhide__ = True
         # If value exists in cache or has been overridden
         cache_key = self._cache_key(objtype)
         if cache_key in self._cache:
@@ -464,6 +468,7 @@ class classproperty(_spec_property_base):
         return value
 
     def __set__(self, obj, value):
+        __tracebackhide__ = True
         if not inspect.isclass(obj):
             obj = type(obj)
         if self.fset is None:
@@ -483,6 +488,7 @@ class classproperty(_spec_property_base):
         self.fset.__get__(None, obj)(value)
 
     def __delete__(self, obj):
+        __tracebackhide__ = True
         if not inspect.isclass(obj):
             obj = type(obj)
         if self.fdel is None:

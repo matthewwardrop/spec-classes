@@ -113,6 +113,7 @@ class Alias:
             ) from e
 
     def __get__(self, instance: Any, owner=None):
+        __tracebackhide__ = True
         if instance is None:
             return self
         if (
@@ -139,6 +140,7 @@ class Alias:
             ) from e
 
     def __set__(self, instance, value):
+        __tracebackhide__ = True
         if self.passthrough:
             obj = self.__lookup_attr_path(instance, self._attr_path[:-1])
             if self._attr_path[-1].startswith("["):
@@ -149,6 +151,7 @@ class Alias:
             setattr(instance, self.override_attr, value)
 
     def __delete__(self, instance):
+        __tracebackhide__ = True
         if self.passthrough:
             obj = self.__lookup_attr_path(instance, self._attr_path[:-1])
             if self._attr_path[-1].startswith("["):

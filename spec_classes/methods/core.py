@@ -41,6 +41,7 @@ class InitMethod(MethodDescriptor):
 
     @staticmethod
     def init(spec_cls, self, **kwargs):
+        __tracebackhide__ = True
         instance_metadata = self.__spec_class__
 
         # Initialise any non-local spec attributes via parent constructors
@@ -170,6 +171,7 @@ class GetAttrMethod(MethodDescriptor):
 
     def build_method(self) -> Callable:
         def __getattr__(self, attr):
+            __tracebackhide__ = True
             attr_spec = self.__spec_class__.attrs.get(attr)
             if attr_spec and not attr_spec.is_masked:
                 raise AttributeError(
@@ -205,6 +207,7 @@ class SetAttrMethod(MethodDescriptor):
 
     def build_method(self) -> Callable:
         def __setattr__(self, attr, value, force=False, skip_invalidation=False):
+            __tracebackhide__ = True
             attr_spec = self.__spec_class__.attrs.get(attr)
             mutate_attr(
                 obj=self,
@@ -244,6 +247,7 @@ class DelAttrMethod(MethodDescriptor):
 
     def build_method(self) -> Callable:
         def __delattr__(self, attr, force=False, skip_invalidation=False):
+            __tracebackhide__ = True
             if (
                 not (force or getattr(self, "__spec_class_initializing__", False))
                 and self.__spec_class__.frozen
@@ -294,6 +298,7 @@ class EqMethod(MethodDescriptor):
 
     @staticmethod
     def eq(self, other: Any) -> bool:
+        __tracebackhide__ = True
         if not isinstance(other, self.__class__):
             return False
         for attr, attr_spec in self.__spec_class__.attrs.items():
@@ -345,6 +350,7 @@ class ReprMethod(MethodDescriptor):
             indent_threshold: The threshold at which to switch to indented
                 representations (see above).
         """
+        __tracebackhide__ = True
         if compact:
             attrs = ""
             if self.__spec_class__.key:
@@ -369,11 +375,10 @@ class ReprMethod(MethodDescriptor):
         # have to re-render to indented form, it is cheaper for property
         # methods to have stored the value in this cache rather than have to
         # look it up again.
-        attr_values = {
-            attr: getattr(self, attr, MISSING)
-            for attr in include_attrs
-            if attr not in exclude_attrs
-        }
+        attr_values = {}
+        for attr in include_attrs:
+            if attr not in exclude_attrs:
+                attr_values[attr] = getattr(self, attr, MISSING)
 
         def object_repr(obj, indent=False):
             if obj is self:
@@ -464,6 +469,7 @@ class DeepCopyMethod(MethodDescriptor):
 
     @staticmethod
     def deepcopy(self, memo):
+        __tracebackhide__ = True
         if self.__spec_class__.frozen or self.__spec_class__.do_not_copy:
             return self
         new = self.__class__.__new__(self.__class__)

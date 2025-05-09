@@ -94,6 +94,7 @@ def mutate_attr(
     instance. If `inplace` is `False`, copy the instance before assigning
     the new attribute value.
     """
+    __tracebackhide__ = True
     if value is MISSING or value is EMPTY or value is UNCHANGED:
         return obj
 
@@ -217,6 +218,7 @@ def mutate_value(
     Returns:
         The mutated object.
     """
+    __tracebackhide__ = True
     if new_value is UNCHANGED:
         return old_value.__wrapped__ if isinstance(old_value, Proxy) else old_value
 
@@ -326,6 +328,7 @@ def prepare_attr_value(
     Returns:
         The prepared value.
     """
+    __tracebackhide__ = True
     value = mutate_value(
         old_value=MISSING,
         new_value=value,
