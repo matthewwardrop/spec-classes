@@ -1,0 +1,862 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      <link rel="icon" href="assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.4">
+    
+    
+      
+        <title>Spec Classes</title>
+      
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/main.db9e7362.min.css">
+      
+        
+        <link rel="stylesheet" href="assets/stylesheets/palette.3f5d1f46.min.css">
+        
+      
+    
+    
+    
+      
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>:root{--md-text-font-family:"Roboto";--md-code-font-family:"Roboto Mono"}</style>
+      
+    
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/colors.css">
+    
+    
+      
+
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="none" data-md-color-accent="none">
+  
+    
+    <script>function __prefix(e){return new URL(".",location).pathname+"."+e}function __get(e,t=localStorage){return JSON.parse(t.getItem(__prefix(e)))}</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#introduction" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="." title="Spec Classes" class="md-header__button md-logo" aria-label="Spec Classes" data-md-component="logo">
+      
+  <img src="assets/images/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Spec Classes
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Introduction
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-tabs__inner md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+    
+  
+
+
+  <li class="md-tabs__item">
+    <a href="." class="md-tabs__link md-tabs__link--active">
+      Introduction
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="examples/" class="md-tabs__link">
+        Examples
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="usage/" class="md-tabs__link">
+        Usage
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="implementation/how_it_works/" class="md-tabs__link">
+        Implementation Details
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="." title="Spec Classes" class="md-nav__button md-logo" aria-label="Spec Classes" data-md-component="logo">
+      
+  <img src="assets/images/logo.svg" alt="logo">
+
+    </a>
+    Spec Classes
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Introduction
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="." class="md-nav__link md-nav__link--active">
+        Introduction
+      </a>
+      
+        
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#philosophy" class="md-nav__link">
+    Philosophy
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    Example
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    Installation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-projects-and-prior-art" class="md-nav__link">
+    Related projects and prior art
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" type="checkbox" id="__nav_2" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2">
+          Examples
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Examples" data-md-level="1">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Examples
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="examples/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="examples/basic/" class="md-nav__link">
+        Basic
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="examples/collections/" class="md-nav__link">
+        Collections
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="examples/dataclasses/" class="md-nav__link">
+        Dataclass Interoperability
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="examples/preparation/" class="md-nav__link">
+        Preparation/Typecasting
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3">
+          Usage
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Usage" data-md-level="1">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          Usage
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="usage/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="usage/basic/" class="md-nav__link">
+        Basic Usage
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_3" type="checkbox" id="__nav_3_3" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3_3">
+          Helper Methods
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Helper Methods" data-md-level="2">
+        <label class="md-nav__title" for="__nav_3_3">
+          <span class="md-nav__icon md-icon"></span>
+          Helper Methods
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="usage/methods/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="usage/methods/toplevel/" class="md-nav__link">
+        Toplevel Methods
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="usage/methods/scalars/" class="md-nav__link">
+        Scalar Methods
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="usage/methods/collections/" class="md-nav__link">
+        Collection Methods
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="usage/special_types/" class="md-nav__link">
+        Special Types
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="usage/advanced/" class="md-nav__link">
+        Advanced Usage
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4" type="checkbox" id="__nav_4" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4">
+          Implementation Details
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Implementation Details" data-md-level="1">
+        <label class="md-nav__title" for="__nav_4">
+          <span class="md-nav__icon md-icon"></span>
+          Implementation Details
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="implementation/how_it_works/" class="md-nav__link">
+        How It Works
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="implementation/performance/" class="md-nav__link">
+        Performance Implications
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                
+                <p><img alt="Spec Classes Logo" src="https://raw.githubusercontent.com/matthewwardrop/spec-classes/main/docsite/docs/assets/images/logo-with-text.png" style="max-width: 500px"/></p>
+<p><a href="https://pypi.org/project/spec-classes/"><img alt="PyPI - Version" src="https://img.shields.io/pypi/v/spec-classes.svg" /></a>
+<a href="https://anaconda.org/conda-forge/spec-classes"><img alt="Conda Forge - Version" src="https://img.shields.io/conda/vn/conda-forge/spec-classes.svg" /></a>
+<img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/spec-classes.svg" />
+<img alt="PyPI - Status" src="https://img.shields.io/pypi/status/spec-classes.svg" />
+<a href="https://github.com/matthewwardrop/spec-classes/actions?query=workflow%3A%22Run+Tox+Tests%22"><img alt="build" src="https://img.shields.io/github/actions/workflow/status/matthewwardrop/spec-classes/tests.yml" /></a>
+<a href="https://codecov.io/gh/matthewwardrop/spec-classes"><img alt="codecov" src="https://codecov.io/gh/matthewwardrop/spec-classes/branch/main/graph/badge.svg" /></a>
+<a href="https://github.com/psf/black"><img alt="Code Style" src="https://img.shields.io/badge/code%20style-black-black" /></a></p>
+<ul>
+<li><strong>Documentation</strong>: <a href="https://matthewwardrop.github.io/spec-classes">https://matthewwardrop.github.io/spec-classes</a></li>
+<li><strong>Source Code</strong>: <a href="https://github.com/matthewwardrop/spec-classes">https://github.com/matthewwardrop/spec-classes</a></li>
+<li><strong>Issue tracker</strong>: <a href="https://github.com/matthewwardrop/spec-classes/issues">https://github.com/matthewwardrop/spec-classes/issues</a></li>
+</ul>
+<h1 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h1>
+<p><strong><code>spec_classes</code></strong> is a stand-alone (but largely interoperable) generalization
+of the standard library's <code>dataclass</code> decorator. It adds, among other things:
+type-checking, rich field preparation, and convenient copy-on-write mutation
+wrappers. Spec-class definitions are Pythonic, simple, and concise.</p>
+<p>This library is especially useful in contexts where run-time validation and
+instant feedback is desirable, and/or where correctness is valued over
+performance. With that said, we do try to keep spec-classes performant (see
+<a href="https://matthewwardrop.github.io/spec-classes/implementation/performance">performance details</a>).</p>
+<h2 id="philosophy">Philosophy<a class="headerlink" href="#philosophy" title="Permanent link">&para;</a></h2>
+<p><strong>It should be hard for users to do the wrong thing.</strong> <code>spec_classes</code> is
+designed to help end-users interact with, mutate, and assemble (especially in ad
+hoc contexts like notebooks) potentially large libraries of data classes without
+fear of breaking things. Operations on data classes should be atomic (operations
+should never be partially committed), validated (types should match, etc.), and
+provide instant helpful feedback when the user makes a mistake.</p>
+<p><strong>We don't own your class.</strong> <code>spec_classes</code> <strong>never</strong> overrides local
+pre-existing methods, and doesn't add any metaclasses or parents. If you
+decorate a class with <code>@spec_class</code>, spec classes will add (if you have not
+already) some dunder magic methods (like <code>__init__</code>,<code>__setattr__</code>, etc.), and
+some helper methods... but that's it. Spec classes are, at the end of the day,
+just regular classes pre-loaded with useful methods that you didn't have to
+write yourself.</p>
+<p><strong>Copy-on-write by default.</strong> One of the dangers with using class instances as
+specification is that if they are mutated in one context, they are mutated for
+all contexts. Spec classes does not prevent (by default) local mutations of
+class instances (you can still do <code>my_spec.foo = 'bar'</code>); but all helper methods
+return a mutated copy by default. For example, <code>my_spec.with_foo('bar')</code> will
+not be the same instance as <code>my_spec</code>, and so these methods are always safe to
+use.</p>
+<p><strong>Be consistent.</strong> All helper methods added by <code>spec_classes</code> exist within well
+defined namespaces; that is: <code>with_&lt;attr&gt;</code>, <code>transform_&lt;attr&gt;</code>, etc.; and each
+class of methods has the same naming conventions for arguments and provides
+complete inline documentation. This makes it easy for users to figure out how to
+use the methods, to override these methods and/or to add new methods that do not
+collide.</p>
+<p><strong>Minimize Surprise.</strong> The behavior of spec classes almost always matches that
+of base Python classes where functionality overlaps, and should always be
+intuitive otherwise (e.g. when type-checking is violated).</p>
+<p><strong>Performance is important.</strong> Although performance is not the primary goal of
+<code>spec_classes</code>, given the targeted feature-set, the overhead introduced should
+be as small as possible.</p>
+<h2 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">spec_classes</span> <span class="kn">import</span> <span class="n">spec_class</span>
+
+<span class="nd">@spec_class</span>
+<span class="k">class</span> <span class="nc">Rectangle</span><span class="p">:</span>
+    <span class="n">width</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">height</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">area</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span>
+
+<span class="n">rect</span> <span class="o">=</span> <span class="n">Rectangle</span><span class="p">()</span>
+<span class="n">rect</span>  <span class="c1"># Rectangle(width=MISSING, height=MISSING, color=MISSING)</span>
+<span class="n">rect</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="mf">10.</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mf">12.</span><span class="p">)</span><span class="o">.</span><span class="n">with_color</span><span class="p">(</span><span class="s2">&quot;red&quot;</span><span class="p">)</span>  <span class="c1"># Rectangle(width=10.0, height=12.0, color=&#39;red&#39;)</span>
+
+<span class="n">Rectangle</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="mf">10.</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mf">10.</span><span class="p">)</span><span class="o">.</span><span class="n">area</span>  <span class="c1"># 100.0</span>
+
+<span class="n">rect</span><span class="o">.</span><span class="n">with_width</span><span class="p">(</span><span class="s1">&#39;invalid&#39;</span><span class="p">)</span>  <span class="c1"># TypeError: Attempt to set `Rectangle.width` with an invalid type [got `&#39;invalid&#39;`; expecting `float`].</span>
+</code></pre></div>
+<p>For more details on usage, refer to the <a href="https://matthewwardrop.github.io/spec-classes">documentation</a>.</p>
+<h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
+<p>Spec classes can be installed via <code>pip</code> or <code>conda</code>.</p>
+<p>To install via <code>pip</code> you can use:</p>
+<div class="highlight"><pre><span></span><code>pip install spec-classes
+</code></pre></div>
+<p>To install via <code>conda</code> you can use:</p>
+<div class="highlight"><pre><span></span><code>conda install spec-classes
+</code></pre></div>
+<p>You can verify that the installation was successful by printing the version of
+<code>spec-classes</code> that was installed:</p>
+<div class="highlight"><pre><span></span><code>python -c <span class="s2">&quot;import spec_classes; print(spec_classes.__version__)&quot;</span>
+</code></pre></div>
+<h2 id="related-projects-and-prior-art">Related projects and prior art<a class="headerlink" href="#related-projects-and-prior-art" title="Permanent link">&para;</a></h2>
+<p><code>spec_classes</code> takes a more opinionated stance than most libraries in this space
+on exactly how data-classes should be built and mutated. Nevertheless, there are
+excellent pre-existing alternatives to spec-classes for those looking for
+something lighter-weight. In particular, you could consider:</p>
+<ul>
+<li><a href="https://github.com/agronholm/typeguard">typeguard</a>: A utility library for
+    run-time type-checking functions, methods and classes.</li>
+<li><a href="https://github.com/Stewori/pytypes">pytypes</a>: Another utility library for
+    run-time type-checking functions, methods and classes.</li>
+<li><a href="https://github.com/samuelcolvin/pydantic/">pydantic</a>: A light-weight data
+    parsing and validation library that also uses type hints.</li>
+<li><a href="https://github.com/python-attrs/attrs">attrs</a>: A library that provides a
+    super-set of the functionality of Python's data-class, but still adds no
+    run-time overhead (no type-checking, extra helper-methods, etc).</li>
+</ul>
+<p>There are many other libraries in the business of mapping and validating
+transformations from JSON to Python classes, but these are somewhat orthogonal
+to the aims of this project (which is to make Python classes themselves pleasant
+to use), and so they are not included here.</p>
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+        
+          <a href="#" class="md-top md-icon" data-md-component="top" data-md-state="hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"/></svg>
+            Back to top
+          </a>
+        
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+      
+        
+        <a href="examples/" class="md-footer__link md-footer__link--next" aria-label="Next: Overview" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Overview
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        
+          Made with
+          <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+            Material for MkDocs
+          </a>
+        
+        
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": ".", "features": ["navigation.tabs", "navigation.top", "navigation.tracking", "toc.integrate"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "assets/javascripts/workers/search.8397ff9e.min.js", "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="assets/javascripts/bundle.1e84347e.min.js"></script>
+      
+    
+  </body>
+</html>
