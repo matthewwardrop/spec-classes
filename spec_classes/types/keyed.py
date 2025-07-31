@@ -9,10 +9,13 @@ ItemType = TypeVar("ItemType")
 KeyType = TypeVar("KeyType")
 
 
-class KeyedBase:
+class KeyedBase(Generic[ItemType, KeyType]):
     def __init__(self, key: Optional[Callable[[ItemType], Any]] = None):
         self._key = key
         self._type = self.__class__
+        self._type_item, self._type_key = (
+            self._type.__args__ if hasattr(self._type, "__args__") else (Any, Any)
+        )
 
     def key(self, item: ItemType) -> KeyType:
         """
@@ -24,17 +27,22 @@ class KeyedBase:
 
     # Helpers
 
+    def _is_valid_key(self, key: Any) -> bool:
+        return check_type(key, self._type_key)
+
+    def _is_valid_item(self, item: Any) -> bool:
+        return check_type(item, self._type_item)
+
     def _validate_item(self, item: ItemType) -> Tuple[ItemType, KeyType]:
         key = self.key(item)
-        if hasattr(self._type, "__args__"):
-            item_type, key_type = self._type.__args__
-            if not check_type(item, item_type):
+        if hasattr(self._type, "__args__"):  # Skip type checking if untyped
+            if not self._is_valid_item(item):
                 raise TypeError(
-                    f"Invalid item type. Got: `{repr(item)}`; Expected instance of: `{type_label(item_type)}`."
+                    f"Invalid item type. Got: `{repr(item)}`; Expected instance of: `{type_label(self._type_item)}`."
                 )
-            if not check_type(key, key_type):
+            if not self._is_valid_key(key):
                 raise TypeError(
-                    f"Invalid key type. Got: `{repr(key)}`; Expected instance of: `{type_label(key_type)}`."
+                    f"Invalid key type. Got: `{repr(key)}`; Expected instance of: `{type_label(self._type_key)}`."
                 )
         return item, key
 
@@ -69,6 +77,9 @@ class KeyedBase:
     @__orig_class__.setter
     def __orig_class__(self, type_):
         self._type = type_
+        self._type_item, self._type_key = (
+            self._type.__args__ if hasattr(self._type, "__args__") else (Any, Any)
+        )
         if getattr(self._type, "__args__", None):
             try:
                 for item in self:
@@ -104,7 +115,7 @@ class KeyedBase:
         return True
 
 
-class KeyedList(Generic[ItemType, KeyType], MutableSequence, KeyedBase):  # pylint: disable=too-many-ancestors
+class KeyedList(KeyedBase[ItemType, KeyType], MutableSequence):  # pylint: disable=too-many-ancestors
     """
     A list-like object that can also look up items by key. The computational
     complexity for list-like operations is the same as the base `list` class,
@@ -182,12 +193,17 @@ class KeyedList(Generic[ItemType, KeyType], MutableSequence, KeyedBase):  # pyli
         self._dict[key] = item
 
     def __contains__(self, value):
-        try:
-            if value in self._dict:
-                return True
-        except TypeError:
-            pass
-        return super().__contains__(value)
+        if self._is_valid_key(value):
+            try:
+                if value in self._dict:
+                    return True
+            except TypeError:
+                pass
+        if self._is_valid_item(value):
+            key = self.key(value)
+            if self._is_valid_key(key):
+                return key in self._dict and self._dict[key] == value
+        return False
 
     # Implement dict-like lookups by key
 
@@ -230,7 +246,7 @@ class KeyedList(Generic[ItemType, KeyType], MutableSequence, KeyedBase):  # pyli
         return f"{type_label(self._type)}({repr(self._list)})"
 
 
-class KeyedSet(Generic[ItemType, KeyType], MutableSet, KeyedBase):  # pylint: disable=too-many-ancestors
+class KeyedSet(MutableSet, KeyedBase[ItemType, KeyType]):  # pylint: disable=too-many-ancestors
     """
     A set-like object that can also look up items by key. The computational
     complexity for set-like operations is the same as the base `set` class,
