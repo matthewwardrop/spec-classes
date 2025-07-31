@@ -207,7 +207,7 @@ class spec_class:
                     )  # pragma: no cover; We should never see this.
 
                 with thread_lock:
-                    if getattr(cls.__new__, "__spec_classes_new_wrapper__", False):
+                    if getattr(spec_cls.__new__, "__spec_classes_new_wrapper__", False):
                         # Remove this __new__ wrapper.
                         if orig_new:
                             spec_cls.__new__ = orig_new

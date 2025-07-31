@@ -600,6 +600,18 @@ class TestFramework:
 
         assert C("foo").overridden == 2.0
 
+    def test_subclassing_with_new_override(self):
+        @spec_class
+        class A:
+            pass
+
+        @spec_class
+        class B(A):
+            def __new__(cls, *args, **kwargs):
+                return super().__new__(cls)
+
+        assert isinstance(B(), B)
+
     def test_respect_super_init(self):
         @spec_class
         class A:
