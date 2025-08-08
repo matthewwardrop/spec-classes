@@ -473,7 +473,10 @@ class DeepCopyMethod(MethodDescriptor):
         if self.__spec_class__.frozen or self.__spec_class__.do_not_copy:
             return self
         new = self.__class__.__new__(self.__class__)
-        for attr, value in self.__dict__.items():
+        for attr, value in list(self.__dict__.items()):
+            # note: we iterate over a list copy of the items to avoid
+            # issues in rare cases where the dict is mutated during iteration
+            # due to threading or non-local mutations.
             if inspect.ismethod(value) and value.__self__ is self:
                 continue
             attr_spec = self.__spec_class__.attrs.get(attr)
