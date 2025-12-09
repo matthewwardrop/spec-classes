@@ -51,7 +51,7 @@ class InitMethod(MethodDescriptor):
             )
             for parent in reversed(spec_cls.mro()[1:]):
                 parent_metadata = getattr(parent, "__spec_class__", None)
-                if parent_metadata:
+                if parent_metadata and parent_metadata.owner is parent:
                     parent_kwargs = {}
                     for attr in parent_metadata.attrs:
                         instance_attr_spec = instance_metadata.attrs[attr]
@@ -60,7 +60,7 @@ class InitMethod(MethodDescriptor):
                         if attr in kwargs:
                             parent_kwargs[attr] = kwargs.pop(attr)
                         else:
-                            # Parent constructor may may be overridden, and not pick up
+                            # Parent constructor may be overridden, and not pick up
                             # subclass defaults. We pre-emptively solve this here.
                             # If the constructor was not overridden, then no harm is
                             # done (we just looked it up earlier than we had to).
