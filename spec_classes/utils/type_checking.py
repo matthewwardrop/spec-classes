@@ -13,10 +13,18 @@ from typing import (
     TypeVar,
     Union,
     _GenericAlias,
+    get_type_hints,
 )
 
 # pylint: disable=protected-access
-from typing_extensions import Literal as LiteralExtension
+from typing_extensions import (
+    Literal as LiteralExtension,
+)
+from typing_extensions import (
+    NotRequired,
+    Required,
+    is_typeddict,
+)
 
 try:
     from typing import Literal
@@ -47,6 +55,25 @@ def check_type(value: Any, attr_type: Type) -> bool:
 
     if sys.version_info >= (3, 10) and isinstance(attr_type, types.UnionType):
         return any(check_type(value, type_) for type_ in attr_type.__args__)
+
+    if is_typeddict(attr_type):  # we are dealinq with a TypedDict
+        if not isinstance(value, dict):
+            return False
+        keys = set(value.keys())
+        if attr_type.__required_keys__.difference(keys):
+            return False
+        if keys.difference(attr_type.__required_keys__).difference(
+            attr_type.__optional_keys__
+        ):
+            return False
+        annotations = get_type_hints(attr_type)
+        for key, value in value.items():
+            subattr_type = annotations[key]
+            if getattr(subattr_type, "__origin__", None) in (Required, NotRequired):
+                subattr_type = subattr_type.__args__[0]
+            if not check_type(value, subattr_type):
+                return False
+        return True
 
     if hasattr(attr_type, "__origin__"):  # we are dealing with a `typing` object.
         if attr_type.__origin__ is Union:
