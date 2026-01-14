@@ -703,7 +703,7 @@ def spec_class(**kwargs) -> Callable[[WrappedClass], WrappedClass]: ...
 @dataclass_transform()
 def spec_class(
     *args, **kwargs
-) -> WrappedClass | Callable[[WrappedClass], WrappedClass]:
+) -> Union[WrappedClass, Callable[[WrappedClass], WrappedClass]]:
     """
     A class decorator that converts an ordinary class into a spec-class.
 
@@ -792,7 +792,7 @@ def spec_class(
             iterable to `attrs_skip`.
     """
     return cast(
-        WrappedClass | Callable[[WrappedClass], WrappedClass],
+        Union[WrappedClass, Callable[[WrappedClass], WrappedClass]],
         SpecClassBuilder(*args, **kwargs),
     )
 
