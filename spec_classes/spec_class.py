@@ -6,7 +6,19 @@ import typing
 import warnings
 from collections import defaultdict
 from threading import RLock
-from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Type, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Mapping,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 from cached_property import cached_property
 from typing_extensions import dataclass_transform
@@ -677,8 +689,21 @@ class _SpecClassMetadataPlaceholder:
         return getattr(owner.__spec_class__, self.return_attr)
 
 
+WrappedClass = TypeVar("WrappedClass")
+
+
+@overload
+def spec_class(cls: WrappedClass) -> WrappedClass: ...
+
+
+@overload
+def spec_class(**kwargs) -> Callable[[WrappedClass], WrappedClass]: ...
+
+
 @dataclass_transform()
-def spec_class(*args, **kwargs) -> Union[Type, SpecClassBuilder]:
+def spec_class(
+    *args, **kwargs
+) -> WrappedClass | Callable[[WrappedClass], WrappedClass]:
     """
     A class decorator that converts an ordinary class into a spec-class.
 
@@ -766,7 +791,10 @@ def spec_class(*args, **kwargs) -> Union[Type, SpecClassBuilder]:
             incremental on top of all attributes, pass a (potentially empty)
             iterable to `attrs_skip`.
     """
-    return SpecClassBuilder(*args, **kwargs)
+    return cast(
+        WrappedClass | Callable[[WrappedClass], WrappedClass],
+        SpecClassBuilder(*args, **kwargs),
+    )
 
 
 _SPEC_CLASS_BUILDER_SIGNATURE = inspect.signature(SpecClassBuilder.__init__)
