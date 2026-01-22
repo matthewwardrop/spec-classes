@@ -1,6 +1,7 @@
 import numbers
 from abc import ABCMeta, abstractmethod
-from typing import Any, Callable, Type
+from collections.abc import Callable
+from typing import Any
 
 from spec_classes.utils.type_checking import check_type, type_label
 
@@ -59,7 +60,7 @@ def validated(
 
 
 def bounded(
-    numeric_type: Type,
+    numeric_type: type,
     *,
     ge: numbers.Number = None,
     gt: numbers.Number = None,

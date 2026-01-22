@@ -1,6 +1,7 @@
 import functools
+from collections.abc import Callable
 from inspect import Parameter
-from typing import Any, Callable, Dict, Union
+from typing import Any
 
 from spec_classes.types import MISSING, Attr
 from spec_classes.utils.method_builder import MethodBuilder
@@ -16,10 +17,7 @@ def _get_set_item_type(attr_spec):
     """
     item_type = attr_spec.item_type
     if attr_spec.item_spec_key_type:
-        item_type = Union[
-            attr_spec.item_spec_key_type,
-            item_type,
-        ]
+        item_type = attr_spec.item_spec_key_type | item_type
     return item_type
 
 
@@ -132,7 +130,7 @@ class UpdateSetItemMethod(AttrMethodDescriptor):
         *,
         _inplace: bool = False,
         _if: bool = True,
-        **attrs: Dict[str, Any],
+        **attrs: dict[str, Any],
     ) -> Any:
         if not _if:
             return self
@@ -226,7 +224,7 @@ class TransformSetItemMethod(AttrMethodDescriptor):
         *,
         _inplace: bool = False,
         _if: bool = True,
-        **attr_transforms: Dict[str, Callable[[Any], Any]],
+        **attr_transforms: dict[str, Callable[[Any], Any]],
     ) -> Any:
         if not _if:
             return self

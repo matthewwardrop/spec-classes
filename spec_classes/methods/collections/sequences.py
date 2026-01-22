@@ -1,6 +1,7 @@
 import functools
+from collections.abc import Callable
 from inspect import Parameter
-from typing import Any, Callable, Dict, Union
+from typing import Any
 
 from spec_classes.types import MISSING, Attr
 from spec_classes.utils.method_builder import MethodBuilder
@@ -14,15 +15,12 @@ def _get_sequence_index_and_item_annotations(attr_spec):
     """
     Get the annotations of indexes and items for sequence method signatures.
     """
-    index_type = Union[
-        int, Any
-    ]  # Some sequence containers (e.g. KeyedList) accept arbitrary index types.
+    index_type = (
+        int | Any
+    )  # Some sequence containers (e.g. KeyedList) accept arbitrary index types.
     item_type = attr_spec.item_type
     if attr_spec.item_spec_key_type:
-        item_type = Union[
-            attr_spec.item_spec_key_type,
-            item_type,
-        ]
+        item_type = attr_spec.item_spec_key_type | item_type
     return index_type, item_type
 
 
@@ -158,7 +156,7 @@ class UpdateSequenceItemMethod(AttrMethodDescriptor):
         _by_index: Any = MISSING,
         _inplace: bool = False,
         _if: bool = True,
-        **attrs: Dict[str, Any],
+        **attrs: dict[str, Any],
     ) -> Any:
         __tracebackhide__ = True
         if not _if:
@@ -196,7 +194,7 @@ class UpdateSequenceItemMethod(AttrMethodDescriptor):
             .with_arg(
                 "_value_or_index",
                 desc="The value or index look up and transform.",
-                annotation=Union[fn_item_type, fn_index_type],
+                annotation=fn_item_type | fn_index_type,
             )
             .with_arg(
                 "_new_item",
@@ -263,7 +261,7 @@ class TransformSequenceItemMethod(AttrMethodDescriptor):
         _by_index: Any = MISSING,
         _inplace: bool = False,
         _if: bool = True,
-        **attr_transforms: Dict[str, Callable[[Any], Any]],
+        **attr_transforms: dict[str, Callable[[Any], Any]],
     ) -> Any:
         __tracebackhide__ = True
         if not _if:
@@ -300,7 +298,7 @@ class TransformSequenceItemMethod(AttrMethodDescriptor):
             .with_arg(
                 "_value_or_index",
                 desc="The value to transform, or (if `by_index=True`) its index.",
-                annotation=Union[fn_item_type, fn_index_type],
+                annotation=fn_item_type | fn_index_type,
             )
             .with_arg(
                 "_transform",
@@ -399,7 +397,7 @@ class WithoutSequenceItemMethod(AttrMethodDescriptor):
             .with_arg(
                 "_value_or_index",
                 desc="The value to remove, or (if `by_index=True`) its index.",
-                annotation=Union[fn_item_type, fn_index_type],
+                annotation=fn_item_type | fn_index_type,
             )
             .with_arg(
                 "_by_index",

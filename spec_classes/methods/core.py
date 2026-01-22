@@ -3,8 +3,14 @@
 import functools
 import inspect
 import textwrap
-from collections.abc import MutableMapping, MutableSequence, MutableSet
-from typing import Any, Callable, Iterable, Optional
+from collections.abc import (
+    Callable,
+    Iterable,
+    MutableMapping,
+    MutableSequence,
+    MutableSet,
+)
+from typing import Any
 
 from spec_classes.errors import FrozenInstanceError
 from spec_classes.types import MISSING, Attr
@@ -332,7 +338,7 @@ class ReprMethod(MethodDescriptor):
         self,  # noqa: PLW0211
         include_attrs: Iterable[str] = None,
         exclude_attrs: Iterable[str] = None,
-        indent: Optional[bool] = None,
+        indent: bool | None = None,
         indent_threshold: int = 100,
         compact: bool = False,
         compact_children: bool = True,

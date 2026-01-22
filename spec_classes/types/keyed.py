@@ -1,6 +1,6 @@
 import sys
-from collections.abc import MutableSequence, MutableSet, Sequence
-from typing import Any, Callable, Generic, Iterable, Optional, Tuple, Type, TypeVar
+from collections.abc import Callable, Iterable, MutableSequence, MutableSet, Sequence
+from typing import Any, Generic, TypeVar
 
 from spec_classes.errors import BaseTypeError
 from spec_classes.utils.type_checking import check_type, type_label
@@ -10,7 +10,7 @@ KeyType = TypeVar("KeyType")
 
 
 class KeyedBase(Generic[ItemType, KeyType]):
-    def __init__(self, key: Optional[Callable[[ItemType], Any]] = None):
+    def __init__(self, key: Callable[[ItemType], Any] | None = None):
         self._key = key
         self._type = self.__class__
         self._type_item, self._type_key = (
@@ -33,7 +33,7 @@ class KeyedBase(Generic[ItemType, KeyType]):
     def _is_valid_item(self, item: Any) -> bool:
         return check_type(item, self._type_item)
 
-    def _validate_item(self, item: ItemType) -> Tuple[ItemType, KeyType]:
+    def _validate_item(self, item: ItemType) -> tuple[ItemType, KeyType]:
         key = self.key(item)
         if hasattr(self._type, "__args__"):  # Skip type checking if untyped
             if not self._is_valid_item(item):
@@ -93,7 +93,7 @@ class KeyedBase(Generic[ItemType, KeyType]):
                 raise
 
     @classmethod
-    def __spec_class_check_type__(cls, instance: Any, type_: Type) -> bool:
+    def __spec_class_check_type__(cls, instance: Any, type_: type) -> bool:
         """
         Returns `True` if this instance is a valid instance of `type_` and this
         class.
@@ -140,8 +140,8 @@ class KeyedList(KeyedBase[ItemType, KeyType], MutableSequence):  # pylint: disab
 
     def __init__(
         self,
-        sequence: Optional[Iterable[ItemType]] = None,
-        key: Optional[Callable[[ItemType], Any]] = None,
+        sequence: Iterable[ItemType] | None = None,
+        key: Callable[[ItemType], Any] | None = None,
     ):
         super().__init__(key=key)
         self._list = []
@@ -280,8 +280,8 @@ class KeyedSet(MutableSet, KeyedBase[ItemType, KeyType]):  # pylint: disable=too
 
     def __init__(
         self,
-        sequence: Optional[Iterable[ItemType]] = None,
-        key: Optional[Callable[[ItemType], KeyType]] = None,
+        sequence: Iterable[ItemType] | None = None,
+        key: Callable[[ItemType], KeyType] | None = None,
         enforce_item_equivalence: bool = False,
     ):
         super().__init__(key=key)

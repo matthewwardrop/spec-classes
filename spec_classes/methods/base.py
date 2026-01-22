@@ -1,7 +1,8 @@
 import types
 from abc import ABCMeta, abstractmethod
+from collections.abc import Callable
 from functools import cached_property
-from typing import Any, Callable, Type
+from typing import Any
 
 from spec_classes.types import Attr
 
@@ -37,16 +38,16 @@ class MethodDescriptor(metaclass=ABCMeta):
             is true.
     """
 
-    def __init__(self, spec_cls: Type = None, dissolve: bool = True):
+    def __init__(self, spec_cls: type = None, dissolve: bool = True):
         self.spec_cls = spec_cls
         self.attr_name = None
         self.dissolve = dissolve
 
-    def __set_name__(self, spec_cls: Type, attr_name: str):
+    def __set_name__(self, spec_cls: type, attr_name: str):
         self.spec_cls = spec_cls
         self.attr_name = attr_name
 
-    def __get__(self, instance: Any, spec_cls: Type = None) -> Callable:
+    def __get__(self, instance: Any, spec_cls: type = None) -> Callable:
         if self.dissolve:
             setattr(spec_cls, self.name, self.method)
         if instance is not None:
@@ -80,6 +81,6 @@ class AttrMethodDescriptor(MethodDescriptor):  # pylint: disable=abstract-method
             is supposed to interact.
     """
 
-    def __init__(self, attr_spec: Attr, spec_cls: Type = None, dissolve: bool = True):
+    def __init__(self, attr_spec: Attr, spec_cls: type = None, dissolve: bool = True):
         super().__init__(spec_cls=spec_cls, dissolve=dissolve)
         self.attr_spec = attr_spec

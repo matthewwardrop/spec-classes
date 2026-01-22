@@ -1,7 +1,6 @@
 # flake8: noqa: E741; Short names are fine here in the tests.
 
 import sys
-from typing import Set
 
 import pytest
 
@@ -268,7 +267,7 @@ class TestKeyedSet:
             s.add(Item("a", name="blah"))
 
     def test_edge_cases(self):
-        s = KeyedSet[Set[int], int]([{1}, {1, 2}, {1, 2, 3}], key=len)
+        s = KeyedSet[set[int], int]([{1}, {1, 2}, {1, 2, 3}], key=len)
         assert {1} in s
         assert 10 not in s
         assert s != {1, 2, 3}

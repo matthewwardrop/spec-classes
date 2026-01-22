@@ -4,9 +4,15 @@ import copy
 import dataclasses
 import functools
 import inspect
-from collections.abc import MutableMapping, MutableSequence, MutableSet
+from collections.abc import (
+    Callable,
+    Iterable,
+    MutableMapping,
+    MutableSequence,
+    MutableSet,
+)
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, Type
+from typing import TYPE_CHECKING, Any
 
 from spec_classes.utils.naming import get_singular_form
 from spec_classes.utils.type_checking import (
@@ -146,11 +152,11 @@ class Attr:
         init: bool = True,
         repr: bool = True,  # pylint: disable=redefined-builtin
         compare: bool = True,
-        hash: Optional[bool] = None,  # pylint: disable=redefined-builtin
-        metadata: Optional[Any] = None,
-        desc: Optional[str] = None,
+        hash: bool | None = None,  # pylint: disable=redefined-builtin
+        metadata: Any | None = None,
+        desc: str | None = None,
         do_not_copy: bool = False,
-        invalidated_by: Optional[Iterable[str]] = None,
+        invalidated_by: Iterable[str] | None = None,
     ):
         # User-specified attributes
         if default is not MISSING and default_factory is not MISSING:
@@ -172,12 +178,12 @@ class Attr:
 
         # Auto-populated attributes
         self.name: str = None
-        self.type: Type = None
-        self.owner: Type = None
+        self.type: type = None
+        self.owner: type = None
         self.is_masked: bool = False
-        self.helper_methods: Optional[Iterable[AttrMethodDescriptor]] = None
-        self.prepare: Optional[Callable[[Any], Any]] = None
-        self.prepare_item: Optional[Callable[[Any], Any]] = None
+        self.helper_methods: Iterable[AttrMethodDescriptor] | None = None
+        self.prepare: Callable[[Any], Any] | None = None
+        self.prepare_item: Callable[[Any], Any] | None = None
 
     def __set_name__(self, owner, name):
         self.name = name
@@ -198,15 +204,15 @@ class Attr:
         return self.name
 
     @cached_property
-    def spec_type(self) -> Optional[Type]:
+    def spec_type(self) -> type | None:
         return get_spec_class_for_type(self.type)
 
     @cached_property
-    def spec_type_polymorphic(self) -> Optional[Type]:
+    def spec_type_polymorphic(self) -> type | None:
         return get_spec_class_for_type(self.type, allow_polymorphic=True)
 
     @cached_property
-    def constructor(self) -> Optional[Type]:
+    def constructor(self) -> type | None:
         return self.spec_type_polymorphic or self.type
 
     # Collection attributes
@@ -216,7 +222,7 @@ class Attr:
         return self.collection_mutator_type is not None
 
     @cached_property
-    def collection_mutator_type(self) -> Optional[Type[CollectionAttrMutator]]:
+    def collection_mutator_type(self) -> type[CollectionAttrMutator] | None:
         # ruff: noqa: PLC0415
         from spec_classes.collections import (
             MappingMutator,
@@ -233,7 +239,7 @@ class Attr:
         return None
 
     @cached_property
-    def get_collection_mutator(self) -> Optional[Callable[..., CollectionAttrMutator]]:
+    def get_collection_mutator(self) -> Callable[..., CollectionAttrMutator] | None:
         return functools.partial(self.collection_mutator_type, self)
 
     @cached_property
@@ -241,15 +247,15 @@ class Attr:
         return get_singular_form(self.name)
 
     @cached_property
-    def item_type(self) -> Optional[Type]:
+    def item_type(self) -> type | None:
         return get_collection_item_type(self.type)
 
     @cached_property
-    def item_spec_type(self) -> Optional[Type]:
+    def item_spec_type(self) -> type | None:
         return get_spec_class_for_type(self.item_type)
 
     @cached_property
-    def item_spec_key_type(self) -> Optional[Type]:
+    def item_spec_key_type(self) -> type | None:
         if self.item_spec_type and self.item_spec_type.__spec_class__.key:
             return self.item_spec_type.__spec_class__.annotations[
                 self.item_spec_type.__spec_class__.key
@@ -257,11 +263,11 @@ class Attr:
         return None
 
     @cached_property
-    def item_spec_type_polymorphic(self) -> Optional[Type]:
+    def item_spec_type_polymorphic(self) -> type | None:
         return get_spec_class_for_type(self.item_type, allow_polymorphic=True)
 
     @cached_property
-    def item_spec_polymorphic_key_type(self) -> Optional[Type]:
+    def item_spec_polymorphic_key_type(self) -> type | None:
         if (
             self.item_spec_type_polymorphic
             and self.item_spec_type_polymorphic.__spec_class__.key
@@ -272,11 +278,11 @@ class Attr:
         return None
 
     @cached_property
-    def item_constructor(self) -> Optional[Type]:
+    def item_constructor(self) -> type | None:
         return self.item_spec_type_polymorphic or self.item_type
 
     # Helpers
-    def lookup_default_value(self, spec_cls: Type) -> Any:
+    def lookup_default_value(self, spec_cls: type) -> Any:
         """
         Look up the correct default value for this attribute for `instance`.
         We cannot use `.default_value` directly here because the spec-class
@@ -330,11 +336,11 @@ class Attr:
 
     # Decorators
 
-    def preparer(self, fpreparer: Optional[Callable[[Any], Any]]) -> Attr:
+    def preparer(self, fpreparer: Callable[[Any], Any] | None) -> Attr:
         self.prepare = fpreparer
         return self
 
-    def item_preparer(self, fitem_preparer: Optional[Callable[[Any], Any]]) -> Attr:
+    def item_preparer(self, fitem_preparer: Callable[[Any], Any] | None) -> Attr:
         self.prepare_item = fitem_preparer
         return self
 

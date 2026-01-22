@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sys
-from typing import List
 
 import pytest
 from lazy_object_proxy import Proxy
@@ -19,7 +18,7 @@ from spec_classes.utils.mutation import (
 class Spec:
     key: str = "key"
     scalar: int
-    list_values: List[int]
+    list_values: list[int]
 
 
 @spec_class(init_overflow_attr="kwargs")

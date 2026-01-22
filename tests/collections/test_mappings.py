@@ -1,5 +1,4 @@
 import re
-from typing import Dict
 
 import pytest
 
@@ -17,12 +16,12 @@ class TestMappingMutator:
     @pytest.fixture
     def attr_spec(self):
         return Attr.from_attr_value(
-            "attr", "value", type=Dict[str, str], prepare_item=lambda self, x: str(x)
+            "attr", "value", type=dict[str, str], prepare_item=lambda self, x: str(x)
         )
 
     @pytest.fixture
     def attr_spec2(self):
-        return Attr.from_attr_value("attr", "value", type=Dict[str, Spec])
+        return Attr.from_attr_value("attr", "value", type=dict[str, Spec])
 
     def test_cow(self, attr_spec):
         c = {"a": 1}

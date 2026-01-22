@@ -1,5 +1,4 @@
 import re
-from typing import Set
 
 import pytest
 
@@ -18,7 +17,7 @@ class TestSetMutator:
     @pytest.fixture
     def attr_spec(self):
         return Attr.from_attr_value(
-            "attr", "value", type=Set[str], prepare_item=lambda self, x: str(x)
+            "attr", "value", type=set[str], prepare_item=lambda self, x: str(x)
         )
 
     @pytest.fixture

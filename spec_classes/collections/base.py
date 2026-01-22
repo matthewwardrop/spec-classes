@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
-from typing import Any, Callable, Dict, List, Type
+from collections.abc import Callable
+from typing import Any
 
 from spec_classes.methods.base import AttrMethodDescriptor
 from spec_classes.types import MISSING, Attr
@@ -44,8 +45,8 @@ class CollectionAttrMutator(metaclass=ABCMeta):
                 copy it before doing any mutations.
     """
 
-    COLLECTION_FAMILY: Type = MISSING
-    HELPER_METHODS: List[AttrMethodDescriptor] = []
+    COLLECTION_FAMILY: type = MISSING
+    HELPER_METHODS: list[AttrMethodDescriptor] = []
 
     def __init__(
         self,
@@ -103,8 +104,8 @@ class CollectionAttrMutator(metaclass=ABCMeta):
         require_pre_existent: bool = False,
         new_item: Any = MISSING,
         transform: Callable = None,
-        attrs: Dict[str, Any] = None,
-        attr_transforms: Dict[str, Callable] = None,
+        attrs: dict[str, Any] = None,
+        attr_transforms: dict[str, Callable] = None,
         replace: bool = False,
     ) -> Any:
         """

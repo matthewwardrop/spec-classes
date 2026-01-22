@@ -5,18 +5,12 @@ import inspect
 import typing
 import warnings
 from collections import defaultdict
+from collections.abc import Callable, Iterable, Mapping
 from functools import cached_property
 from threading import RLock
 from typing import (
     Any,
-    Callable,
-    Dict,
-    Iterable,
-    Mapping,
-    Optional,
-    Type,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -94,16 +88,16 @@ class SpecClassBuilder:
     def __init__(
         self,
         key: str = MISSING,
-        do_not_copy: Union[bool, Iterable[str]] = False,
+        do_not_copy: bool | Iterable[str] = False,
         frozen: bool = False,
         init: bool = True,
         repr: bool = True,  # pylint: disable=redefined-builtin
         eq: bool = True,
         bootstrap: bool = False,
         attrs: Iterable[str] = MISSING,
-        attrs_typed: Mapping[str, Type] = MISSING,
+        attrs_typed: Mapping[str, type] = MISSING,
         attrs_skip: Iterable[str] = MISSING,
-        init_overflow_attr: Optional[str] = MISSING,
+        init_overflow_attr: str | None = MISSING,
     ):
         """
         Args:
@@ -159,7 +153,7 @@ class SpecClassBuilder:
         self.attrs = {
             **{attr: Any for attr in (attrs or set())},
             **(attrs_typed or {}),
-            **({init_overflow_attr: Dict[str, Any]} if init_overflow_attr else {}),
+            **({init_overflow_attr: dict[str, Any]} if init_overflow_attr else {}),
         }
         self.attrs_skip = set(attrs_skip or set())
         self.spec_cls_methods = {
@@ -442,8 +436,8 @@ class SpecClassBuilder:
 
     @classmethod
     def get_methods_for_spec_class(
-        cls, spec_cls: type, methods_filter: Dict[str, bool]
-    ) -> Dict[str, Callable]:
+        cls, spec_cls: type, methods_filter: dict[str, bool]
+    ) -> dict[str, Callable]:
         """
         Generate any required `__init__`, `__repr__` and `__eq__` methods. Will
         only be added if these methods do not already exist on the class.
@@ -483,7 +477,7 @@ class SpecClassBuilder:
 
         return methods
 
-    def get_methods_for_attribute(self, attr_spec: Attr) -> Dict[str, Callable]:
+    def get_methods_for_attribute(self, attr_spec: Attr) -> dict[str, Callable]:
         """
         Return the methods that should be added to `spec_cls` for the given
         `attr_name` and `attr_type`.
@@ -504,7 +498,7 @@ class SpecClassBuilder:
         return methods
 
     @classmethod
-    def register_methods(cls, spec_cls: type, methods: Dict[str, Callable]):
+    def register_methods(cls, spec_cls: type, methods: dict[str, Callable]):
         """
         Register nominated methods onto `spec_cls`. Methods will not be added if
         they already exist on the class.
@@ -570,7 +564,7 @@ class SpecClassMetadata:
     """
 
     @classmethod
-    def for_class(cls, spec_cls: Type) -> SpecClassMetadata:
+    def for_class(cls, spec_cls: type) -> SpecClassMetadata:
         """
         Generate a new instance of `SpecClassMetadata` for the nominated `spec_cls`.
 
@@ -631,13 +625,13 @@ class SpecClassMetadata:
             post_init=getattr(spec_cls, "__post_init__", None),
         )
 
-    owner: Type
-    key: Optional[str] = None
-    init_overflow_attr: Optional[str] = None
+    owner: type
+    key: str | None = None
+    init_overflow_attr: str | None = None
     frozen: bool = False
     do_not_copy: bool = False
-    attrs: Dict[str, Attr] = dataclasses.field(default_factory=dict)
-    post_init: Optional[Callable[[Any], None]] = None
+    attrs: dict[str, Attr] = dataclasses.field(default_factory=dict)
+    post_init: Callable[[Any], None] | None = None
     instance_state: WeakRefCache = dataclasses.field(default_factory=WeakRefCache)
 
     @cached_property
@@ -698,7 +692,7 @@ class _SpecClassMetadataPlaceholder:
     """
 
     bootstrapper: Callable[[], None]
-    return_attr: Optional[str] = None
+    return_attr: str | None = None
 
     def __get__(self, instance, owner):
         """
@@ -725,7 +719,7 @@ def spec_class(**kwargs) -> Callable[[WrappedClass], WrappedClass]: ...
 @dataclass_transform()
 def spec_class(
     *args, **kwargs
-) -> Union[WrappedClass, Callable[[WrappedClass], WrappedClass]]:
+) -> WrappedClass | Callable[[WrappedClass], WrappedClass]:
     """
     A class decorator that converts an ordinary class into a spec-class.
 
@@ -814,7 +808,7 @@ def spec_class(
             iterable to `attrs_skip`.
     """
     return cast(
-        Union[WrappedClass, Callable[[WrappedClass], WrappedClass]],
+        WrappedClass | Callable[[WrappedClass], WrappedClass],
         SpecClassBuilder(*args, **kwargs),
     )
 

@@ -2,7 +2,6 @@ import inspect
 import re
 import textwrap
 from inspect import Parameter, Signature
-from typing import Tuple
 
 import pytest
 
@@ -136,7 +135,7 @@ class TestMethodBuilder:
 
         m = MethodBuilder("basic_wrapper", basic_implementation)
         m.with_preamble("Hello World!")
-        m.with_returns("All the arguments.", annotation=Tuple)
+        m.with_returns("All the arguments.", annotation=tuple)
         m.with_notes("This method doesn't do a whole lot.")
         m.with_arg("a", desc="A value.", annotation=int)
 

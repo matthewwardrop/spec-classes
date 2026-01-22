@@ -2,22 +2,19 @@ import inspect
 import numbers
 import sys
 import types
+from collections.abc import Mapping, Sequence
 from collections.abc import Sequence as SequenceMutator
 from collections.abc import Set as SetMutator
 from typing import (
     Any,
     Literal,
-    Mapping,
-    Sequence,
-    Set,
-    Type,
     TypeVar,
     Union,
     _GenericAlias,
 )
 
 
-def type_match(type_input: Type, type_reference: type) -> bool:
+def type_match(type_input: type, type_reference: type) -> bool:
     """
     Check whether `type_input` matches `type_reference`, that latter of
     which is permitted to be a sequence of multiple values; but cannot be
@@ -28,7 +25,7 @@ def type_match(type_input: Type, type_reference: type) -> bool:
     return isinstance(type_input, type) and issubclass(type_input, type_reference)
 
 
-def check_type(value: Any, attr_type: Type) -> bool:
+def check_type(value: Any, attr_type: type) -> bool:
     """
     Check whether a given object `value` matches the provided `attr_type`.
     """
@@ -42,7 +39,10 @@ def check_type(value: Any, attr_type: Type) -> bool:
         return any(check_type(value, type_) for type_ in attr_type.__args__)
 
     if hasattr(attr_type, "__origin__"):  # we are dealing with a `typing` object.
-        if attr_type.__origin__ is Union:
+        if (
+            isinstance(attr_type, types.UnionType)
+            or getattr(attr_type, "__origin__", None) is Union
+        ):
             return any(check_type(value, type_) for type_ in attr_type.__args__)
 
         if attr_type.__origin__ is Literal:
@@ -89,7 +89,7 @@ def check_type(value: Any, attr_type: Type) -> bool:
     return isinstance(value, attr_type)
 
 
-def get_collection_item_type(container_type: Type) -> Type:
+def get_collection_item_type(container_type: type) -> type:
     """
     Return the type of object inside a typing container (List, Set, Dict),
     or `None` if this isn't annotated.
@@ -101,7 +101,7 @@ def get_collection_item_type(container_type: Type) -> Type:
     if type_match(container_type, Mapping) and len(container_type.__args__) == 2:
         item_type = container_type.__args__[1]
     elif (
-        type_match(container_type, (Sequence, Set, SequenceMutator, SetMutator))
+        type_match(container_type, (Sequence, set, SequenceMutator, SetMutator))
         or len(container_type.__args__) == 1
     ):
         item_type = container_type.__args__[0]
@@ -110,9 +110,7 @@ def get_collection_item_type(container_type: Type) -> Type:
     return item_type
 
 
-def get_spec_class_for_type(
-    attr_type: Type, allow_polymorphic=False
-) -> Union[Type, None]:
+def get_spec_class_for_type(attr_type: type, allow_polymorphic=False) -> type | None:
     """
     Get the spec class to associated with a given attribute type. This is
     useful when `attr_type` is a polymorphic type, e.g.
@@ -122,7 +120,10 @@ def get_spec_class_for_type(
     """
     if hasattr(attr_type, "__spec_class__"):
         return attr_type
-    if allow_polymorphic and getattr(attr_type, "__origin__", None) is Union:
+    if allow_polymorphic and (
+        isinstance(attr_type, types.UnionType)
+        or getattr(attr_type, "__origin__", None) is Union
+    ):
         spec_classes = []
         for typ in attr_type.__args__:
             spec_typ = get_spec_class_for_type(typ)
@@ -133,7 +134,7 @@ def get_spec_class_for_type(
     return None
 
 
-def type_label(attr_type: Type) -> str:
+def type_label(attr_type: type) -> str:
     """
     Generate the label to be used to describe an `attr_type` in generated
     user documentation. Since we care about the output of this method when
@@ -168,7 +169,7 @@ def type_label(attr_type: Type) -> str:
     return attr_type.__name__
 
 
-def type_instantiate(attr_type: Type, **kwargs) -> Any:
+def type_instantiate(attr_type: type, **kwargs) -> Any:
     """
     Instantiate a nominated type.
     """

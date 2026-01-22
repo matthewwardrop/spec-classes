@@ -2,7 +2,6 @@ import inspect
 import warnings
 from abc import abstractmethod
 from functools import cached_property
-from typing import Tuple
 
 from spec_classes.errors import NestedAttributeError
 from spec_classes.types.missing import EMPTY, MISSING, UNCHANGED
@@ -16,7 +15,7 @@ class _spec_property_base:
     Basic abstract implementation of the the descriptor protocol for properties.
     """
 
-    ALLOWED_ATTRS: Tuple[str, ...] = ()
+    ALLOWED_ATTRS: tuple[str, ...] = ()
 
     def __new__(cls, *args, **kwargs):
         if not args:

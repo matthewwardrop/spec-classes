@@ -7,8 +7,9 @@ import re
 import sys
 import textwrap
 import warnings
+from collections.abc import Callable
 from types import ModuleType
-from typing import Any, Callable, Dict, List
+from typing import Any
 
 import pytest
 
@@ -90,7 +91,7 @@ class TestFramework:
         assert ItemSubSub.__spec_class__.key is None
 
     def test_spec_arguments(self):
-        @spec_class(attrs={"value"}, attrs_typed={"items": List[str]}, bootstrap=True)
+        @spec_class(attrs={"value"}, attrs_typed={"items": list[str]}, bootstrap=True)
         class Item:
             pass
 
@@ -382,7 +383,7 @@ class TestFramework:
         @spec_class
         class MyClass:
             prepared_str: str = "a"
-            prepared_items: List[str] = []
+            prepared_items: list[str] = []
 
             def _prepare_prepared_str(self, prepared_str):
                 return "c"
@@ -417,7 +418,7 @@ class TestFramework:
         class MyClass:
             module: ModuleType = sys
 
-            module_items: List[ModuleType] = [sys]
+            module_items: list[ModuleType] = [sys]
 
         assert MyClass().module is sys
         assert MyClass().module_items == [sys]
@@ -556,7 +557,7 @@ class TestFramework:
     def test_kwarg_overflow(self):
         @spec_class(init_overflow_attr="options")
         class MyClass:
-            options: Dict[str, Any]
+            options: dict[str, Any]
 
         assert MyClass(a=1, b=2).options == {"a": 1, "b": 2}
 
@@ -660,7 +661,7 @@ class TestFramework:
     def test_class_attribute_masking(self):
         @spec_class
         class Item:
-            a: List[int] = [1, 2, 3]
+            a: list[int] = [1, 2, 3]
 
         assert Item().a == [1, 2, 3]
 
@@ -677,7 +678,7 @@ class TestFramework:
     def test_copy_behavior(self):
         @spec_class
         class MySpec:
-            values: List[str]
+            values: list[str]
             pending_write: bool = True
             copied: bool = False
 
@@ -854,14 +855,14 @@ class TestFramework:
     def test_overlapping_attributes(self):
         @spec_class
         class Spec:
-            items: List[int]
+            items: list[int]
 
         assert Spec.__spec_class__.attrs["items"].item_name == "item"
 
         @spec_class
         class Spec:
             item: int
-            items: List[int]
+            items: list[int]
 
         assert Spec.__spec_class__.attrs["items"].item_name == "items_item"
 
@@ -876,7 +877,7 @@ class TestFramework:
             class Spec:
                 item: int
                 items_item: int
-                items: List[int]
+                items: list[int]
 
     def test_post_init(self):
         @spec_class

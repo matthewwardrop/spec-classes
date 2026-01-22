@@ -1,5 +1,3 @@
-from typing import Union
-
 import pytest
 
 from spec_classes.types import ValidatedType, bounded, validated
@@ -49,7 +47,7 @@ class TestValidatedType:
         assert not isinstance(5, b2)
         assert b2.__name__ == "float∊(1,2]"
 
-        b3 = bounded(Union[float, int], gt=1, lt=3)
+        b3 = bounded(float | int, gt=1, lt=3)
         assert not isinstance(1.0, b3)
         assert not isinstance(3.0, b3)
         assert isinstance(2, b3)
