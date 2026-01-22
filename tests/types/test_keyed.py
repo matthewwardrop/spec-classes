@@ -146,6 +146,12 @@ class TestKeyedList:
         ):
             KeyedList[int, int]([1, 2, 3], key=str)
 
+    def test_contains(self):
+        l = KeyedList[int, int]([1, 2, 3])
+        assert 1 in l
+        assert 10 not in l
+        assert "1" not in l
+
     def test_spec_class(self):
         @spec_class(key="key")
         class KeyedSpec:

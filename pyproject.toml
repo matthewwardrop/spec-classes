@@ -99,3 +99,15 @@ ignore = [
     "PLR09",
     "PLR2004",
 ]
+
+# Coverage configuration
+
+[tool.coverage.run]
+omit = ["spec_classes/_version.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "if sys.version_info >= \\(3, 11\\):",
+]
