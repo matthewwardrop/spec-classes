@@ -3,9 +3,10 @@ import copy
 import copyreg
 import functools
 import inspect
+from collections.abc import Callable
 from threading import RLock
 from types import ModuleType
-from typing import Any, Callable, Dict, Optional, Set, Type, Union
+from typing import Any
 
 from lazy_object_proxy import Proxy
 
@@ -147,7 +148,7 @@ def mutate_attr(
     return obj
 
 
-def invalidate_attrs(obj: Any, attr: str, invalidation_map: Dict[str, Set[str]] = None):
+def invalidate_attrs(obj: Any, attr: str, invalidation_map: dict[str, set[str]] = None):
     if invalidation_map is None:
         invalidation_map = obj.__spec_class__.invalidation_map
     if not invalidation_map:
@@ -171,11 +172,11 @@ def mutate_value(
     new_value: Any = MISSING,
     replace: bool = False,
     prepare: Callable[[Any], Any] = None,
-    attrs: Dict[str, Any] = None,
-    constructor: Union[Type, Callable] = None,
-    expected_type: Type = None,
+    attrs: dict[str, Any] = None,
+    constructor: type | Callable = None,
+    expected_type: type = None,
     transform: Callable = None,
-    attr_transforms: Dict[str, Callable] = None,
+    attr_transforms: dict[str, Callable] = None,
     inplace: bool = False,
 ) -> Any:
     """
@@ -309,7 +310,7 @@ def mutate_value(
 
 
 def prepare_attr_value(
-    attr_spec: Attr, instance: Any, value: Any, attrs: Optional[Dict[str, Any]] = None
+    attr_spec: Attr, instance: Any, value: Any, attrs: dict[str, Any] | None = None
 ) -> Any:
     """
     Prepare an incoming `value` for assignment to the attribute associated with

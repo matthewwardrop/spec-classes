@@ -1,5 +1,5 @@
 import functools
-from typing import Iterable, MutableSet
+from collections.abc import Iterable, MutableSet
 
 from spec_classes.methods.collections import SET_METHODS
 from spec_classes.types import MISSING

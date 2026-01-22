@@ -1,7 +1,8 @@
 # pylint: disable=bad-staticmethod-argument
 
 import copy
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from spec_classes.types import MISSING
 from spec_classes.utils.method_builder import MethodBuilder

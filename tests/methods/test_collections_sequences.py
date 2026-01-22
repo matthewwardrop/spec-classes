@@ -1,5 +1,4 @@
 import inspect
-from typing import List
 
 import pytest
 
@@ -11,8 +10,8 @@ class TestListAttribute:
     def list_spec(self):
         @spec_class
         class ListSpec:
-            list_values: List[int]
-            list_str_values: List[str]
+            list_values: list[int]
+            list_str_values: list[str]
 
         return ListSpec(list_values=[1, 2, 3], list_str_values=["a", "b", "c"])
 

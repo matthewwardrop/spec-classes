@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import inspect
 import textwrap
+from collections.abc import Callable
 from inspect import Parameter, Signature, cleandoc
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any
 
 from spec_classes.types import MISSING
 from spec_classes.utils.type_checking import type_label
@@ -66,16 +67,16 @@ class MethodBuilder:
 
         # Documentation attributes
         self.doc_preamble: str = ""
-        self.doc_args: List[str] = []
+        self.doc_args: list[str] = []
         self.doc_returns: str = ""
-        self.doc_notes: List[str] = []
+        self.doc_notes: list[str] = []
 
         # Method signature
-        self.method_args: List[Parameter] = [
+        self.method_args: list[Parameter] = [
             Parameter("self", Parameter.POSITIONAL_OR_KEYWORD)
         ]
-        self.method_args_virtual: List[Parameter] = []
-        self.method_return_type: Optional[Type] = None
+        self.method_args_virtual: list[Parameter] = []
+        self.method_return_type: type | None = None
 
         self.check_attrs_match_sig = (  # TODO: Remove this
             True  # This is toggled if signature contains a var_kwarg parameter.
@@ -88,9 +89,9 @@ class MethodBuilder:
         name: str,
         *,
         desc: str,
-        annotation: Type = Parameter.empty,
+        annotation: type = Parameter.empty,
         default: Any = Parameter.empty,
-        kind: Union[str, inspect._ParameterKind] = Parameter.POSITIONAL_OR_KEYWORD,
+        kind: str | inspect._ParameterKind = Parameter.POSITIONAL_OR_KEYWORD,
         virtual: bool = False,
         only_if: bool = True,
     ) -> MethodBuilder:
@@ -175,10 +176,10 @@ class MethodBuilder:
 
     def with_args(
         self,
-        args: Union[List[str], Dict[str, str]],
+        args: list[str] | dict[str, str],
         *,
-        annotations: Optional[Dict[str, Type]] = None,
-        defaults: Optional[Dict[str, Any]] = None,
+        annotations: dict[str, type] | None = None,
+        defaults: dict[str, Any] | None = None,
         virtual: bool = False,
         only_if: bool = True,
     ) -> MethodBuilder:
@@ -242,7 +243,7 @@ class MethodBuilder:
         self,
         spec_cls: type,
         *,
-        desc_template: Optional[str] = None,
+        desc_template: str | None = None,
         only_if: bool = True,
     ) -> MethodBuilder:
         """
@@ -309,7 +310,7 @@ class MethodBuilder:
         return self
 
     def with_returns(
-        self, desc: str, *, annotation: Type = Parameter.empty, only_if: bool = True
+        self, desc: str, *, annotation: type = Parameter.empty, only_if: bool = True
     ) -> MethodBuilder:
         """
         Specify the return type and description of the method being built.
@@ -529,7 +530,7 @@ class MethodBuilder:
     @staticmethod
     def _method_signature_to_definition_str(
         signature: Signature,
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> tuple[str, dict[str, Any]]:
         """
         Return a string representation of the signature that can be used in exec.
         This string assumes that `DEFAULTS` is available in the evaluation

@@ -2,8 +2,9 @@ import ast
 import functools
 import re
 import warnings
+from collections.abc import Callable
 from functools import cached_property
-from typing import Any, Callable, Optional, Type
+from typing import Any
 
 from .missing import MISSING
 
@@ -57,7 +58,7 @@ class Alias:
         attr: str,
         *,
         passthrough: bool = False,
-        transform: Optional[Callable[[Any], Any]] = None,
+        transform: Callable[[Any], Any] | None = None,
         fallback: Any = MISSING,
     ):
         self.attr = attr
@@ -180,11 +181,11 @@ class DeprecatedAlias(Alias):
         attr: str,
         *,
         passthrough: bool = True,
-        transform: Optional[Callable[[Any], Any]] = None,
+        transform: Callable[[Any], Any] | None = None,
         fallback: Any = MISSING,
-        as_of: Optional[str] = None,
-        until: Optional[str] = None,
-        warning_cls: Type[Warning] = DeprecationWarning,
+        as_of: str | None = None,
+        until: str | None = None,
+        warning_cls: type[Warning] = DeprecationWarning,
     ):
         """
         Args:

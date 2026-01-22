@@ -1,6 +1,6 @@
 import dataclasses
 import re
-from typing import Any, List, Optional
+from typing import Any
 
 import pytest
 
@@ -87,9 +87,9 @@ class TestAttr:
 
         class MyClass:
             attr1: MySpec = Attr()
-            attr2: List[MySpec] = Attr(default_factory=[])
-            attr3: Optional[MySpec] = Attr()
-            attr4: List[Optional[MySpec]] = Attr(default_factory=[])
+            attr2: list[MySpec] = Attr(default_factory=[])
+            attr3: MySpec | None = Attr()
+            attr4: list[MySpec | None] = Attr(default_factory=[])
 
         a1 = MyClass.attr1
         a2 = MyClass.attr2
@@ -137,7 +137,7 @@ class TestAttr:
         assert a1.item_type is Any
         assert a2.item_type is MySpec
         assert a3.item_type is Any
-        assert a4.item_type is Optional[MySpec]
+        assert a4.item_type == MySpec | None
 
         # Item spec type
         assert a1.item_spec_type is None
@@ -165,7 +165,7 @@ class TestAttr:
 
     def test_decorators(self):
         class MyClass:
-            attr: List[str] = Attr()
+            attr: list[str] = Attr()
 
             @attr.preparer
             def _(self, attr):

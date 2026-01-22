@@ -1,5 +1,4 @@
 import re
-from typing import List
 
 import pytest
 
@@ -17,12 +16,12 @@ class TestSequenceMutator:
     @pytest.fixture
     def attr_spec(self):
         return Attr.from_attr_value(
-            "attr", "value", type=List[str], prepare_item=lambda self, x: str(x)
+            "attr", "value", type=list[str], prepare_item=lambda self, x: str(x)
         )
 
     @pytest.fixture
     def attr_spec2(self):
-        return Attr.from_attr_value("attr", "value", type=List[Spec])
+        return Attr.from_attr_value("attr", "value", type=list[Spec])
 
     def test_cow(self, attr_spec):
         c = [1, 2, 3]

@@ -1,4 +1,4 @@
-from typing import Mapping, MutableMapping
+from collections.abc import Mapping, MutableMapping
 
 from spec_classes.methods.collections import MAPPING_METHODS
 from spec_classes.types import MISSING

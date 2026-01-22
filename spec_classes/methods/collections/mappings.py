@@ -1,6 +1,7 @@
 import functools
+from collections.abc import Callable
 from inspect import Parameter
-from typing import Any, Callable, Dict, TypeVar, Union
+from typing import Any, TypeVar
 
 from spec_classes.types import MISSING, Attr
 from spec_classes.utils.method_builder import MethodBuilder
@@ -22,10 +23,7 @@ def _get_mapping_key_and_value_annotations(attr_spec):
     )
     value_type = attr_spec.item_type
     if attr_spec.item_spec_key_type:
-        value_type = Union[
-            attr_spec.item_spec_key_type,
-            value_type,
-        ]
+        value_type = attr_spec.item_spec_key_type | value_type
     return key_type, value_type
 
 
@@ -146,7 +144,7 @@ class UpdateMappingItemMethod(AttrMethodDescriptor):
         *,
         _inplace: bool = False,
         _if: bool = True,
-        **attrs: Dict[str, Any],
+        **attrs: dict[str, Any],
     ) -> Any:
         __tracebackhide__ = True
         if not _if:
@@ -243,7 +241,7 @@ class TransformMappingItemMethod(AttrMethodDescriptor):
         *,
         _inplace: bool = False,
         _if: bool = True,
-        **attr_transforms: Dict[str, Callable[[Any], Any]],
+        **attr_transforms: dict[str, Callable[[Any], Any]],
     ) -> Any:
         __tracebackhide__ = True
         if not _if:

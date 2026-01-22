@@ -3,8 +3,8 @@
 import copy
 import functools
 import inspect
+from collections.abc import Callable
 from functools import cached_property
-from typing import Callable
 
 from lazy_object_proxy import Proxy
 

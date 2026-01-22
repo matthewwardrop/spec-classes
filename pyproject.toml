@@ -77,7 +77,7 @@ python = ["310", "311", "312", "313", "314"]
 # Linting configuration
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "PL"]
+select = ["E", "F", "W", "I", "PL", "UP"]
 ignore = [
     "C901",
     "D100",
