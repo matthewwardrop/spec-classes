@@ -1,0 +1,996 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.4">
+    
+    
+      
+        <title>Collection Methods - Spec Classes</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.db9e7362.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.3f5d1f46.min.css">
+        
+      
+    
+    
+    
+      
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>:root{--md-text-font-family:"Roboto";--md-code-font-family:"Roboto Mono"}</style>
+      
+    
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/colors.css">
+    
+    
+      
+
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="none" data-md-color-accent="none">
+  
+    
+    <script>function __prefix(e){return new URL("../../..",location).pathname+"."+e}function __get(e,t=localStorage){return JSON.parse(t.getItem(__prefix(e)))}</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#method-singular-naming" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="Spec Classes" class="md-header__button md-logo" aria-label="Spec Classes" data-md-component="logo">
+      
+  <img src="../../../assets/images/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Spec Classes
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Collection Methods
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-tabs__inner md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../../.." class="md-tabs__link">
+      Introduction
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../examples/" class="md-tabs__link">
+        Examples
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+    
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../" class="md-tabs__link md-tabs__link--active">
+        Usage
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../implementation/how_it_works/" class="md-tabs__link">
+        Implementation Details
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="Spec Classes" class="md-nav__button md-logo" aria-label="Spec Classes" data-md-component="logo">
+      
+  <img src="../../../assets/images/logo.svg" alt="logo">
+
+    </a>
+    Spec Classes
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" type="checkbox" id="__nav_2" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2">
+          Examples
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Examples" data-md-level="1">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Examples
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/basic/" class="md-nav__link">
+        Basic
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/collections/" class="md-nav__link">
+        Collections
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/dataclasses/" class="md-nav__link">
+        Dataclass Interoperability
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/preparation/" class="md-nav__link">
+        Preparation/Typecasting
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3">
+          Usage
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Usage" data-md-level="1">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          Usage
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../basic/" class="md-nav__link">
+        Basic Usage
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_3" type="checkbox" id="__nav_3_3" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3_3">
+          Helper Methods
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Helper Methods" data-md-level="2">
+        <label class="md-nav__title" for="__nav_3_3">
+          <span class="md-nav__icon md-icon"></span>
+          Helper Methods
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../toplevel/" class="md-nav__link">
+        Toplevel Methods
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scalars/" class="md-nav__link">
+        Scalar Methods
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Collection Methods
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Collection Methods
+      </a>
+      
+        
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#method-singular-naming" class="md-nav__link">
+    Method "Singular" Naming
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mutable-sequences" class="md-nav__link">
+    Mutable Sequences
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mutable-mappings" class="md-nav__link">
+    Mutable Mappings
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mutable-sets" class="md-nav__link">
+    Mutable Sets
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extensions-for-spec-class-types" class="md-nav__link">
+    Extensions for spec-class types
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../special_types/" class="md-nav__link">
+        Special Types
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../advanced/" class="md-nav__link">
+        Advanced Usage
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4" type="checkbox" id="__nav_4" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4">
+          Implementation Details
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Implementation Details" data-md-level="1">
+        <label class="md-nav__title" for="__nav_4">
+          <span class="md-nav__icon md-icon"></span>
+          Implementation Details
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation/how_it_works/" class="md-nav__link">
+        How It Works
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../implementation/performance/" class="md-nav__link">
+        Performance Implications
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                
+                  <h1>Collection Methods</h1>
+                
+                <p>Attributes that have a type subclassing from <code>MutableSequence</code>, <code>MutableMapping</code>
+or <code>MutableSet</code> (see <code>collections.abc</code> in the standard library; and note that
+these include the standard <code>list</code>, <code>dict</code> and <code>set</code> datatypes) are considered to
+be collections. In addition to the scalar helper methods, spec-classes also
+adds three more helper methods to assist with the mutation of elements of the
+collection; again with a view to simplifying incremental setting of the
+attributes and/or adoption of a copy-on-write workflow. The helper methods are:</p>
+<ul>
+<li><code>with_&lt;attr_singular&gt;(...)</code></li>
+<li><code>update_&lt;attr_singular&gt;(...)</code></li>
+<li><code>transform_&lt;attr_singular&gt;(...)</code></li>
+<li><code>without_&lt;attr_sigular&gt;(...)</code></li>
+</ul>
+<p>The concrete signatures differ based on the collection type, and so will be
+explored in more detail below. As for the scalar methods, when the collected
+item type is a spec-class, additional fields are added to the methods to allow
+direct access or mutation of attributes of the elements in the collection.</p>
+<h2 id="method-singular-naming">Method "Singular" Naming<a class="headerlink" href="#method-singular-naming" title="Permanent link">&para;</a></h2>
+<p>As indicated above, the collection methods are named after the singular form of the attribute name. The generation of the singular form is handled
+by the excellent <a href="https://github.com/jaraco/inflect"><code>inflect</code></a> library.</p>
+<p>This approach has two main benefits:
+  1. It clearly distinguishes the target of the collection from the scalar helper methods.
+  2. It encourages sensible naming of collections (i.e. plural names).</p>
+<p>If <code>inflect</code> cannot find a singular form either because the attribute name was
+not plural, or the plural form is the same as the singular form, or the plural
+form overlaps with an existing attribute, then a suffix of <code>_item</code> will be used
+instead. If the resulting singular form overlaps with an existing attribute, a
+<code>RuntimeError</code> is raised and the user is invited to remedy the problem by
+renaming the attribute(s).</p>
+<p>By way of example, here are a few mappings:</p>
+<table>
+<thead>
+<tr>
+<th>attribute name</th>
+<th>singular form</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>numbers</td>
+<td>number</td>
+</tr>
+<tr>
+<td>children</td>
+<td>child</td>
+</tr>
+<tr>
+<td>errata</td>
+<td>erratum</td>
+</tr>
+<tr>
+<td>collection</td>
+<td>collection_item</td>
+</tr>
+</tbody>
+</table>
+<h2 id="mutable-sequences">Mutable Sequences<a class="headerlink" href="#mutable-sequences" title="Permanent link">&para;</a></h2>
+<p>The helper method signatures for mutable sequences (including <code>list</code>) are:</p>
+<ul>
+<li><code>with_&lt;attr_singular&gt;(_item, *, _index=MISSING, _insert=False, _inplace=False, _if=True)</code>:
+    Adds an element to the collection when <code>_if</code> is <code>True</code>. If <code>_index</code> is
+    provided, the item at that index is replaced unless <code>_insert</code> is <code>True</code> in
+    which case the new item is inserted before it. If <code>_inplace</code> is <code>True</code> then
+    the current instance is mutated, otherwise the mutation happens on a
+    copy.</li>
+<li><code>update_&lt;attr_singular&gt;(_value_or_index, _new_item=MISSING, *, _by_index=MISSING, _inplace=False, _if=True)</code>:
+    Updates/replaces an element of the collection. Indexing semantics are as for
+    <code>transform_&lt;attr_singular&gt;</code> below.</li>
+<li>
+<p><code>transform_&lt;attr_singular&gt;(_value_or_index, _transform, *, _by_index=MISSING, _inplace=False, _if=True)</code>:
+    Transforms an element of the collection if <code>_if</code> is <code>True</code>. The item to be
+    transformed is passed to the callable <code>_transform</code>, and is:</p>
+<ul>
+<li>if <code>_by_index</code> is <code>False</code>, the first instance of <code>_value_or_index</code> in the
+  collection.</li>
+<li>if <code>_by_index</code> is <code>True</code>, the item at index <code>_value_or_index</code>.</li>
+</ul>
+<p>If <code>_by_index</code> is not specified, it defaults to <code>True</code> if <code>_value_or_index</code>
+is not of the same type as as that contained in the sequence. If <code>_inplace</code>
+is <code>True</code> then the current instance is mutated, otherwise the mutation
+happens on a copy.
+  - <code>without_&lt;attr_singular&gt;(_value_or_index, *, _by_index: bool = False, _inplace: bool = False, _if=True)</code>:
+Removes an element from the collection if <code>_if</code> is <code>True</code>. The item to be
+removed is:</p>
+<ul>
+<li>if <code>_by_index</code> is <code>False</code>, the first instance of <code>_value_or_index</code> in the
+  collection.</li>
+<li>if <code>_by_index</code> is <code>True</code>, the item at index <code>_value_or_index</code>.</li>
+</ul>
+<p>If <code>_by_index</code> is not specified, it defaults to <code>True</code> if <code>_value_or_index</code>
+is not of the same type as as that contained in the sequence. If <code>_inplace</code>
+is <code>True</code> then the current instance is mutated, otherwise the mutation
+happens on a copy.</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nd">@spec_class</span>
+<span class="k">class</span> <span class="nc">FavoriteNumbers</span><span class="p">:</span>
+    <span class="n">numbers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">assert</span> <span class="n">FavoriteNumbers</span><span class="p">()</span><span class="o">.</span><span class="n">with_number</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="o">.</span><span class="n">without_number</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="o">.</span><span class="n">numbers</span> <span class="o">==</span> <span class="p">[]</span>
+</code></pre></div>
+<h2 id="mutable-mappings">Mutable Mappings<a class="headerlink" href="#mutable-mappings" title="Permanent link">&para;</a></h2>
+<p>The helper method signatures for mutable mappings (including <code>dict</code>) are:</p>
+<ul>
+<li><code>with_&lt;attr_singular&gt;(_key, _value, *, _inplace=False, _if=True)</code>:
+    Adds an element to the collection when <code>_if</code> is <code>True</code> by setting the value
+    assigned to key <code>_key</code> to value <code>_value</code>. If <code>_inplace</code> is <code>True</code> then the
+    current instance is mutated, otherwise the mutation happens on a copy.</li>
+<li><code>update_&lt;attr_singular&gt;(_key, _new_item=MISSING, *, _inplace=False, _if=True)</code>:
+    Updates/replaces an element of the collection when <code>_if</code> is <code>True</code>.If
+    <code>_inplace</code> is <code>True</code> then the current instance is mutated, otherwise the
+    mutation happens on a copy.</li>
+<li><code>transform_&lt;attr_singular&gt;(_key, _transform, *, _inplace=False, _if=True)</code>:
+    Transforms the value associated with key <code>_key</code> by passing it through the
+    callable <code>_transform</code> when <code>_if</code> is <code>True</code>. If <code>_inplace</code> is <code>True</code> then the
+    current instance is mutated, otherwise the mutation happens on a copy.</li>
+<li><code>without_&lt;attr_singular&gt;(_key, *, _inplace: bool = False, _if=True)</code>:
+    Removes the mapping for <code>_key</code> from the collection when <code>_if</code> is <code>True</code>. If
+    <code>_inplace</code> is <code>True</code> then the current instance is mutated, otherwise the
+    mutation happens on a copy.</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nd">@spec_class</span>
+<span class="k">class</span> <span class="nc">ExaminationScores</span><span class="p">:</span>
+    <span class="n">scores</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="k">assert</span> <span class="p">(</span>
+    <span class="n">ExaminationScores</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">with_score</span><span class="p">(</span><span class="s2">&quot;Peter&quot;</span><span class="p">,</span> <span class="mf">10.1</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">with_score</span><span class="p">(</span><span class="s2">&quot;Justine&quot;</span><span class="p">,</span> <span class="mf">13.3</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">without_score</span><span class="p">(</span><span class="s2">&quot;Peter&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">scores</span>
+<span class="p">)</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;Peter&#39;</span><span class="p">:</span> <span class="mf">10.1</span><span class="p">}</span>
+</code></pre></div>
+<h2 id="mutable-sets">Mutable Sets<a class="headerlink" href="#mutable-sets" title="Permanent link">&para;</a></h2>
+<p>The helper method signatures for mutable sets (including <code>set</code>) are:</p>
+<ul>
+<li><code>with_&lt;attr_singular&gt;(_item, *, _inplace=False, _if=True)</code>:
+    Adds the nominated element <code>_item</code> to the collection when <code>_if</code> is <code>True</code>.
+    If <code>_inplace</code> is <code>True</code> then the current instance is mutated, otherwise the
+    mutation happens on a copy.</li>
+<li><code>update_&lt;attr_singular&gt;(_item, _new_item=MISSING, *, _inplace=False, _if=True)</code>:
+    Updates/replaces an element of the collection when <code>_if</code> is <code>True</code>. If
+    <code>_inplace</code> is <code>True</code> then the current instance is mutated, otherwise the
+    mutation happens on a copy.</li>
+<li><code>transform_&lt;attr_singular&gt;(_item, _transform, *, _inplace=False, _if=True)</code>:
+    Transforms the nominated <code>_item</code> by passing it through the callable
+    <code>_transform</code> when <code>_if</code> is <code>True</code>. If <code>_inplace</code> is <code>True</code> then the current
+    instance is mutated, otherwise the mutation happens on a copy.</li>
+<li><code>without_&lt;attr_singular&gt;(_item, *, _inplace: bool = False, _if=True)</code>:
+    Removes <code>_item</code> from the collection when <code>_if</code> is <code>True</code>. If <code>_inplace</code> is
+    <code>True</code> then the current instance is mutated, otherwise the mutation happens
+    on a copy.</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nd">@spec_class</span>
+<span class="k">class</span> <span class="nc">FavoriteNumbers</span><span class="p">:</span>
+    <span class="n">numbers</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+
+<span class="k">assert</span> <span class="p">(</span>
+    <span class="n">FavoriteNumbers</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">with_number</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">with_number</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">transform_number</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">without_number</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">numbers</span>
+<span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">()</span>
+</code></pre></div>
+<h2 id="extensions-for-spec-class-types">Extensions for spec-class types<a class="headerlink" href="#extensions-for-spec-class-types" title="Permanent link">&para;</a></h2>
+<p>Just as for the scalar methods, if the item stored within any of the collections
+above is a spec-class, then the <code>.with_&lt;attr_singular&gt;()</code> and
+<code>.transform_&lt;attr_singular&gt;()</code> method signatures are extended with to allow
+direct mutation of the attributes of the nested spec classes. The following
+example is for sequence containers but the logic is the same for all
+collections.</p>
+<div class="highlight"><pre><span></span><code><span class="nd">@spec_class</span>
+<span class="k">class</span> <span class="nc">Box</span><span class="p">:</span>
+    <span class="n">label</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">items</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">children</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="s2">&quot;Box&quot;</span><span class="p">]</span>
+
+<span class="n">help</span><span class="p">(</span><span class="n">Box</span><span class="p">()</span><span class="o">.</span><span class="n">with_child</span><span class="p">)</span>
+<span class="c1"># with_child(_item: __main__.Box = MISSING, *, _index: int = MISSING, _insert: bool = False, _inplace: bool = False, _if: bool = True, label: str = None, items: List[str] = None, children: List[__main__.Box] = None) method of __main__.Box instance</span>
+<span class="c1">#     Return a `Box` instance identical to this one except with an item added to or updated in `children`.</span>
+<span class="c1">#</span>
+<span class="c1">#     Args:</span>
+<span class="c1">#         _item: A new `Box` instance for children.</span>
+<span class="c1">#         _index: Index for which to insert or replace, depending on `insert`;</span>
+<span class="c1">#             if not provided, append.</span>
+<span class="c1">#         _insert: Insert item before children[index], otherwise replace this</span>
+<span class="c1">#             index.</span>
+<span class="c1">#         _inplace: Whether to perform change without first copying.</span>
+<span class="c1">#         _if: This action is only taken when `_if` is `True`. If it is `False`,</span>
+<span class="c1">#             this is a no-op.</span>
+<span class="c1">#         label: An optional new value for `child.label`.</span>
+<span class="c1">#         items: An optional new value for `child.items`.</span>
+<span class="c1">#         children: An optional new value for `child.children`.</span>
+<span class="c1">#     Returns:</span>
+<span class="c1">#         A reference to the mutated `Box` instance.</span>
+
+<span class="n">help</span><span class="p">(</span><span class="n">Box</span><span class="p">()</span><span class="o">.</span><span class="n">transform_child</span><span class="p">)</span>
+<span class="c1"># transform_child(_value_or_index: Union[__main__.Box, int], _transform: Callable = MISSING, *, _by_index: bool = MISSING, _inplace: bool = False, _if: bool = True, label: str = None, items: List[str] = None, childre</span>
+<span class="c1"># n: List[__main__.Box] = None) method of __main__.Box instance</span>
+<span class="c1">#     Return a `Box` instance identical to this one except with an item transformed in `children`.</span>
+<span class="c1">#</span>
+<span class="c1">#     Args:</span>
+<span class="c1">#         _value_or_index: The value to transform, or (if `by_index=True`) its</span>
+<span class="c1">#             index.</span>
+<span class="c1">#         _transform: A function that takes the old item as input, and returns</span>
+<span class="c1">#             the new item.</span>
+<span class="c1">#         _by_index: If True, value_or_index is the index of the item to</span>
+<span class="c1">#             transform.</span>
+<span class="c1">#         _inplace: Whether to perform change without first copying.</span>
+<span class="c1">#         _if: This action is only taken when `_if` is `True`. If it is `False`,</span>
+<span class="c1">#             this is a no-op.</span>
+<span class="c1">#         label: An optional transformer for `child.label`.</span>
+<span class="c1">#         items: An optional transformer for `child.items`.</span>
+<span class="c1">#         children: An optional transformer for `child.children`.</span>
+<span class="c1">#     Returns:</span>
+<span class="c1">#         A reference to the mutated `Box` instance.</span>
+</code></pre></div>
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+        
+          <a href="#" class="md-top md-icon" data-md-component="top" data-md-state="hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"/></svg>
+            Back to top
+          </a>
+        
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        
+        <a href="../scalars/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Scalar Methods" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Scalar Methods
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../../special_types/" class="md-footer__link md-footer__link--next" aria-label="Next: Special Types" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Special Types
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        
+          Made with
+          <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+            Material for MkDocs
+          </a>
+        
+        
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs", "navigation.top", "navigation.tracking", "toc.integrate"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../../assets/javascripts/workers/search.8397ff9e.min.js", "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.1e84347e.min.js"></script>
+      
+    
+  </body>
+</html>
