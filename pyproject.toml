@@ -112,3 +112,5 @@ exclude_lines = [
     "if TYPE_CHECKING:",
     "if sys.version_info >= \\(3, 11\\):",
 ]
+
+[tool.setuptools_scm]  # silence warning from setuptools_scm
