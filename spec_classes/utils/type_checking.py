@@ -6,6 +6,7 @@ from collections.abc import Sequence as SequenceMutator
 from collections.abc import Set as SetMutator
 from typing import (
     Any,
+    Literal,
     Mapping,
     Sequence,
     Set,
@@ -14,14 +15,6 @@ from typing import (
     Union,
     _GenericAlias,
 )
-
-# pylint: disable=protected-access
-from typing_extensions import Literal as LiteralExtension
-
-try:
-    from typing import Literal
-except ImportError:  # pragma: no cover
-    from typing_extensions import Literal  # pylint: disable=reimported
 
 
 def type_match(type_input: Type, type_reference: type) -> bool:
@@ -52,7 +45,7 @@ def check_type(value: Any, attr_type: Type) -> bool:
         if attr_type.__origin__ is Union:
             return any(check_type(value, type_) for type_ in attr_type.__args__)
 
-        if attr_type.__origin__ in (Literal, LiteralExtension):
+        if attr_type.__origin__ is Literal:
             return value in attr_type.__args__
 
         if (

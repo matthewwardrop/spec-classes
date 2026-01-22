@@ -2,9 +2,8 @@ import ast
 import functools
 import re
 import warnings
+from functools import cached_property
 from typing import Any, Callable, Optional, Type
-
-from cached_property import cached_property
 
 from .missing import MISSING
 

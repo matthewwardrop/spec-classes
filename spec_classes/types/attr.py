@@ -5,9 +5,8 @@ import dataclasses
 import functools
 import inspect
 from collections.abc import MutableMapping, MutableSequence, MutableSet
+from functools import cached_property
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, Type
-
-from cached_property import cached_property
 
 from spec_classes.utils.naming import get_singular_form
 from spec_classes.utils.type_checking import (
