@@ -202,21 +202,18 @@ class TestFramework:
             ).strip()
         )
 
-        assert (
-            spec_cls(
-                key="key",
-                list_values=[1, 2, 3],
-                dict_values={"a": 1, "b": 2},
-                recursive=spec_cls(key="nested"),
-                set_values={
-                    "a"
-                },  # sets are unordered, so we use one item to guarantee order
-            ).__repr__(indent=False)
-            == (
-                "Spec(key='key', scalar=MISSING, list_values=[1, 2, 3], dict_values={'a': 1, 'b': 2}, set_values={'a'}, "
-                "spec=MISSING, spec_list_items=MISSING, spec_dict_items=MISSING, keyed_spec_list_items=MISSING, keyed_spec_dict_items=MISSING, "
-                "keyed_spec_set_items=MISSING, recursive=Spec(key='nested', ...))"
-            )
+        assert spec_cls(
+            key="key",
+            list_values=[1, 2, 3],
+            dict_values={"a": 1, "b": 2},
+            recursive=spec_cls(key="nested"),
+            set_values={
+                "a"
+            },  # sets are unordered, so we use one item to guarantee order
+        ).__repr__(indent=False) == (
+            "Spec(key='key', scalar=MISSING, list_values=[1, 2, 3], dict_values={'a': 1, 'b': 2}, set_values={'a'}, "
+            "spec=MISSING, spec_list_items=MISSING, spec_dict_items=MISSING, keyed_spec_list_items=MISSING, keyed_spec_dict_items=MISSING, "
+            "keyed_spec_set_items=MISSING, recursive=Spec(key='nested', ...))"
         )
 
         with pytest.raises(
@@ -721,7 +718,7 @@ class TestFramework:
         class MySpec:
             a: int
 
-            def __new__(self, a=1):
+            def __new__(cls, a=1):
                 assert a == 2
                 return "hi"
 
@@ -732,7 +729,7 @@ class TestFramework:
         class MySpec:
             ANNOTATION_TYPES = {"my_str": str}
 
-            a: my_str  # noqa: F821; type defined by ANNOTATION_TYPES
+            a: my_str  # noqa: F821 ; type defined by ANNOTATION_TYPES
 
         assert MySpec.__spec_class__.annotations["a"] is str
 
@@ -744,7 +741,7 @@ class TestFramework:
                     "my_str": str,
                 }
 
-            a: my_str  # noqa: F821; type defined by ANNOTATION_TYPES
+            a: my_str  # noqa: F821 ; type defined by ANNOTATION_TYPES
 
         assert MySpec2.__spec_class__.annotations["a"] is str
 

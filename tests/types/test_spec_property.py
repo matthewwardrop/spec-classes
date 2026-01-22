@@ -1,4 +1,5 @@
 import re
+import time
 
 import pytest
 
@@ -26,8 +27,6 @@ class TestSpecProperty:
 
             @spec_property(cache=True)
             def cached_time(self):
-                import time
-
                 return time.time()
 
             @spec_property

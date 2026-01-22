@@ -6,6 +6,7 @@ from typing import Tuple
 
 import pytest
 
+from spec_classes import spec_class
 from spec_classes.utils.method_builder import MethodBuilder
 
 
@@ -83,8 +84,6 @@ class TestMethodBuilder:
             m.with_args({"a": "A value."})
 
     def test_with_spec_attrs_for(self):
-        from spec_classes import spec_class
-
         @spec_class(init_overflow_attr="overflow")
         class Spec:
             a: int

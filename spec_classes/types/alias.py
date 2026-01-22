@@ -128,6 +128,7 @@ class Alias:
             )
         except AttributeError:
             if self.fallback is not MISSING:
+                # ruff: noqa: PLC0415
                 from spec_classes.utils.mutation import protect_via_deepcopy
 
                 return protect_via_deepcopy(self.fallback)

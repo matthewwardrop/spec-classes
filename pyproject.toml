@@ -17,16 +17,13 @@ classifiers=[
     "Intended Audience :: Information Technology",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
 ]
-requires-python = ">=3.7.2"
+requires-python = ">=3.10"
 dependencies = [
     "cached-property>=1.5.2",
     "inflect>=5.0.0",
@@ -61,9 +58,9 @@ include = [
 
 [tool.hatch.envs.default]
 dependencies = [
-    "ruff==0.4.7",
-    "pytest-cov==4.0.0",
-    "pytest==7.2.0",
+    "ruff==0.14.13",
+    "pytest-cov==7.0.0",
+    "pytest==9.0.2",
 ]
 
 [tool.hatch.envs.default.scripts]
@@ -76,7 +73,7 @@ linters = [
 format = "ruff format spec_classes tests"
 
 [[tool.hatch.envs.test.matrix]]
-python = ["37", "38", "39", "310", "311", "312"]
+python = ["310", "311", "312", "313", "314"]
 
 # Linting configuration
 
@@ -101,6 +98,9 @@ ignore = [
     "PLR09",
     "PLR2004",
 ]
+
+[tool.ruff.lint.per-file-ignores]
+"**/{tests,docs,tools}/*" = ["E741"]
 
 # Coverage configuration
 

@@ -417,7 +417,7 @@ class MethodBuilder:
             textwrap.dedent(
                 f"""
             from __future__ import annotations
-            def {self.name}{str_signature} { '-> ' + repr(type_label(self.method_return_type)) if self.method_return_type is not None else ""}:
+            def {self.name}{str_signature} {"-> " + repr(type_label(self.method_return_type)) if self.method_return_type is not None else ""}:
                 {"validate_attrs(kwargs)" if self.method_args_virtual and self.check_attrs_match_sig else ""}
                 return implementation({self._method_signature_to_implementation_call(self._signature)})
         """
@@ -551,7 +551,7 @@ class MethodBuilder:
                 defaults[p.name] = p.default
             else:
                 out.append(param)
-        return f'({", ".join(out)})', defaults
+        return f"({', '.join(out)})", defaults
 
     @staticmethod
     def _method_signature_to_implementation_call(signature: Signature) -> str:
