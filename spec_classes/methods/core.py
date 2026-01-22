@@ -297,7 +297,7 @@ class EqMethod(MethodDescriptor):
     method_name = "__eq__"
 
     @staticmethod
-    def eq(self, other: Any) -> bool:
+    def eq(self, other: Any) -> bool:  # noqa: PLW0211
         __tracebackhide__ = True
         if not isinstance(other, self.__class__):
             return False
@@ -329,7 +329,7 @@ class ReprMethod(MethodDescriptor):
 
     @staticmethod
     def repr(
-        self,
+        self,  # noqa: PLW0211
         include_attrs: Iterable[str] = None,
         exclude_attrs: Iterable[str] = None,
         indent: Optional[bool] = None,
@@ -468,7 +468,7 @@ class DeepCopyMethod(MethodDescriptor):
     method_name = "__deepcopy__"
 
     @staticmethod
-    def deepcopy(self, memo):
+    def deepcopy(self, memo):  # noqa: PLW0211
         __tracebackhide__ = True
         if self.__spec_class__.frozen or self.__spec_class__.do_not_copy:
             return self

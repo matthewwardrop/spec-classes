@@ -66,13 +66,13 @@ def check_type(value: Any, attr_type: Type) -> bool:
                 for item in value:
                     if not check_type(item, attr_type.__args__[0]):
                         return False
-            elif attr_type.__origin__ == dict:
+            elif attr_type.__origin__ is dict:
                 for k, v in value.items():
                     if not check_type(k, attr_type.__args__[0]):
                         return False
                     if not check_type(v, attr_type.__args__[1]):
                         return False
-            elif attr_type.__origin__ == tuple:
+            elif attr_type.__origin__ is tuple:
                 if len(attr_type.__args__) == 2 and attr_type.__args__[1] is Ellipsis:
                     for item in value:
                         if not check_type(item, attr_type.__args__[0]):
@@ -83,7 +83,7 @@ def check_type(value: Any, attr_type: Type) -> bool:
                     for i, item in enumerate(value):
                         if not check_type(item, attr_type.__args__[i]):
                             return False
-            elif attr_type.__origin__ == type:
+            elif attr_type.__origin__ is type:
                 if not issubclass(value, attr_type.__args__[0]):
                     return False
 

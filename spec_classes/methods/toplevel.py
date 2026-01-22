@@ -23,7 +23,7 @@ class UpdateMethod(MethodDescriptor):
 
     @staticmethod
     def update(
-        self,
+        self,  # noqa: PLW0211
         _new_value=MISSING,
         *,
         _inplace: bool = False,
@@ -92,7 +92,7 @@ class TransformMethod(MethodDescriptor):
 
     @staticmethod
     def transform(
-        self,
+        self,  # noqa: PLW0211
         _transform=None,
         *,
         _inplace: bool = False,
@@ -157,7 +157,7 @@ class ResetMethod(MethodDescriptor):
 
     @staticmethod
     def reset(
-        self,
+        self,  # noqa: PLW0211
         *,
         _inplace: bool = False,
         _if: bool = True,

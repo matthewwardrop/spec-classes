@@ -218,6 +218,7 @@ class Attr:
 
     @cached_property
     def collection_mutator_type(self) -> Optional[Type[CollectionAttrMutator]]:
+        # ruff: noqa: PLC0415
         from spec_classes.collections import (
             MappingMutator,
             SequenceMutator,
@@ -289,7 +290,7 @@ class Attr:
         Returns:
             The default value to use for the nominated class.
         """
-        from spec_classes.utils.mutation import protect_via_deepcopy
+        from spec_classes.utils.mutation import protect_via_deepcopy  # noqa: PLC0415
 
         for cls in spec_cls.mro():
             if cls is self.owner:
@@ -312,7 +313,7 @@ class Attr:
         necessary. It will always be mutate-safe, so you can use it without
         further copying.
         """
-        from spec_classes.utils.mutation import protect_via_deepcopy
+        from spec_classes.utils.mutation import protect_via_deepcopy  # noqa: PLC0415
 
         if self.is_masked:
             return MISSING

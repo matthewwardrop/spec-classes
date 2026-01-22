@@ -115,6 +115,7 @@ class KeyedBase(Generic[ItemType, KeyType]):
         return True
 
 
+# ruff: noqa: PLW1641
 class KeyedList(KeyedBase[ItemType, KeyType], MutableSequence):  # pylint: disable=too-many-ancestors
     """
     A list-like object that can also look up items by key. The computational
@@ -246,6 +247,7 @@ class KeyedList(KeyedBase[ItemType, KeyType], MutableSequence):  # pylint: disab
         return f"{type_label(self._type)}({repr(self._list)})"
 
 
+# ruff: noqa: PLW1641
 class KeyedSet(MutableSet, KeyedBase[ItemType, KeyType]):  # pylint: disable=too-many-ancestors
     """
     A set-like object that can also look up items by key. The computational
