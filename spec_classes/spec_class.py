@@ -5,6 +5,7 @@ import inspect
 import typing
 import warnings
 from collections import defaultdict
+from functools import cached_property
 from threading import RLock
 from typing import (
     Any,
@@ -20,7 +21,6 @@ from typing import (
     overload,
 )
 
-from cached_property import cached_property
 from typing_extensions import dataclass_transform
 
 from spec_classes.methods import SCALAR_METHODS, TOPLEVEL_METHODS

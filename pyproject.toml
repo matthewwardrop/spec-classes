@@ -25,7 +25,6 @@ classifiers=[
 ]
 requires-python = ">=3.10"
 dependencies = [
-    "cached-property>=1.5.2",
     "inflect>=5.0.0",
     "lazy-object-proxy>=1.5.0",
     "typing-extensions>=4.1",

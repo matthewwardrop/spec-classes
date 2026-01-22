@@ -1,7 +1,17 @@
 import sys
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, TypeVar, Union
-
-from typing_extensions import Literal
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from spec_classes import spec_class
 from spec_classes.types import KeyedList, KeyedSet

@@ -3,9 +3,9 @@
 import copy
 import functools
 import inspect
+from functools import cached_property
 from typing import Callable
 
-from cached_property import cached_property
 from lazy_object_proxy import Proxy
 
 from spec_classes.types import MISSING, Attr

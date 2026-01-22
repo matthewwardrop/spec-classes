@@ -1,9 +1,8 @@
 import inspect
 import warnings
 from abc import abstractmethod
+from functools import cached_property
 from typing import Tuple
-
-from cached_property import cached_property
 
 from spec_classes.errors import NestedAttributeError
 from spec_classes.types.missing import EMPTY, MISSING, UNCHANGED

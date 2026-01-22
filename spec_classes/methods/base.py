@@ -1,8 +1,7 @@
 import types
 from abc import ABCMeta, abstractmethod
+from functools import cached_property
 from typing import Any, Callable, Type
-
-from cached_property import cached_property
 
 from spec_classes.types import Attr
 
