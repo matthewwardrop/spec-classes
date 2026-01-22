@@ -582,30 +582,52 @@ class SpecClassMetadata:
             spec_cls: The spec-class for which a `SpecClassMetadata` instance
                 should be generated.
         """
-        metadata = MISSING
-        for klass in spec_cls.mro()[1:]:
-            if klass.__dict__.get("__spec_class__", MISSING) is not MISSING:
-                metadata = klass.__spec_class__
-                break
-        if metadata is MISSING:
+        parent_metadata = [
+            parent.__spec_class__
+            for parent in reversed(spec_cls.__bases__)
+            if (parent_metadatum := getattr(parent, "__spec_class__", MISSING))
+            is not MISSING
+        ]
+
+        # No parents are spec-classes; return empty metadata
+        if not parent_metadata:
             return cls(
                 owner=spec_cls, post_init=getattr(spec_cls, "__post_init__", None)
             )
 
-        attrs_inherited = {}
+        inherited_attrs = {}
+        inherited_keys: list[str] = []
+        inherited_overflow_attrs: list[str] = []
 
-        for parent in reversed(spec_cls.__bases__):
-            parent_metadata = getattr(parent, "__spec_class__", None)
-            if parent_metadata:
-                attrs_inherited.update(parent_metadata.attrs)
+        # Iterating from least to highest priority in MRO, collecting overrides
+        for parent_metadatum in parent_metadata:
+            inherited_attrs.update(parent_metadatum.attrs)
+            if parent_metadatum.key:
+                inherited_keys.append(parent_metadatum.key)
+            if parent_metadatum.init_overflow_attr:
+                inherited_overflow_attrs.append(parent_metadatum.init_overflow_attr)
+
+        if len(set(inherited_keys)) > 1:
+            warnings.warn(
+                f"Spec-class {spec_cls.__name__} inherits conflicting `key` "
+                f"attributes from parents: {inherited_keys}. Using '{inherited_keys[-1]}'.",
+            )
+        if len(set(inherited_overflow_attrs)) > 1:
+            warnings.warn(
+                f"Spec-class {spec_cls.__name__} inherits conflicting "
+                f"`init_overflow_attr` attributes from parents: {inherited_overflow_attrs}. "
+                f"Using '{inherited_overflow_attrs[-1]}'.",
+            )
 
         return cls(
             owner=spec_cls,
-            key=metadata.key,
-            init_overflow_attr=metadata.init_overflow_attr,
-            frozen=metadata.frozen,
+            key=inherited_keys[-1] if inherited_keys else None,
+            init_overflow_attr=inherited_overflow_attrs[-1]
+            if inherited_overflow_attrs
+            else None,
+            frozen=False,  # We always reset this
             do_not_copy=False,  # We always reset this (but attributes inherited will not be copied unless overridden)
-            attrs=attrs_inherited,
+            attrs=inherited_attrs,
             post_init=getattr(spec_cls, "__post_init__", None),
         )
 
