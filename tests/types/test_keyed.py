@@ -1,4 +1,4 @@
-# flake8: noqa: E741; Short names are fine here in the tests.
+# ruff: noqa: E741 ; Short names are fine here in the tests.
 
 import sys
 

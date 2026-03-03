@@ -1132,3 +1132,18 @@ class TestFramework:
         # And spec-class methods should work
         instance2 = instance.with_spec_attr(25)
         assert instance2.spec_attr == 25
+
+    def test_inheritance_with_nested_types(self):
+        @spec_class
+        class A:
+            class Nested:
+                pass
+
+            nested: Nested
+
+        @spec_class
+        class B(A):
+            nested2: A.Nested
+
+        assert B.__spec_class__.attrs["nested"].type is A.Nested
+        assert B.__spec_class__.attrs["nested2"].type is A.Nested
