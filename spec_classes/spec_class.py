@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
+import itertools
 import typing
 import warnings
 from collections import defaultdict
@@ -276,7 +277,16 @@ class SpecClassBuilder:
         managed_attrs.extend(self.attrs)
 
         # Generate namespace of annotations (in addition to local class context)
-        annotation_namespace = {spec_cls.__name__: spec_cls, **vars(spec_cls)}
+        annotation_namespace = {
+            **{
+                attr_name: attr
+                for klass in reversed(spec_cls.mro())
+                for attr_name, attr in itertools.chain(
+                    vars(klass).items(), ((klass.__name__, klass),)
+                )
+                if inspect.isclass(attr)
+            },
+        }
         if hasattr(spec_cls, "ANNOTATION_TYPES"):
             spec_annotation_types = spec_cls.ANNOTATION_TYPES
             if callable(spec_annotation_types):
