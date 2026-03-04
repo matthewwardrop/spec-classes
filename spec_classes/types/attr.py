@@ -16,13 +16,14 @@ from typing import TYPE_CHECKING, Any
 
 from spec_classes.utils.naming import get_singular_form
 from spec_classes.utils.type_checking import (
+    check_type,
     get_collection_item_type,
     get_spec_class_for_type,
     type_label,
     type_match,
 )
 
-from .missing import MISSING
+from .missing import MISSING, SENTINEL
 
 if TYPE_CHECKING:  # pragma: no cover
     from spec_classes.collections.base import CollectionAttrMutator
@@ -90,6 +91,9 @@ class Attr:
             prepare_item: A optional callable used to cast new items into a
                 collection into the appropriate type for the collection. This
                 casting happens before type-checking.
+            namespace: The typing namespace to use when resolving the types of
+                this attribute (primarily useful for resolving recursive types,
+                since otherwise the type is already resolved).
 
         Derived attributes (cached):
             qualified_name: The name of the attribute to use in error logs,
@@ -157,6 +161,7 @@ class Attr:
         desc: str | None = None,
         do_not_copy: bool = False,
         invalidated_by: Iterable[str] | None = None,
+        namespace: dict[str, type] | None = None,
     ):
         # User-specified attributes
         if default is not MISSING and default_factory is not MISSING:
@@ -175,11 +180,11 @@ class Attr:
         self.desc = desc
         self.do_not_copy = do_not_copy
         self.invalidated_by = invalidated_by
-
         # Auto-populated attributes
         self.name: str = None
         self.type: type = None
         self.owner: type = None
+        self.namespace = namespace
         self.is_masked: bool = False
         self.helper_methods: Iterable[AttrMethodDescriptor] | None = None
         self.prepare: Callable[[Any], Any] | None = None
@@ -281,7 +286,25 @@ class Attr:
     def item_constructor(self) -> type | None:
         return self.item_spec_type_polymorphic or self.item_type
 
-    # Helpers
+    # Type checking helpers
+
+    def check_type(self, value: Any, type: type | None = SENTINEL) -> bool:
+        """
+        Check whether `value` is valid for this attribute based on its type.
+
+        Args:
+            value: The value to check.
+        """
+
+        if type is SENTINEL:
+            type = self.type
+
+        if type is None:
+            return True
+
+        return check_type(value, type, namespace=self.namespace)
+
+    # Other helpers
     def lookup_default_value(self, spec_cls: type) -> Any:
         """
         Look up the correct default value for this attribute for `instance`.

@@ -28,7 +28,7 @@ class MappingMutator(CollectionAttrMutator):
         return value_or_index, self.collection.get(value_or_index, MISSING)
 
     def _inserter(self, index, item):
-        if not check_type(item, self.attr_spec.item_type):
+        if not self.attr_spec.check_type(item, self.attr_spec.item_type):
             raise ValueError(
                 f"Attempted to add an invalid item `{repr(item)}` to `{self.attr_spec.qualified_name}`. Expected item of type `{type_label(self.attr_spec.item_type)}`."
             )

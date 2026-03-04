@@ -7,7 +7,9 @@ from collections.abc import Sequence as SequenceMutator
 from collections.abc import Set as SetMutator
 from typing import (
     Any,
+    ForwardRef,
     Literal,
+    NewType,
     TypeVar,
     Union,
     _GenericAlias,
@@ -25,25 +27,45 @@ def type_match(type_input: type, type_reference: type) -> bool:
     return isinstance(type_input, type) and issubclass(type_input, type_reference)
 
 
-def check_type(value: Any, attr_type: type) -> bool:
+def check_type(value: Any, attr_type: type, *, namespace: dict | None = None) -> bool:
     """
     Check whether a given object `value` matches the provided `attr_type`.
     """
     if attr_type is Any or isinstance(attr_type, TypeVar):
         return True
 
+    if isinstance(attr_type, (str, ForwardRef)):
+        name = attr_type if isinstance(attr_type, str) else attr_type.__forward_arg__
+        try:
+            attr_type = eval(name, namespace)
+        except Exception:
+            return True  # Unresolvable forward reference, treat as Any
+        return check_type(value, attr_type, namespace=namespace)
+
+    if sys.version_info >= (3, 12) and isinstance(attr_type, types.TypeAliasType):
+        return check_type(value, attr_type.__value__, namespace=namespace)
+
+    if hasattr(attr_type, "__supertype__"):  # typing.NewType
+        return check_type(value, attr_type.__supertype__, namespace=namespace)
+
     if attr_type is float:
         attr_type = numbers.Real
 
     if sys.version_info >= (3, 10) and isinstance(attr_type, types.UnionType):
-        return any(check_type(value, type_) for type_ in attr_type.__args__)
+        return any(
+            check_type(value, type_, namespace=namespace)
+            for type_ in attr_type.__args__
+        )
 
     if hasattr(attr_type, "__origin__"):  # we are dealing with a `typing` object.
         if (
             isinstance(attr_type, types.UnionType)
             or getattr(attr_type, "__origin__", None) is Union
         ):
-            return any(check_type(value, type_) for type_ in attr_type.__args__)
+            return any(
+                check_type(value, type_, namespace=namespace)
+                for type_ in attr_type.__args__
+            )
 
         if attr_type.__origin__ is Literal:
             return value in attr_type.__args__
@@ -57,24 +79,28 @@ def check_type(value: Any, attr_type: type) -> bool:
                 return False
             if attr_type.__origin__ in (list, set):
                 for item in value:
-                    if not check_type(item, attr_type.__args__[0]):
+                    if not check_type(item, attr_type.__args__[0], namespace=namespace):
                         return False
             elif attr_type.__origin__ is dict:
                 for k, v in value.items():
-                    if not check_type(k, attr_type.__args__[0]):
+                    if not check_type(k, attr_type.__args__[0], namespace=namespace):
                         return False
-                    if not check_type(v, attr_type.__args__[1]):
+                    if not check_type(v, attr_type.__args__[1], namespace=namespace):
                         return False
             elif attr_type.__origin__ is tuple:
                 if len(attr_type.__args__) == 2 and attr_type.__args__[1] is Ellipsis:
                     for item in value:
-                        if not check_type(item, attr_type.__args__[0]):
+                        if not check_type(
+                            item, attr_type.__args__[0], namespace=namespace
+                        ):
                             return False
                 else:
                     if len(value) != len(attr_type.__args__):
                         return False
                     for i, item in enumerate(value):
-                        if not check_type(item, attr_type.__args__[i]):
+                        if not check_type(
+                            item, attr_type.__args__[i], namespace=namespace
+                        ):
                             return False
             elif attr_type.__origin__ is type:
                 if not issubclass(value, attr_type.__args__[0]):
@@ -143,6 +169,12 @@ def type_label(attr_type: type) -> str:
     """
     if attr_type is type(None):
         return "None"
+    if isinstance(attr_type, str):
+        return attr_type
+    if isinstance(attr_type, NewType):
+        return attr_type.__name__
+    if isinstance(attr_type, ForwardRef):
+        return attr_type.__forward_arg__
     if (
         sys.version_info >= (3, 10)
         and isinstance(attr_type, types.UnionType)

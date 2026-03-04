@@ -7,7 +7,7 @@ from spec_classes.errors import NestedAttributeError
 from spec_classes.types.missing import EMPTY, MISSING, UNCHANGED
 from spec_classes.utils.mutation import prepare_attr_value
 from spec_classes.utils.stackdepth import get_spec_classes_depth
-from spec_classes.utils.type_checking import check_type, type_label
+from spec_classes.utils.type_checking import type_label
 
 
 class _spec_property_base:
@@ -270,7 +270,7 @@ class spec_property(_spec_property_base):
         if spec_metadata and self.attr_name in spec_metadata.attrs:
             attr_spec = spec_metadata.attrs[self.attr_name]
             value = prepare_attr_value(attr_spec, instance, value)
-            if not check_type(value, attr_spec.type):
+            if not attr_spec.check_type(value):
                 raise ValueError(
                     f"Property override for `{owner.__name__ if owner else ''}.{self.attr_name or ''}` returned an invalid type [got `{repr(value)}`; expecting `{type_label(attr_spec.type)}`]."
                 )

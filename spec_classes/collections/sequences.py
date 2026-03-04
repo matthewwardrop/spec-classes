@@ -32,7 +32,9 @@ class SequenceMutator(CollectionAttrMutator):
             return None, MISSING
 
         if by_index is MISSING:
-            by_index = not check_type(value_or_index, self.attr_spec.item_type)
+            by_index = not self.attr_spec.check_type(
+                value_or_index, self.attr_spec.item_type
+            )
 
         if by_index:
             try:
@@ -56,7 +58,7 @@ class SequenceMutator(CollectionAttrMutator):
         return (value_index, value_or_index)
 
     def _inserter(self, index, item, insert=False):  # pylint: disable=arguments-differ
-        if not check_type(item, self.attr_spec.item_type):
+        if not self.attr_spec.check_type(item, self.attr_spec.item_type):
             raise ValueError(
                 f"Attempted to add an invalid item `{repr(item)}` to `{self.attr_spec.qualified_name}`. Expected item of type `{type_label(self.attr_spec.item_type)}`."
             )
