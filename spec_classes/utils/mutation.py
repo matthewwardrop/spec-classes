@@ -114,7 +114,7 @@ def mutate_attr(
 
         # If attribute is managed by spec classes, prepare it and check the type
         attr_spec = metadata.attrs.get(attr)
-        if attr_spec and type_check and not check_type(value, attr_spec.type):
+        if attr_spec and type_check and not attr_spec.check_type(value):
             raise TypeError(
                 f"Attempt to set `{obj.__class__.__name__}.{attr}` with an invalid type [got `{repr(value)}`; expecting `{type_label(attr_spec.type)}`]."
             )

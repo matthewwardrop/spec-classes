@@ -1,7 +1,11 @@
+import sys
+import types
 from collections.abc import Callable
 from typing import (
     Any,
+    ForwardRef,
     Literal,
+    NewType,
     Optional,
     TypeVar,
     Union,
@@ -85,6 +89,31 @@ class TestTypeChecking:
         assert not check_type(str, type[MyType])
         assert check_type([1, "a"], list[str | int])
 
+    def test_recursive_and_alias_types(self):
+        # NewType
+        UserId = NewType("UserId", int)
+        assert check_type(10, UserId)
+        assert not check_type("not an int", UserId)
+
+        # Recursive type alias resolved via namespace
+        MyType = str | list["MyType"]
+        namespace = {"MyType": MyType}
+        assert check_type("string", MyType, namespace=namespace)
+        assert check_type(["string", ["nested"]], MyType, namespace=namespace)
+        assert not check_type(10, MyType, namespace=namespace)
+        assert not check_type(["string", [10]], MyType, namespace=namespace)
+
+        # Unresolved forward references are treated as Any
+        if sys.version_info <= (3, 10):
+            assert check_type("anything", "UnresolvedType")
+            assert check_type(42, ForwardRef("UnresolvedType"))
+
+        # Python 3.12+ TypeAliasType
+        if sys.version_info >= (3, 12):
+            Vector = types.TypeAliasType("Vector", list[float])
+            assert check_type([1.0, 2.0], Vector)
+            assert not check_type(["a", "b"], Vector)
+
     def test_get_collection_item_type(self):
         assert get_collection_item_type(list) is Any
         assert get_collection_item_type(list) is Any
@@ -116,7 +145,7 @@ class TestTypeChecking:
         assert type_label(list[str]) == "list[str]"
         assert type_label(KeyedList[KeyedSpec, str]) == "KeyedList[KeyedSpec, str]"
         assert type_label(KeyedSet[KeyedSpec, str]) == "KeyedSet[KeyedSpec, str]"
-        assert type_label("") == "str"
+        assert type_label("forward-ref") == "forward-ref"
         assert type_label(KeyedList[KeyedSpec, str]()) == "KeyedList[KeyedSpec, str]"
         assert type_label(Any) == "Any"
         assert type_label(Union[Any, dict[str, int]]) == "Any | dict[str, int]"  # noqa

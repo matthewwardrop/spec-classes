@@ -7,7 +7,6 @@ from spec_classes.methods.base import AttrMethodDescriptor
 from spec_classes.types import MISSING, Attr
 from spec_classes.utils.mutation import mutate_value, protect_via_deepcopy
 from spec_classes.utils.type_checking import (
-    check_type,
     type_instantiate,
 )
 
@@ -89,8 +88,8 @@ class CollectionAttrMutator(metaclass=ABCMeta):
         if (  # Convert to spec-class if key was provided.
             self.attr_spec.item_spec_key_type
             and new_item is not MISSING
-            and not check_type(new_item, self.attr_spec.item_type)
-            and check_type(new_item, self.attr_spec.item_spec_key_type)
+            and not self.attr_spec.check_type(new_item, self.attr_spec.item_type)
+            and self.attr_spec.check_type(new_item, self.attr_spec.item_spec_key_type)
         ):
             new_item = self.attr_spec.item_spec_type(new_item)
         return new_item
@@ -158,7 +157,7 @@ class CollectionAttrMutator(metaclass=ABCMeta):
         __tracebackhide__ = True
         if self.collection is None or self.collection is MISSING:
             self.collection = self._create_collection()
-        if not check_type(self.collection, self.attr_spec.type):
+        if not self.attr_spec.check_type(self.collection):
             items = self.collection
             self.collection = self._create_collection()
             self.add_items(items)

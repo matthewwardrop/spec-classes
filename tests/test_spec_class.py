@@ -9,7 +9,7 @@ import textwrap
 import warnings
 from collections.abc import Callable
 from types import ModuleType
-from typing import Any
+from typing import Any, NewType
 
 import pytest
 
@@ -1147,3 +1147,40 @@ class TestFramework:
 
         assert B.__spec_class__.attrs["nested"].type is A.Nested
         assert B.__spec_class__.attrs["nested2"].type is A.Nested
+
+    def test_recursive_and_alias_types(self):
+        @spec_class(bootstrap=True)
+        class A:
+            MyType = str | list["MyType"]
+            UserId = NewType("UserId", int)
+
+            value: MyType
+            user_id: UserId
+
+        assert A(value="string").value == "string"
+        assert A(value=["string", ["nested"]]).value == ["string", ["nested"]]
+        assert A(user_id=10).user_id == 10
+
+        with pytest.raises(
+            TypeError,
+            match=re.escape(
+                "Attempt to set `A.value` with an invalid type [got `10`; expecting `str | list[MyType]`]."
+            ),
+        ):
+            A(value=10)
+
+        with pytest.raises(
+            TypeError,
+            match=re.escape(
+                "Attempt to set `A.value` with an invalid type [got `['string', [10]]`; expecting `str | list[MyType]`]."
+            ),
+        ):
+            A(value=["string", [10]])
+
+        with pytest.raises(
+            TypeError,
+            match=re.escape(
+                "Attempt to set `A.user_id` with an invalid type [got `'not an int'`; expecting `UserId`]."
+            ),
+        ):
+            A(user_id="not an int")

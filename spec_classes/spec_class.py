@@ -3,6 +3,7 @@ from __future__ import annotations
 import dataclasses
 import inspect
 import itertools
+import sys
 import typing
 import warnings
 from collections import defaultdict
@@ -278,13 +279,13 @@ class SpecClassBuilder:
 
         # Generate namespace of annotations (in addition to local class context)
         annotation_namespace = {
+            **getattr(sys.modules.get(spec_cls.__module__, None), "__dict__", {}),
             **{
                 attr_name: attr
                 for klass in reversed(spec_cls.mro())
                 for attr_name, attr in itertools.chain(
                     vars(klass).items(), ((klass.__name__, klass),)
                 )
-                if inspect.isclass(attr)
             },
         }
         if hasattr(spec_cls, "ANNOTATION_TYPES"):
@@ -327,6 +328,7 @@ class SpecClassBuilder:
                     attr_spec.type,
                     do_not_copy=do_not_copy,
                     owner=attr_spec.owner,
+                    namespace=attr_spec.namespace,
                 )
 
         # Generate new `Attr` instances for each new (or overridden) attribute
@@ -340,6 +342,7 @@ class SpecClassBuilder:
                     do_not_copy=self.do_not_copy
                     if isinstance(self.do_not_copy, bool)
                     else attr in self.do_not_copy,
+                    namespace=annotation_namespace,
                 )
                 for attr in managed_attrs
             }
@@ -353,6 +356,7 @@ class SpecClassBuilder:
                 self.key,
                 attr_types[self.key],
                 helpers=False,
+                namespace=annotation_namespace,
             )
 
         # Check if any collection attributes' singular forms overlap with
@@ -401,6 +405,7 @@ class SpecClassBuilder:
         do_not_copy=False,
         owner=None,
         helpers=True,
+        namespace=None,
     ):
         owner = owner or spec_cls
         with warnings.catch_warnings():
@@ -416,7 +421,12 @@ class SpecClassBuilder:
             )
             owner = spec_cls  # If an Attr or Field was declared, this spec-class should own the attribute.
         attr_spec = Attr.from_attr_value(
-            attr, attr_value, type=attr_type, do_not_copy=do_not_copy, owner=owner
+            attr,
+            attr_value,
+            type=attr_type,
+            do_not_copy=do_not_copy,
+            owner=owner,
+            namespace=namespace,
         )
 
         # Add helper methods
