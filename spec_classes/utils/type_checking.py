@@ -13,6 +13,8 @@ from typing import (
     TypeVar,
     Union,
     _GenericAlias,
+    get_type_hints,
+    is_typeddict,
 )
 
 
@@ -50,6 +52,25 @@ def check_type(value: Any, attr_type: type, *, namespace: dict | None = None) ->
 
     if attr_type is float:
         attr_type = numbers.Real
+
+    if is_typeddict(attr_type):
+        if not isinstance(value, dict):
+            return False
+        try:
+            hints = get_type_hints(attr_type, localns=namespace)
+        except Exception:
+            hints = attr_type.__annotations__
+        if not attr_type.__required_keys__.issubset(value.keys()):
+            return False
+        if not set(value.keys()).issubset(
+            attr_type.__required_keys__ | attr_type.__optional_keys__
+        ):
+            return False
+        return all(
+            check_type(v, hints[k], namespace=namespace)
+            for k, v in value.items()
+            if k in hints
+        )
 
     if sys.version_info >= (3, 10) and isinstance(attr_type, types.UnionType):
         return any(

@@ -7,6 +7,7 @@ from typing import (
     Literal,
     NewType,
     Optional,
+    TypedDict,
     TypeVar,
     Union,
 )
@@ -88,6 +89,29 @@ class TestTypeChecking:
         assert not check_type({1, 2}, set[str])
         assert not check_type(str, type[MyType])
         assert check_type([1, "a"], list[str | int])
+
+    def test_typeddict(self):
+        class Movie(TypedDict):
+            title: str
+            year: int
+
+        class PartialMovie(TypedDict, total=False):
+            title: str
+            year: int
+
+        assert check_type({"title": "Blade Runner", "year": 1982}, Movie)
+        assert not check_type({"title": "Blade Runner"}, Movie)  # missing required key
+        assert not check_type(
+            {"title": "Blade Runner", "year": 1982, "extra": True}, Movie
+        )  # extra key
+        assert not check_type(
+            {"title": "Blade Runner", "year": "1982"}, Movie
+        )  # wrong value type
+        assert not check_type("not a dict", Movie)
+
+        assert check_type({"title": "Blade Runner"}, PartialMovie)  # optional keys
+        assert check_type({}, PartialMovie)  # all optional
+        assert not check_type({"title": 42}, PartialMovie)  # wrong value type
 
     def test_recursive_and_alias_types(self):
         # NewType
