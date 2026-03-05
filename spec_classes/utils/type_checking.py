@@ -7,6 +7,7 @@ from collections.abc import Mapping, Sequence
 from collections.abc import Sequence as SequenceMutator
 from collections.abc import Set as SetMutator
 from typing import (
+    Annotated,
     Any,
     ForwardRef,
     Literal,
@@ -34,6 +35,9 @@ def check_type(value: Any, attr_type: type, *, namespace: dict | None = None) ->
     """
     Check whether a given object `value` matches the provided `attr_type`.
     """
+    if typing.get_origin(attr_type) is Annotated:
+        attr_type = attr_type.__args__[0]
+
     if attr_type is Any or isinstance(attr_type, TypeVar):
         return True
 
@@ -92,11 +96,11 @@ def check_type(value: Any, attr_type: type, *, namespace: dict | None = None) ->
         if attr_type.__origin__ is Literal:
             return value in attr_type.__args__
 
-        if (
-            isinstance(attr_type, _GenericAlias)
-            or sys.version_info >= (3, 9)
-            and isinstance(attr_type, types.GenericAlias)
-        ):
+        if isinstance(attr_type, (_GenericAlias, types.GenericAlias)):
+            # Check if nested alias (e.g. Annotated[dict[str, int], ...]), and if
+            # so move to most nested annotated type (e.g. dict[str, int])
+            while isinstance(attr_type.__origin__, (_GenericAlias, types.GenericAlias)):
+                attr_type = attr_type.__origin__
             if not isinstance(value, attr_type.__origin__):
                 return False
             if attr_type.__origin__ in (list, set):
@@ -142,6 +146,8 @@ def get_collection_item_type(container_type: type) -> type:
     Return the type of object inside a typing container (List, Set, Dict),
     or `None` if this isn't annotated.
     """
+    if typing.get_origin(container_type) is Annotated:
+        container_type = container_type.__args__[0]
     if not hasattr(container_type, "__args__"):  # i.e. this is not a `typing` container
         return Any
 
@@ -166,6 +172,8 @@ def get_spec_class_for_type(attr_type: type, allow_polymorphic=False) -> type | 
     polymorphic type. If there is not exactly one spec class type, `None` is
     returned.
     """
+    if typing.get_origin(attr_type) is Annotated:
+        attr_type = attr_type.__args__[0]
     if hasattr(attr_type, "__spec_class__"):
         return attr_type
     if allow_polymorphic and (
@@ -189,6 +197,8 @@ def type_label(attr_type: type) -> str:
     `attr_type` points to a `spec_cls` decorated type, we don't make this
     method general.
     """
+    if typing.get_origin(attr_type) is Annotated:
+        attr_type = attr_type.__args__[0]
     if attr_type is type(None):
         return "None"
     if isinstance(attr_type, str):
