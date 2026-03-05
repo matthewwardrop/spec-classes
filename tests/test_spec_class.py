@@ -9,7 +9,7 @@ import textwrap
 import warnings
 from collections.abc import Callable
 from types import ModuleType
-from typing import Any, NewType
+from typing import Annotated, Any, NewType
 
 import pytest
 
@@ -122,7 +122,7 @@ class TestFramework:
         class Item:
             x: str
 
-        assert Item.__annotations__ == {"x": "str"}
+        assert Item.__annotations__ == {"x": int}
         assert Item.__spec_class__.annotations == {"x": int}
 
         with pytest.raises(TypeError):
@@ -1143,7 +1143,8 @@ class TestFramework:
 
         @spec_class
         class B(A):
-            nested2: A.Nested
+            ANNOTATION_TYPES = {"Nested": A.Nested}
+            nested2: Nested  # noqa: F821
 
         assert B.__spec_class__.attrs["nested"].type is A.Nested
         assert B.__spec_class__.attrs["nested2"].type is A.Nested
@@ -1154,9 +1155,11 @@ class TestFramework:
             MyType = str | list["MyType"]
             UserId = NewType("UserId", int)
 
+            a: A
             value: MyType
             user_id: UserId
 
+        assert A(a=A()).a == A()
         assert A(value="string").value == "string"
         assert A(value=["string", ["nested"]]).value == ["string", ["nested"]]
         assert A(user_id=10).user_id == 10
@@ -1184,3 +1187,19 @@ class TestFramework:
             ),
         ):
             A(user_id="not an int")
+
+    def test_annotated_types(self):
+        @spec_class(bootstrap=True)
+        class A:
+            a: Annotated[int, "annotation"]
+
+        assert A.__annotations__["a"] == Annotated[int, "annotation"]
+        assert A(a=10).a == 10
+
+        with pytest.raises(
+            TypeError,
+            match=re.escape(
+                "Attempt to set `A.a` with an invalid type [got `'string'`; expecting `int`]."
+            ),
+        ):
+            A(a="string")

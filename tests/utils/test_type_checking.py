@@ -2,6 +2,7 @@ import sys
 import typing
 from collections.abc import Callable
 from typing import (
+    Annotated,
     Any,
     ForwardRef,
     Literal,
@@ -90,6 +91,9 @@ class TestTypeChecking:
         assert not check_type(str, type[MyType])
         assert check_type([1, "a"], list[str | int])
 
+        assert check_type(10, Annotated[int, "annotation"])
+        assert not check_type("string", Annotated[int, "annotation"])
+
     def test_typeddict(self):
         class Movie(TypedDict):
             title: str
@@ -150,6 +154,7 @@ class TestTypeChecking:
         assert get_collection_item_type(KeyedSet[KeyedSpec, str]) is KeyedSpec
         assert get_collection_item_type(TypeVar("typed_var")) is Any  # noqa: F821
         assert get_collection_item_type(list[TypeVar("typed_var")]) is Any  # noqa: F821
+        assert get_collection_item_type(Annotated[list[str], "annotation"]) is str
 
     def test_get_spec_class_for_type(self):
         assert get_spec_class_for_type(Spec) is Spec
@@ -162,6 +167,15 @@ class TestTypeChecking:
         assert get_spec_class_for_type(list) is None
         assert get_spec_class_for_type(list) is None
         assert get_spec_class_for_type(list[Spec]) is None
+
+        assert get_spec_class_for_type(Annotated[Spec, "annotation"]) is Spec
+        assert get_spec_class_for_type(Annotated[str | Spec, "annotation"]) is None
+        assert (
+            get_spec_class_for_type(
+                Annotated[str | Spec, "annotation"], allow_polymorphic=True
+            )
+            is Spec
+        )
 
     def test_attr_type_label(self):
         assert type_label(str) == "str"
@@ -179,6 +193,7 @@ class TestTypeChecking:
         assert type_label(Union[str, int]) == "str | int"  # noqa
         assert type_label(Optional[int]) == "int | None"  # noqa
         assert type_label(str | int) == "str | int"
+        assert type_label(Annotated[int, "annotation"]) == "int"
 
     def test_type_instantiate(self):
         assert type_instantiate(str) == ""
@@ -186,3 +201,4 @@ class TestTypeChecking:
         assert type_instantiate(list[str]) == []
         assert type_instantiate(dict, a=1) == {"a": 1}
         assert type_instantiate(dict[str, int], a=1) == {"a": 1}
+        assert type_instantiate(Annotated[set, "annotation"]) == set()

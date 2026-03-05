@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
-import itertools
 import sys
-import typing
 import warnings
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Mapping
@@ -280,13 +278,8 @@ class SpecClassBuilder:
         # Generate namespace of annotations (in addition to local class context)
         annotation_namespace = {
             **getattr(sys.modules.get(spec_cls.__module__, None), "__dict__", {}),
-            **{
-                attr_name: attr
-                for klass in reversed(spec_cls.mro())
-                for attr_name, attr in itertools.chain(
-                    vars(klass).items(), ((klass.__name__, klass),)
-                )
-            },
+            spec_cls.__name__: spec_cls,
+            **vars(spec_cls),
         }
         if hasattr(spec_cls, "ANNOTATION_TYPES"):
             spec_annotation_types = spec_cls.ANNOTATION_TYPES
@@ -298,7 +291,14 @@ class SpecClassBuilder:
         # Generate type-map for all managed attributes (including local overrides)
         # We explicitly add the `key` attribute even if it is not a managed
         # attribute, so that we can look up the type as necessary later.
-        attr_types_raw = typing.get_type_hints(spec_cls, localns=annotation_namespace)
+        attr_types_raw = {}
+        for klass in reversed(spec_cls.__mro__[1:]):
+            attr_types_raw.update(inspect.get_annotations(klass, eval_str=True))
+        attr_types_raw.update(
+            inspect.get_annotations(
+                spec_cls, locals=annotation_namespace, globals={}, eval_str=True
+            )
+        )
         attr_types = {
             attr: (
                 self.attrs[attr]
@@ -372,12 +372,11 @@ class SpecClassBuilder:
                         f"'{attr}_item'. Please rename the attribute(s) to avoid this collision."
                     )
 
-        # Update __annotations__ attribute to be consistent with spec_class
-        # typings (unless already defined on the class contrarily)
+        # Update __annotations__ attribute to be consistent with spec_class typings
         if not hasattr(spec_cls, "__annotations__"):
             spec_cls.__annotations__ = {}  # pragma: no cover
         for attr, attr_spec in metadata.attrs.items():
-            if attr_spec.owner is spec_cls and attr not in spec_cls.__annotations__:
+            if attr_spec.owner is spec_cls:
                 spec_cls.__annotations__[attr] = attr_spec.type
 
         # Finalize metadata and remove bootstrapper from class.
