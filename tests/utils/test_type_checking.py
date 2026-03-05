@@ -1,5 +1,5 @@
 import sys
-import types
+import typing
 from collections.abc import Callable
 from typing import (
     Any,
@@ -113,6 +113,9 @@ class TestTypeChecking:
         assert check_type({}, PartialMovie)  # all optional
         assert not check_type({"title": 42}, PartialMovie)  # wrong value type
 
+    if sys.version_info >= (3, 12):
+        Vector = typing.TypeAliasType("Vector", list[float])
+
     def test_recursive_and_alias_types(self):
         # NewType
         UserId = NewType("UserId", int)
@@ -134,9 +137,8 @@ class TestTypeChecking:
 
         # Python 3.12+ TypeAliasType
         if sys.version_info >= (3, 12):
-            Vector = types.TypeAliasType("Vector", list[float])
-            assert check_type([1.0, 2.0], Vector)
-            assert not check_type(["a", "b"], Vector)
+            assert check_type([1.0, 2.0], self.Vector)
+            assert not check_type(["a", "b"], self.Vector)
 
     def test_get_collection_item_type(self):
         assert get_collection_item_type(list) is Any

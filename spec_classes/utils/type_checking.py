@@ -2,6 +2,7 @@ import inspect
 import numbers
 import sys
 import types
+import typing
 from collections.abc import Mapping, Sequence
 from collections.abc import Sequence as SequenceMutator
 from collections.abc import Set as SetMutator
@@ -44,7 +45,7 @@ def check_type(value: Any, attr_type: type, *, namespace: dict | None = None) ->
             return True  # Unresolvable forward reference, treat as Any
         return check_type(value, attr_type, namespace=namespace)
 
-    if sys.version_info >= (3, 12) and isinstance(attr_type, types.TypeAliasType):
+    if sys.version_info >= (3, 12) and isinstance(attr_type, typing.TypeAliasType):
         return check_type(value, attr_type.__value__, namespace=namespace)
 
     if hasattr(attr_type, "__supertype__"):  # typing.NewType
