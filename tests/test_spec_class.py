@@ -1203,3 +1203,14 @@ class TestFramework:
             ),
         ):
             A(a="string")
+
+    def test_repr_exception_handling(self):
+        @spec_class
+        class A:
+            a: int
+
+            @spec_property
+            def a(self):
+                raise RuntimeError("Error in repr")
+
+        assert repr(A()) == "A(a=⧛⚠️RuntimeError: Error in repr⧚)"
