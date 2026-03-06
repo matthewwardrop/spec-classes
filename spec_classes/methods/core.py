@@ -10,6 +10,7 @@ from collections.abc import (
     MutableSequence,
     MutableSet,
 )
+from dataclasses import dataclass
 from typing import Any
 
 from spec_classes.errors import FrozenInstanceError
@@ -333,6 +334,16 @@ class ReprMethod(MethodDescriptor):
 
     method_name = "__init__"
 
+    @dataclass
+    class ExceptionRepr:
+        exception: BaseException
+
+        def __repr__(self):
+            return (
+                f"⧛⚠️{type(self.exception).__name__}: "
+                f"{self.exception.args[0] if self.exception.args else ''}⧚"
+            )
+
     @staticmethod
     def repr(
         self,  # noqa: PLW0211
@@ -384,7 +395,10 @@ class ReprMethod(MethodDescriptor):
         attr_values = {}
         for attr in include_attrs:
             if attr not in exclude_attrs:
-                attr_values[attr] = getattr(self, attr, MISSING)
+                try:
+                    attr_values[attr] = getattr(self, attr, MISSING)
+                except Exception as e:
+                    attr_values[attr] = ReprMethod.ExceptionRepr(e)
 
         def object_repr(obj, indent=False):
             if obj is self:
