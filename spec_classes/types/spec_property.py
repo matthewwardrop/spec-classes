@@ -1,13 +1,20 @@
+from __future__ import annotations
+
 import inspect
 import warnings
 from abc import abstractmethod
+from collections.abc import Callable, Iterable
 from functools import cached_property
+from typing import Any, Generic, TypeVar, overload
 
 from spec_classes.errors import NestedAttributeError
 from spec_classes.types.missing import EMPTY, MISSING, UNCHANGED
 from spec_classes.utils.mutation import prepare_attr_value
 from spec_classes.utils.stackdepth import get_spec_classes_depth
 from spec_classes.utils.type_checking import type_label
+
+_T = TypeVar("_T")
+_T_co = TypeVar("_T_co", covariant=True)
 
 
 class _spec_property_base:
@@ -135,16 +142,18 @@ class _spec_property_base:
         return f"{self.owner.__name__ if self.owner else ''}.{self.attr_name or ''}"
 
     @abstractmethod
-    def __get__(self, obj, objtype=None): ...  # pragma: no cover
+    def __get__(
+        self, obj: Any, objtype: type[Any] | None = None
+    ) -> Any: ...  # pragma: no cover
 
     @abstractmethod
-    def __set__(self, obj, value): ...  # pragma: no cover
+    def __set__(self, obj: Any, value: Any) -> None: ...  # pragma: no cover
 
     @abstractmethod
-    def __delete__(self, obj): ...  # pragma: no cover
+    def __delete__(self, obj: Any) -> None: ...  # pragma: no cover
 
 
-class spec_property(_spec_property_base):
+class spec_property(_spec_property_base, Generic[_T_co]):
     """
     An enriched property-like decorator for use by spec-classes (with graceful
     fallbacks for non-spec_class use-cases).
@@ -181,6 +190,54 @@ class spec_property(_spec_property_base):
     """
 
     ALLOWED_ATTRS = ("invalidated_by",)
+
+    @overload
+    def __new__(  # type: ignore[misc]
+        cls,
+        fget: Callable[[Any], _T],
+        fset: Callable[[Any, Any], None] | None = None,
+        fdel: Callable[[Any], None] | None = None,
+        *,
+        doc: str | None = None,
+        overridable: bool = True,
+        warn_on_override: bool | str | Warning = False,
+        cache: bool = False,
+        invalidated_by: str | Iterable[str] | None = None,
+        allow_attribute_error: bool = True,
+        owner: type[Any] | None = None,
+        attr_name: str | None = None,
+    ) -> spec_property[_T]: ...
+    @overload
+    def __new__(  # type: ignore[misc]
+        cls,
+        fget: None,
+        fset: Callable[[Any, Any], None] | None = None,
+        fdel: Callable[[Any], None] | None = None,
+        *,
+        doc: str | None = None,
+        overridable: bool = True,
+        warn_on_override: bool | str | Warning = False,
+        cache: bool = False,
+        invalidated_by: str | Iterable[str] | None = None,
+        allow_attribute_error: bool = True,
+        owner: type[Any] | None = None,
+        attr_name: str | None = None,
+    ) -> spec_property[Any]: ...
+    @overload
+    def __new__(  # type: ignore[misc]
+        cls,
+        *,
+        doc: str | None = None,
+        overridable: bool = True,
+        warn_on_override: bool | str | Warning = False,
+        cache: bool = False,
+        invalidated_by: str | Iterable[str] | None = None,
+        allow_attribute_error: bool = True,
+        owner: type[Any] | None = None,
+        attr_name: str | None = None,
+    ) -> Callable[[Callable[[Any], _T]], spec_property[_T]]: ...
+    def __new__(cls, *args: Any, **kwargs: Any) -> Any:
+        return super().__new__(cls, *args, **kwargs)
 
     def __init__(
         self,
@@ -239,15 +296,21 @@ class spec_property(_spec_property_base):
     def invalidated_by(self):
         return self.attrs.get("invalidated_by") or ()
 
-    def __get__(self, instance, owner=None):
+    @overload
+    def __get__(
+        self, obj: None, objtype: type[Any] | None = None
+    ) -> spec_property[_T_co]: ...
+    @overload
+    def __get__(self, obj: Any, objtype: type[Any] | None = None) -> _T_co: ...
+    def __get__(self, obj, objtype=None):
         __tracebackhide__ = True
         # If lookup occuring on owner class.
-        if instance is None:
+        if obj is None:
             return self
 
         # If value exists in cache or has been overridden
-        if (self.overridable or self.cache) and self.attr_name in instance.__dict__:
-            return instance.__dict__[self.attr_name]
+        if (self.overridable or self.cache) and self.attr_name in obj.__dict__:
+            return obj.__dict__[self.attr_name]
 
         # If there is no assigned getter
         if self.fget is None:
@@ -257,7 +320,7 @@ class spec_property(_spec_property_base):
 
         # Get value from getter
         try:
-            value = self.fget(instance)
+            value = self.fget(obj)
         except AttributeError as e:
             if self.allow_attribute_error:
                 raise
@@ -266,13 +329,13 @@ class spec_property(_spec_property_base):
         # If attribute is annotated with a `spec_class` type, apply any
         # transforms using `_prepare_foo()` methods, and then check that the
         # attribute type is correct.
-        spec_metadata = getattr(instance, "__spec_class__", None)
+        spec_metadata = getattr(obj, "__spec_class__", None)
         if spec_metadata and self.attr_name in spec_metadata.attrs:
             attr_spec = spec_metadata.attrs[self.attr_name]
-            value = prepare_attr_value(attr_spec, instance, value)
+            value = prepare_attr_value(attr_spec, obj, value)
             if not attr_spec.check_type(value):
                 raise ValueError(
-                    f"Property override for `{owner.__name__ if owner else ''}.{self.attr_name or ''}` returned an invalid type [got `{repr(value)}`; expecting `{type_label(attr_spec.type)}`]."
+                    f"Property override for `{objtype.__name__ if objtype else ''}.{self.attr_name or ''}` returned an invalid type [got `{repr(value)}`; expecting `{type_label(attr_spec.type)}`]."
                 )
 
         # Store value in cache is cache is enabled
@@ -282,7 +345,7 @@ class spec_property(_spec_property_base):
             and value is not EMPTY
             and value is not UNCHANGED
         ):
-            instance.__dict__[self.attr_name] = value
+            obj.__dict__[self.attr_name] = value
 
         return value
 
@@ -315,6 +378,15 @@ class spec_property(_spec_property_base):
             )
         self.fdel(instance)
 
+    def getter(self, fget: Callable[[Any], _T]) -> spec_property[_T]:  # type: ignore[override]
+        return super().getter(fget)  # type: ignore[return-value]
+
+    def setter(self, fset: Callable[[Any, Any], None]) -> spec_property[_T_co]:  # type: ignore[override]
+        return super().setter(fset)  # type: ignore[return-value]
+
+    def deleter(self, fdel: Callable[[Any], None]) -> spec_property[_T_co]:  # type: ignore[override]
+        return super().deleter(fdel)  # type: ignore[return-value]
+
     # Let spec-class know to invalidate any cache based on `.invalidate_by`
     @property
     def __spec_class_invalidated_by__(self):
@@ -323,7 +395,7 @@ class spec_property(_spec_property_base):
         return self.invalidated_by
 
 
-class classproperty(_spec_property_base):
+class classproperty(_spec_property_base, Generic[_T_co]):
     """
     An analog of `property` for classmethods. It has the same API, but acts on
     methods which take the class as the first argument. Note, though, that class
@@ -342,6 +414,54 @@ class classproperty(_spec_property_base):
     """
 
     ALLOWED_ATTRS = ("cache_per_subclass",)
+
+    @overload
+    def __new__(  # type: ignore[misc]
+        cls,
+        fget: Callable[..., _T],
+        fset: Callable[..., None] | None = None,
+        fdel: Callable[..., None] | None = None,
+        *,
+        doc: str | None = None,
+        overridable: bool = False,
+        warn_on_override: bool | str | Warning = False,
+        cache: bool = False,
+        cache_per_subclass: bool = False,
+        allow_attribute_error: bool = True,
+        owner: type[Any] | None = None,
+        attr_name: str | None = None,
+    ) -> classproperty[_T]: ...
+    @overload
+    def __new__(  # type: ignore[misc]
+        cls,
+        fget: None,
+        fset: Callable[..., None] | None = None,
+        fdel: Callable[..., None] | None = None,
+        *,
+        doc: str | None = None,
+        overridable: bool = False,
+        warn_on_override: bool | str | Warning = False,
+        cache: bool = False,
+        cache_per_subclass: bool = False,
+        allow_attribute_error: bool = True,
+        owner: type[Any] | None = None,
+        attr_name: str | None = None,
+    ) -> classproperty[Any]: ...
+    @overload
+    def __new__(  # type: ignore[misc]
+        cls,
+        *,
+        doc: str | None = None,
+        overridable: bool = False,
+        warn_on_override: bool | str | Warning = False,
+        cache: bool = False,
+        cache_per_subclass: bool = False,
+        allow_attribute_error: bool = True,
+        owner: type[Any] | None = None,
+        attr_name: str | None = None,
+    ) -> Callable[[Callable[..., _T]], classproperty[_T]]: ...
+    def __new__(cls, *args: Any, **kwargs: Any) -> Any:
+        return super().__new__(cls, *args, **kwargs)
 
     def __init__(
         self,
@@ -438,7 +558,7 @@ class classproperty(_spec_property_base):
     def _cache_key(self, objtype):
         return objtype if self.cache_per_subclass else None
 
-    def __get__(self, obj, objtype=None):
+    def __get__(self, obj: Any, objtype: type[Any] | None = None) -> _T_co:
         __tracebackhide__ = True
         # If value exists in cache or has been overridden
         cache_key = self._cache_key(objtype)
@@ -498,3 +618,12 @@ class classproperty(_spec_property_base):
                 f"Class property for `{self._qualified_name}` has no cache or override to delete."
             )
         self.fdel.__get__(None, obj)()
+
+    def getter(self, fget: Callable[..., _T]) -> classproperty[_T]:  # type: ignore[override]
+        return super().getter(fget)  # type: ignore[return-value]
+
+    def setter(self, fset: Callable[..., None]) -> classproperty[_T_co]:  # type: ignore[override]
+        return super().setter(fset)  # type: ignore[return-value]
+
+    def deleter(self, fdel: Callable[..., None]) -> classproperty[_T_co]:  # type: ignore[override]
+        return super().deleter(fdel)  # type: ignore[return-value]
