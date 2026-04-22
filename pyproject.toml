@@ -55,11 +55,15 @@ include = [
 
 # Testing configuration
 
+[project.optional-dependencies]
+mypy = ["mypy>=1.0"]
+
 [tool.hatch.envs.default]
 dependencies = [
     "ruff==0.14.13",
     "pytest-cov==7.0.0",
     "pytest==9.0.2",
+    "mypy>=1.0",
 ]
 
 [tool.hatch.envs.default.scripts]

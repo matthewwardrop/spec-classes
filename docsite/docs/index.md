@@ -114,6 +114,26 @@ You can verify that the installation was successful by printing the version of
 python -c "import spec_classes; print(spec_classes.__version__)"
 ```
 
+## Static type checking
+
+`spec-classes` dynamically modifies classes at runtime, and so although it does
+as much as possible to allow for static type checking using standard typing 
+annotations, this can only get so far. As such, you should expect spurious 
+warnings from `pyright` and other static type checkers.
+
+We do, however, ship an experimental `mypy` plugin that provides much more
+accurate static type information for the generated methods (such as
+`.with_*()`). To enable it, add the plugin to your mypy configuration. For
+pyproject.toml configurations, this will look like adding a section like:
+
+```toml
+[tool.mypy]
+plugins = ["spec_classes.mypy_plugin"]
+```
+
+If you encounter issues with the correctness of this plugin, please report
+issues. This plugin was largely AI generated, and may need further refinement.
+
 ## Related projects and prior art
 
 `spec_classes` takes a more opinionated stance than most libraries in this space
