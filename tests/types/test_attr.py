@@ -163,6 +163,46 @@ class TestAttr:
         assert a3.item_spec_polymorphic_key_type is None
         assert a4.item_spec_polymorphic_key_type is str
 
+    def test_lookup_default_value_do_not_copy(self):
+        class NotCopyable:
+            def __copy__(self):
+                raise RuntimeError("This class cannot be copied")
+
+            def __deepcopy__(self, memo):
+                raise RuntimeError("This class cannot be deep-copied")
+
+        @spec_class(bootstrap=True, do_not_copy={"uncopied_items"})
+        class Parent:
+            items: list
+            uncopied_items: NotCopyable = NotCopyable()
+
+        class Child(Parent):
+            items = [1, 2, 3]
+
+        items_value = Child.__dict__["items"]
+        uncopied_items_value = Parent.__dict__["uncopied_items"]
+        items_attr = Parent.__spec_class__.attrs["items"]
+        uncopied_items_attr = Child.__spec_class__.attrs["uncopied_items"]
+
+        # do_not_copy=False (default): should deep-copy the class-level override
+        assert items_attr.do_not_copy is False
+        result = items_attr.lookup_default_value(Child)
+        assert result == [1, 2, 3]
+        assert result is not items_value
+
+        # do_not_copy=True: should return the exact same object
+        assert uncopied_items_attr.do_not_copy is True
+        result = uncopied_items_attr.lookup_default_value(Child)
+        assert result is uncopied_items_value
+
+    def test_default_value_do_not_copy(self):
+        sentinel = object()
+        a = Attr(default=sentinel, do_not_copy=True)
+        assert a.default_value is sentinel
+
+        a_copy = Attr(default=sentinel, do_not_copy=False)
+        assert a_copy.default_value is not sentinel
+
     def test_decorators(self):
         class MyClass:
             attr: list[str] = Attr()

@@ -341,6 +341,7 @@ def prepare_attr_value(
         constructor=attr_spec.constructor,
         expected_type=attr_spec.type,
         attrs=attrs,
+        inplace=attr_spec.do_not_copy,
     )
     if attr_spec.is_collection:
         value = (

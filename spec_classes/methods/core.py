@@ -279,7 +279,9 @@ class DelAttrMethod(MethodDescriptor):
             return mutate_attr(
                 obj=self,
                 attr=attr,
-                value=protect_via_deepcopy(attr_spec.default),  # handle default factory
+                value=attr_spec.default
+                if attr_spec.do_not_copy
+                else protect_via_deepcopy(attr_spec.default),  # handle default factory
                 inplace=True,
                 force=True,
                 skip_invalidation=skip_invalidation,

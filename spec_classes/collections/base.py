@@ -60,7 +60,7 @@ class CollectionAttrMutator(metaclass=ABCMeta):
 
         if collection is MISSING_COLLECTION:
             collection = getattr(instance, self.attr_spec.name, MISSING)
-        if collection is not MISSING and not inplace:
+        if collection is not MISSING and not inplace and not self.attr_spec.do_not_copy:
             collection = protect_via_deepcopy(collection)
         self.collection = collection
 
@@ -137,7 +137,7 @@ class CollectionAttrMutator(metaclass=ABCMeta):
                 transform=transform,
                 attr_transforms=attr_transforms,
                 replace=replace,
-                inplace=False,  # Although we've already copied, index lookups may depend on the old value.
+                inplace=self.attr_spec.do_not_copy,  # Although we've already copied, index lookups may depend on the old value.
             )
             inserter(index, new_item)
             return self

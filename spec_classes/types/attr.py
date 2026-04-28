@@ -310,7 +310,8 @@ class Attr:
         Look up the correct default value for this attribute for `instance`.
         We cannot use `.default_value` directly here because the spec-class
         could be subclassed with being made explicitly a spec-class, and we
-        need to detect any overrides. Values returned are always mutate-safe.
+        need to detect any overrides. Values returned are always mutate-safe
+        when `do_not_copy` is not `True`.
 
         Args:
             spec_cls: The class for which a default value should be looked up.
@@ -331,6 +332,8 @@ class Attr:
                     or inspect.isdatadescriptor(value)
                 ):
                     return MISSING  # Default is masked.
+                if self.do_not_copy:
+                    return value
                 return protect_via_deepcopy(value)
         return MISSING  # pragma: no cover; this should never happen... but you can't be too careful.
 
@@ -338,8 +341,8 @@ class Attr:
     def default_value(self) -> Any:
         """
         A default value for this `Attr` (evaluating `default_factory`) if
-        necessary. It will always be mutate-safe, so you can use it without
-        further copying.
+        necessary. It will always be mutate-safe (so long as `do_not_copy` is
+        not `True`), so you can use it without further copying.
         """
         from spec_classes.utils.mutation import protect_via_deepcopy  # noqa: PLC0415
 
@@ -347,6 +350,8 @@ class Attr:
             return MISSING
         if self.default_factory:
             return self.default_factory()
+        if self.do_not_copy:
+            return self.default
         return protect_via_deepcopy(self.default)
 
     @property
