@@ -126,6 +126,7 @@ class UpdateAttrMethod(AttrMethodDescriptor):
                 constructor=attr_spec.constructor,
                 expected_type=attr_spec.type,
                 attrs=attrs,
+                inplace=attr_spec.do_not_copy,
             ),
             _inplace=_inplace,
         )
@@ -209,6 +210,7 @@ class TransformAttrMethod(AttrMethodDescriptor):
                 constructor=attr_spec.constructor,
                 expected_type=attr_spec.type,
                 attr_transforms=attr_transforms,
+                inplace=attr_spec.do_not_copy,
             ),
             _inplace=_inplace,
         )

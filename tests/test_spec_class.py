@@ -17,6 +17,30 @@ from spec_classes import MISSING, Attr, FrozenInstanceError, spec_class, spec_pr
 from spec_classes.spec_class import SpecClassMetadata, _SpecClassMetadataPlaceholder
 
 
+# Module-level helpers for do_not_copy mutation tests
+@spec_class(bootstrap=True)
+class _MutationInner:
+    x: int = 0
+
+
+@spec_class(do_not_copy=["inner"], bootstrap=True)
+class _MutationItem:
+    inner: _MutationInner = Attr(default_factory=_MutationInner)
+
+
+@spec_class(do_not_copy=["items"], bootstrap=True)
+class _MutationCollItem:
+    items: list[_MutationInner] = Attr(default_factory=list)
+
+
+_del_test_default: list = [1, 2]
+
+
+@spec_class(do_not_copy=["items"], bootstrap=True)
+class _MutationDelItem:
+    items: list = Attr(default=_del_test_default)
+
+
 class TestFramework:
     def test_bootstrapping(self):
         @spec_class
@@ -467,6 +491,59 @@ class TestFramework:
         assert ShallowItem.__spec_class__.attrs["deep_list"].do_not_copy is True
         assert ShallowItem.__spec_class__.attrs["shallow_list"].do_not_copy is True
 
+    def test_do_not_copy_list_on_inherited_attrs(self):
+        # do_not_copy as a list should apply to inherited attrs not redeclared on child
+        @spec_class(bootstrap=True)
+        class Parent:
+            value: str
+            items: list
+
+        @spec_class(do_not_copy=["items"], bootstrap=True)
+        class Child(Parent):
+            pass
+
+        assert Child.__spec_class__.attrs["items"].do_not_copy is True
+        assert Child.__spec_class__.attrs["value"].do_not_copy is False
+
+        list_obj = [1, 2, 3]
+        child = Child(items=list_obj)
+        assert child.items is list_obj
+
+    def test_do_not_copy_del_attr(self):
+        attr_spec_default = _MutationDelItem.__spec_class__.attrs["items"].default
+        item = _MutationDelItem(items=[99])
+        del item.items
+        assert item.items is attr_spec_default
+
+    def test_do_not_copy_scalar_mutations(self):
+        # update_<attr> with keyword attrs should mutate the existing object in place
+        inner = _MutationInner(x=1)
+        item = _MutationItem(inner=inner)
+        result = item.update_inner(x=2)
+        assert result.inner is inner
+        assert result.inner.x == 2
+
+        # transform_<attr> with attr_transforms should mutate the existing object in place
+        inner = _MutationInner(x=1)
+        item = _MutationItem(inner=inner)
+        result = item.transform_inner(x=lambda v: v + 10)
+        assert result.inner is inner
+        assert result.inner.x == 11
+
+        # with_<attr> passing an existing value with attrs should mutate it in place
+        inner = _MutationInner(x=1)
+        item = _MutationItem(inner=inner)
+        result = item.with_inner(inner, x=99)
+        assert result.inner is inner
+        assert result.inner.x == 99
+
+    def test_do_not_copy_collection_item_mutation(self):
+        inner = _MutationInner(x=1)
+        item = _MutationCollItem(items=[inner])
+        result = item.with_item(inner, _index=0, x=2)
+        assert result.items[0] is inner
+        assert result.items[0].x == 2
+
     def test_overriding_methods(self):
         class Item:
             key: str
@@ -553,6 +630,18 @@ class TestFramework:
             Item(x=10).with_x(20, _inplace=True)
         with pytest.raises(FrozenInstanceError):
             del Item(x=10).x
+
+    def test_frozen_inheritance(self):
+        @spec_class(frozen=True)
+        class Parent:
+            value: int = 1
+
+        @spec_class
+        class Child(Parent):
+            extra: int = 2
+
+        assert Parent.__spec_class__.frozen is True
+        assert Child.__spec_class__.frozen is False
 
     def test_kwarg_overflow(self):
         @spec_class(init_overflow_attr="options")
