@@ -16,7 +16,7 @@ Usage in mypy.ini or pyproject.toml:
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Final
 
 import inflect
@@ -32,6 +32,7 @@ from mypy.nodes import (
     Decorator,
     EllipsisExpr,
     FuncDef,
+    ListExpr,
     NameExpr,
     OverloadedFuncDef,
     PlaceholderNode,
@@ -39,6 +40,7 @@ from mypy.nodes import (
     StrExpr,
     SymbolTableNode,
     TempNode,
+    TupleExpr,
     TypeAlias,
     TypeVarExpr,
     Var,
@@ -200,6 +202,8 @@ def spec_class_hook(ctx: ClassDefContext) -> bool:
     # inherited attrs get their methods via the parent and TypeVar unification.
     # Top-level methods (update/transform/reset) are only generated for the
     # root spec-class in the hierarchy to avoid LSP override conflicts.
+    # Inheriting `key` and `init_overflow_attr` lets subclasses without an
+    # explicit `@spec_class(key=...)` still expose the key as a positional arg.
     attrs: dict[str, SpecAttrInfo] = {}
     has_spec_parent = False
     for ancestor_info in reversed(info.mro[1:-1]):
@@ -212,7 +216,12 @@ def spec_class_hook(ctx: ClassDefContext) -> bool:
             continue
         has_spec_parent = True
         api.add_plugin_dependency(make_wildcard_trigger(ancestor_info.fullname))
-        for attr_data in ancestor_info.metadata["spec_class"]["attrs"]:
+        ancestor_meta = ancestor_info.metadata["spec_class"]
+        if key is None and ancestor_meta.get("key"):
+            key = ancestor_meta["key"]
+        if init_overflow_attr is None and ancestor_meta.get("init_overflow_attr"):
+            init_overflow_attr = ancestor_meta["init_overflow_attr"]
+        for attr_data in ancestor_meta["attrs"]:
             try:
                 attrs[attr_data["name"]] = SpecAttrInfo.deserialize(attr_data, api)
             except Exception:
@@ -221,6 +230,52 @@ def spec_class_hook(ctx: ClassDefContext) -> bool:
     # Capture inherited attr names before we add current-class attrs to the dict.
     # Per-attr methods are only generated for current-class attrs (not inherited).
     inherited_names = set(attrs.keys())
+
+    # Step 3a: Pre-scan the class body for @spec_property declarations. A
+    # field of the same name uses the spec_property as its computed default at
+    # runtime. Non-key fields are already always optional in __init__ (spec-
+    # classes happily instantiates with missing values, surfaced as
+    # AttributeError on access), so this only changes observable typing for the
+    # *key* attribute, which is otherwise emitted as a required positional arg.
+    spec_property_names: set[str] = set()
+    for stmt in ctx.cls.defs.body:
+        if not isinstance(stmt, Decorator):
+            continue
+        for dec_expr in stmt.decorators:
+            target = dec_expr.callee if isinstance(dec_expr, CallExpr) else dec_expr
+            if isinstance(target, RefExpr) and target.fullname in (
+                "spec_classes.types.spec_property.spec_property",
+                "spec_classes.types.spec_property",
+                "spec_classes.spec_property",
+            ):
+                spec_property_names.add(stmt.name)
+                break
+
+    # Step 3a': Detect non-annotated class-level assignments (e.g.
+    # `key = "foobar"`) whose target matches an inherited attr name. At runtime,
+    # spec-classes treats these as default overrides for the inherited attribute.
+    # As with Step 3a this only changes the typed signature when the overridden
+    # attribute is the *key* (non-key inherited attrs are already optional),
+    # but it's the path that lets a subclass with only a class-level key
+    # override be constructed with no positional args.
+    inherited_overrides: set[str] = set()
+    for stmt in ctx.cls.defs.body:
+        if not isinstance(stmt, AssignmentStmt) or stmt.new_syntax:
+            continue
+        for lhs in stmt.lvalues:
+            if isinstance(lhs, NameExpr) and lhs.name in inherited_names:
+                inherited_overrides.add(lhs.name)
+
+    # An inherited attr also gets a default if this class declares a
+    # @spec_property of the same name.
+    for prop_name in spec_property_names:
+        if prop_name in inherited_names:
+            inherited_overrides.add(prop_name)
+
+    if inherited_overrides:
+        for name in inherited_overrides:
+            existing = attrs[name]
+            attrs[name] = replace(existing, has_default=True)
 
     # Step 3: Collect attributes from the current class body
     for stmt in ctx.cls.defs.body:
@@ -247,8 +302,25 @@ def spec_class_hook(ctx: ClassDefContext) -> bool:
             return False  # Type not yet resolved
 
         is_in_init, has_default = _parse_attr_call(stmt.rvalue, api)
+        if not has_default and lhs.name in spec_property_names:
+            has_default = True
         collection_kind, key_type, item_type = _detect_collection(node.type)
         item_name = _get_item_name(lhs.name) if collection_kind else None
+
+        # spec-classes coerces literal collection defaults (e.g. `= []` for a
+        # `KeyedList[X, K]` field, or `= set()` for a `KeyedSet[X, K]` field)
+        # into the declared collection type at __init__-time. Tell mypy to treat
+        # the rvalue as already typed as the declared field type so the type
+        # checker doesn't emit a spurious [assignment] error.
+        if collection_kind is not None and _is_empty_collection_literal(
+            stmt.rvalue, collection_kind
+        ):
+            original_rvalue = stmt.rvalue
+            stmt.rvalue = TempNode(node.type, no_rhs=False)
+            stmt.rvalue.line = original_rvalue.line
+            stmt.rvalue.column = original_rvalue.column
+            stmt.rvalue.end_line = original_rvalue.end_line
+            stmt.rvalue.end_column = original_rvalue.end_column
 
         attrs[lhs.name] = SpecAttrInfo(
             name=lhs.name,
@@ -305,7 +377,11 @@ def spec_class_hook(ctx: ClassDefContext) -> bool:
     tvd = _make_base_self_tvar(ctx)
 
     # Step 6: Generate __init__ (always includes all attrs including inherited)
-    if generate_init:
+    # Skip generation if the user has defined their own __init__ in the class
+    # body. spec-classes supports this pattern via __spec_class_init__, and
+    # overwriting the user signature here would mask their custom positional
+    # args (e.g. `Exception(*args)` style).
+    if generate_init and not _has_user_init(info):
         _add_init(ctx, attr_list, key, init_overflow_attr)
 
     # Step 7: Top-level methods - only on the root spec-class.
@@ -314,6 +390,7 @@ def spec_class_hook(ctx: ClassDefContext) -> bool:
     # the Self TypeVar changes with each class.
     if not has_spec_parent:
         _add_toplevel_methods(ctx, tvd)
+        _add_spec_class_dunders(ctx, attr_list, key, init_overflow_attr)
 
     # Step 8: Per-attribute methods - only for attrs defined on THIS class.
     # Inherited attrs keep their parent-generated methods; TypeVar unification
@@ -391,6 +468,26 @@ def _parse_attr_call(rvalue, api) -> tuple[bool, bool]:
             has_default = True
 
     return is_in_init, has_default
+
+
+def _is_empty_collection_literal(rvalue, collection_kind: str) -> bool:
+    """True if *rvalue* is an empty literal compatible with *collection_kind*.
+
+    Matches:
+      list/KeyedList <- ``[]``, ``()``
+      set/KeyedSet   <- ``set()``
+    Only the Keyed* cases actually need rewriting: ``{} : dict[K, V]`` and
+    ``[] : list[X]`` already type-check, but ``[] : KeyedList[X, K]`` and
+    ``set() : KeyedSet[X, K]`` do not. Non-empty literals are left alone so
+    mypy's regular item-type checking still fires.
+    """
+    if collection_kind == "list":
+        if isinstance(rvalue, (ListExpr, TupleExpr)) and not rvalue.items:
+            return True
+    elif collection_kind == "set":
+        if isinstance(rvalue, CallExpr) and isinstance(rvalue.callee, NameExpr):
+            return rvalue.callee.name == "set" and not rvalue.args
+    return False
 
 
 def _detect_collection(typ: Type) -> tuple[str | None, Type | None, Type | None]:
@@ -579,8 +676,95 @@ def _add(
 
 
 # ---------------------------------------------------------------------------
+# Input-type widening for collections
+# ---------------------------------------------------------------------------
+
+
+def _input_type_for_attr(attr: SpecAttrInfo, api) -> Type:
+    """Return the type accepted by __init__ / with_<attr> / update_<attr> for *attr*.
+
+    spec-classes coerces incoming collection values into the declared collection
+    type (e.g. a `list[X]` argument is accepted for a `KeyedList[X, K]` field, a
+    `tuple[X, ...]` argument for a `list[X]` field, etc.). The plugin therefore
+    widens the input type for managed collection attributes to accept any
+    iterable/mapping that yields the right item/key shape, in addition to the
+    declared type itself.
+
+    A `_prepare_<attr>` user hook always wins (input becomes Any).
+    """
+    if attr.has_attr_preparer:
+        return AnyType(TypeOfAny.special_form)
+
+    if attr.collection_kind in ("list", "set") and attr.item_type is not None:
+        try:
+            iterable = api.named_type("typing.Iterable", [attr.item_type])
+        except Exception:
+            return attr.type
+        return UnionType.make_union([attr.type, iterable])
+
+    if (
+        attr.collection_kind == "dict"
+        and attr.key_type is not None
+        and attr.item_type is not None
+    ):
+        try:
+            mapping = api.named_type("typing.Mapping", [attr.key_type, attr.item_type])
+        except Exception:
+            return attr.type
+        return UnionType.make_union([attr.type, mapping])
+
+    return attr.type
+
+
+# ---------------------------------------------------------------------------
 # __init__ generation
 # ---------------------------------------------------------------------------
+
+
+def _has_user_init(info: TypeInfo) -> bool:
+    """True if the class body declares its own ``__init__``.
+
+    `info.names` includes only this class's own symbols (not inherited ones), so
+    a hit here means the user explicitly authored a custom constructor.
+    """
+    sym = info.names.get("__init__")
+    if sym is None:
+        return False
+    node = sym.node
+    return isinstance(node, (FuncDef, Decorator, OverloadedFuncDef))
+
+
+def _build_init_args(
+    api,
+    attrs: list[SpecAttrInfo],
+    key: str | None,
+    init_overflow_attr: str | None,
+) -> list[Argument]:
+    # The key attribute (if any) is callable positionally; everything else is
+    # keyword-only. Emit the positional key first so mypy doesn't sink it
+    # behind the implicit `*` separator that follows the first ARG_NAMED_OPT.
+    positional: list[Argument] = []
+    keyword: list[Argument] = []
+    for attr in attrs:
+        if not attr.is_in_init:
+            continue
+        input_t = _input_type_for_attr(attr, api)
+        if attr.name == key:
+            kind = ARG_OPT if attr.has_default else ARG_POS
+            positional.append(
+                Argument(Var(attr.name, input_t), input_t, EllipsisExpr(), kind)
+            )
+        else:
+            keyword.append(
+                Argument(
+                    Var(attr.name, input_t), input_t, EllipsisExpr(), ARG_NAMED_OPT
+                )
+            )
+    args = positional + keyword
+    if init_overflow_attr:
+        any_t = AnyType(TypeOfAny.explicit)
+        args.append(Argument(Var("kwargs", any_t), any_t, None, ARG_STAR2))
+    return args
 
 
 def _add_init(
@@ -589,21 +773,82 @@ def _add_init(
     key: str | None,
     init_overflow_attr: str | None,
 ) -> None:
-    args: list[Argument] = []
-    for attr in attrs:
-        if not attr.is_in_init:
-            continue
-        if attr.name == key:
-            kind = ARG_OPT if attr.has_default else ARG_POS
-        else:
-            kind = ARG_NAMED_OPT
-        args.append(
-            Argument(Var(attr.name, attr.type), attr.type, EllipsisExpr(), kind)
-        )
-    if init_overflow_attr:
-        any_t = AnyType(TypeOfAny.explicit)
-        args.append(Argument(Var("kwargs", any_t), any_t, None, ARG_STAR2))
+    args = _build_init_args(ctx.api, attrs, key, init_overflow_attr)
     add_method_to_class(ctx.api, ctx.cls, "__init__", args=args, return_type=NoneType())
+
+
+# ---------------------------------------------------------------------------
+# spec-class dunder helpers (__spec_class__, __spec_class_init__, etc.)
+# ---------------------------------------------------------------------------
+
+
+def _add_spec_class_dunders(
+    ctx: ClassDefContext,
+    attrs: list[SpecAttrInfo],
+    key: str | None,
+    init_overflow_attr: str | None,
+) -> None:
+    """Declare ``__spec_class__`` and the ``__spec_class_*__`` mirror methods.
+
+    At runtime spec-classes always installs:
+      * ``__spec_class__``: a ``SpecClassMetadata`` instance.
+      * ``__spec_class_init__``: backup reference to the generated ``__init__``.
+      * ``__spec_class_repr__``: backup reference to the generated ``__repr__``.
+      * ``__spec_class_eq__``: backup reference to the generated ``__eq__``.
+
+    These are commonly used by classes that need to override ``__init__`` (e.g.
+    ``MetricsRepoError(Exception)``) and still delegate to the spec-class
+    machinery. Declaring them on the class lets mypy resolve those references
+    instead of emitting ``[attr-defined]``.
+    """
+    api = ctx.api
+    info = ctx.cls.info
+    any_t = AnyType(TypeOfAny.explicit)
+    str_t = api.named_type("builtins.str")
+    bool_t = api.named_type("builtins.bool")
+
+    # __spec_class__ is a Var holding the spec-class metadata object. Typed as
+    # Any to avoid a hard dependency on the SpecClassMetadata symbol (which
+    # may not be importable from contexts that exercise the plugin).
+    if "__spec_class__" not in info.names:
+        var = Var("__spec_class__", any_t)
+        var.info = info
+        var.is_initialized_in_class = True
+        var._fullname = f"{info.fullname}.__spec_class__"
+        info.names["__spec_class__"] = SymbolTableNode(MDEF, var)
+
+    # __spec_class_init__ mirrors __init__'s shape (with the inferred key /
+    # init_overflow_attr); we reuse `_add_init` and rename it after.
+    init_args = _build_init_args(api, attrs, key, init_overflow_attr)
+    add_method_to_class(
+        api,
+        ctx.cls,
+        "__spec_class_init__",
+        args=init_args,
+        return_type=NoneType(),
+    )
+
+    # Both __spec_class_repr__ and __spec_class_eq__ accept arbitrary kwargs at
+    # runtime (e.g. include_attrs=, exclude_attrs= for repr). Accept **kwargs to
+    # avoid bogus call-arg errors at call sites that pass keyword tweaks.
+    add_method_to_class(
+        api,
+        ctx.cls,
+        "__spec_class_repr__",
+        args=[Argument(Var("kwargs", any_t), any_t, None, ARG_STAR2)],
+        return_type=str_t,
+    )
+
+    add_method_to_class(
+        api,
+        ctx.cls,
+        "__spec_class_eq__",
+        args=[
+            Argument(Var("other", any_t), any_t, None, ARG_POS),
+            Argument(Var("kwargs", any_t), any_t, None, ARG_STAR2),
+        ],
+        return_type=bool_t,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -660,8 +905,10 @@ def _add_scalar_methods(
     api = ctx.api
     t = attr.type
     # If a _prepare_<attr> method exists the value is cast before type-checking,
-    # so accept Any as the input.
-    input_t: Type = AnyType(TypeOfAny.special_form) if attr.has_attr_preparer else t
+    # so accept Any as the input. Collection attrs are widened by
+    # `_input_type_for_attr` to accept the iterable/mapping shape spec-classes
+    # coerces from.
+    input_t: Type = _input_type_for_attr(attr, api)
     nested = _get_spec_class_info(t)
     nested_ready = nested is not None and "spec_class" in nested.metadata
 
