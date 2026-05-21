@@ -241,19 +241,19 @@ class spec_property(_spec_property_base, Generic[_T_co]):
 
     def __init__(
         self,
-        fget=None,
-        fset=None,
-        fdel=None,
+        fget: Callable[[Any], _T_co] | None = None,
+        fset: Callable[[Any, Any], None] | None = None,
+        fdel: Callable[[Any], None] | None = None,
         *,
-        doc=None,
-        overridable=True,
-        warn_on_override=False,
-        cache=False,
-        invalidated_by=None,
-        allow_attribute_error=True,
-        owner=None,
-        attr_name=None,
-    ):
+        doc: str | None = None,
+        overridable: bool = True,
+        warn_on_override: bool | str | Warning = False,
+        cache: bool = False,
+        invalidated_by: str | Iterable[str] | None = None,
+        allow_attribute_error: bool = True,
+        owner: type[Any] | None = None,
+        attr_name: str | None = None,
+    ) -> None:
         """
         Args:
             fget: The getter function.
@@ -293,8 +293,17 @@ class spec_property(_spec_property_base, Generic[_T_co]):
         )
 
     @property
-    def invalidated_by(self):
+    def invalidated_by(self) -> tuple[str, ...]:
         return self.attrs.get("invalidated_by") or ()
+
+    def __call__(self, func: Callable[[Any], _T]) -> spec_property[_T]:
+        # At runtime, this is reached only when ``spec_property(...)`` was
+        # invoked with keyword arguments alone: ``_spec_property_base.__new__``
+        # returns a closure that calls ``cls(func, **kwargs)`` when applied to
+        # the decorated function. The closure is invoked instead of this
+        # method at runtime, but mypy needs ``__call__`` on ``spec_property``
+        # to recognise the static decorator pattern.
+        ...  # pragma: no cover
 
     @overload
     def __get__(
