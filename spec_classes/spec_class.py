@@ -299,7 +299,15 @@ class SpecClassBuilder:
             attr_types_raw.update(inspect.get_annotations(klass, eval_str=True))
         attr_types_raw.update(
             inspect.get_annotations(
-                spec_cls, locals=annotation_namespace, globals={}, eval_str=True
+                spec_cls,
+                globals=annotation_namespace,
+                # Empty locals so the layered overrides in `annotation_namespace`
+                # (especially `ANNOTATION_TYPES`) win over `vars(spec_cls)`.
+                # Globals (not locals) is also what lambdas embedded in
+                # annotations capture as `__globals__`, so name lookups still
+                # work when those lambdas are invoked later.
+                locals={},
+                eval_str=True,
             )
         )
         attr_types = {
