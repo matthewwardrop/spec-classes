@@ -7,6 +7,14 @@ from collections.abc import Callable, Iterable
 from functools import cached_property
 from typing import Any, Generic, TypeVar, overload
 
+# ``typing_extensions.TypeVar`` supports the PEP 696 ``default=`` parameter on
+# all supported Python versions; ``typing.TypeVar`` only does so on 3.13+.
+# We need the default so that mypy 2.1+ resolves an unparameterised
+# ``spec_property(cache=True)`` to ``spec_property[Any]`` rather than to the
+# uninhabited ``spec_property[Never]`` (which mypy then refuses to call,
+# breaking the keyword-only decorator form).
+from typing_extensions import TypeVar as _TypeVarExt
+
 from spec_classes.errors import NestedAttributeError
 from spec_classes.types.missing import EMPTY, MISSING, UNCHANGED
 from spec_classes.utils.mutation import prepare_attr_value
@@ -14,7 +22,7 @@ from spec_classes.utils.stackdepth import get_spec_classes_depth
 from spec_classes.utils.type_checking import type_label
 
 _T = TypeVar("_T")
-_T_co = TypeVar("_T_co", covariant=True)
+_T_co = _TypeVarExt("_T_co", covariant=True, default=Any)
 
 
 class _spec_property_base:
@@ -525,6 +533,15 @@ class classproperty(_spec_property_base, Generic[_T_co]):
             owner=owner,
             attr_name=attr_name,
         )
+
+    def __call__(self, func: Callable[..., _T]) -> classproperty[_T]:
+        # At runtime, this is reached only when ``classproperty(...)`` was
+        # invoked with keyword arguments alone: ``_spec_property_base.__new__``
+        # returns a closure that calls ``cls(func, **kwargs)`` when applied to
+        # the decorated function. The closure is invoked instead of this
+        # method at runtime, but mypy needs ``__call__`` on ``classproperty``
+        # to recognise the static decorator pattern.
+        ...  # pragma: no cover
 
     @property
     def cache_per_subclass(self):
