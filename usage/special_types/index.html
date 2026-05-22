@@ -1,0 +1,1224 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.4">
+    
+    
+      
+        <title>Special Types - Spec Classes</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.db9e7362.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.3f5d1f46.min.css">
+        
+      
+    
+    
+    
+      
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>:root{--md-text-font-family:"Roboto";--md-code-font-family:"Roboto Mono"}</style>
+      
+    
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/colors.css">
+    
+    
+      
+
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="none" data-md-color-accent="none">
+  
+    
+    <script>function __prefix(e){return new URL("../..",location).pathname+"."+e}function __get(e,t=localStorage){return JSON.parse(t.getItem(__prefix(e)))}</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#attribute-specification" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Spec Classes" class="md-header__button md-logo" aria-label="Spec Classes" data-md-component="logo">
+      
+  <img src="../../assets/images/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Spec Classes
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Special Types
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-tabs__inner md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../.." class="md-tabs__link">
+      Introduction
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../examples/" class="md-tabs__link">
+        Examples
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+    
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../" class="md-tabs__link md-tabs__link--active">
+        Usage
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../implementation/how_it_works/" class="md-tabs__link">
+        Implementation Details
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Spec Classes" class="md-nav__button md-logo" aria-label="Spec Classes" data-md-component="logo">
+      
+  <img src="../../assets/images/logo.svg" alt="logo">
+
+    </a>
+    Spec Classes
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" type="checkbox" id="__nav_2" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2">
+          Examples
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Examples" data-md-level="1">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Examples
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/basic/" class="md-nav__link">
+        Basic
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/collections/" class="md-nav__link">
+        Collections
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/dataclasses/" class="md-nav__link">
+        Dataclass Interoperability
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/preparation/" class="md-nav__link">
+        Preparation/Typecasting
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3">
+          Usage
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Usage" data-md-level="1">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          Usage
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../basic/" class="md-nav__link">
+        Basic Usage
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_3" type="checkbox" id="__nav_3_3" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3_3">
+          Helper Methods
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Helper Methods" data-md-level="2">
+        <label class="md-nav__title" for="__nav_3_3">
+          <span class="md-nav__icon md-icon"></span>
+          Helper Methods
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../methods/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../methods/toplevel/" class="md-nav__link">
+        Toplevel Methods
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../methods/scalars/" class="md-nav__link">
+        Scalar Methods
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../methods/collections/" class="md-nav__link">
+        Collection Methods
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Special Types
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Special Types
+      </a>
+      
+        
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#attribute-specification" class="md-nav__link">
+    Attribute specification
+  </a>
+  
+    <nav class="md-nav" aria-label="Attribute specification">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#field" class="md-nav__link">
+    field
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#attr" class="md-nav__link">
+    Attr
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validated-types" class="md-nav__link">
+    Validated Types
+  </a>
+  
+    <nav class="md-nav" aria-label="Validated Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#validatedtype" class="md-nav__link">
+    ValidatedType
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validated" class="md-nav__link">
+    validated
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bounded" class="md-nav__link">
+    bounded
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#keyed-containers" class="md-nav__link">
+    Keyed Containers
+  </a>
+  
+    <nav class="md-nav" aria-label="Keyed Containers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#key-lookups" class="md-nav__link">
+    Key lookups
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#keyedlist" class="md-nav__link">
+    KeyedList
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#keyedset" class="md-nav__link">
+    KeyedSet
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#descriptors" class="md-nav__link">
+    Descriptors
+  </a>
+  
+    <nav class="md-nav" aria-label="Descriptors">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#spec_property" class="md-nav__link">
+    spec_property
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#classproperty" class="md-nav__link">
+    classproperty
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#attrproxy" class="md-nav__link">
+    AttrProxy
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sentinels" class="md-nav__link">
+    Sentinels
+  </a>
+  
+    <nav class="md-nav" aria-label="Sentinels">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#missing" class="md-nav__link">
+    MISSING
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../advanced/" class="md-nav__link">
+        Advanced Usage
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4" type="checkbox" id="__nav_4" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4">
+          Implementation Details
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Implementation Details" data-md-level="1">
+        <label class="md-nav__title" for="__nav_4">
+          <span class="md-nav__icon md-icon"></span>
+          Implementation Details
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../implementation/how_it_works/" class="md-nav__link">
+        How It Works
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../implementation/performance/" class="md-nav__link">
+        Performance Implications
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                
+                  <h1>Special Types</h1>
+                
+                <p>Spec classes do not require you to use any special types: you can use standard
+types from the standard library or any custom type you choose. However, the
+<code>spec_classes</code> library <em>does</em> come with some useful types that you can use to
+enrich your spec classes (or indeed any class). These are detailed below, and
+are all available by importing from <code>spec_classes.types</code>.</p>
+<h2 id="attribute-specification">Attribute specification<a class="headerlink" href="#attribute-specification" title="Permanent link">&para;</a></h2>
+<p>In most cases, you can simply set spec-class attribute defaults (and or lack
+thereof) directly in the class definition. This attribute will then be "managed",
+and included in the constructor, equality comparisons, representations, etc.
+However, in some cases you need to customize this behavior... and that's where
+<code>field</code> and <code>Attr</code> come in.</p>
+<h3 id="field"><code>field</code><a class="headerlink" href="#field" title="Permanent link">&para;</a></h3>
+<p>Spec-classes is compatible with the standard-libraries dataclass
+<a href="https://docs.python.org/3/library/dataclasses.html#dataclasses.field">field specification</a>,
+so you can use that directly as the attribute values in spec-classes just as you
+would in a dataclass. However, in most cases you will want to use <code>Attr</code> below.</p>
+<h3 id="attr"><code>Attr</code><a class="headerlink" href="#attr" title="Permanent link">&para;</a></h3>
+<p><code>Attr</code> is to <code>spec_class</code> what <code>field</code> is to <code>dataclass</code>, and it offers a
+superset of the API of <code>field</code>, making it a drop in replacement. The signature
+of <code>Attr</code> is:
+<div class="highlight"><pre><span></span><code><span class="n">Attr</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">MISSING</span><span class="p">,</span>
+    <span class="n">default_factory</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">MISSING</span><span class="p">,</span>
+    <span class="n">init</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="nb">repr</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">compare</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="nb">hash</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">desc</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">do_not_copy</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">invalidated_by</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div></p>
+<p>The default value for the attribute is set by either <code>default</code> or <code>default_factory</code>,
+and <code>init</code>, <code>repr</code>, <code>compare</code> and <code>hash</code> control whether the attribute is
+considered by <code>__init__</code>, <code>__repr__</code>, <code>__eq__</code> and <code>__hash__</code> respectively.
+Metadata is an arbitrary object that is not looked at by spec-classes. <code>desc</code>
+is a docstring for the attribute. <code>do_not_copy</code> is an instruction to
+spec-classes not to copy the attribute, and so when the parent spec-class is
+copied the new spec-class instance will have a reference to the same attribute.
+<code>invalidated_by</code> is an instruction to spec-classes to reset this attribute
+whenever the attributes in this list are mutated.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Hashing is not yet implemented by spec-classes, but is provided here for
+API compatibility. Ordering of spec-classes is also not yet implemented.</p>
+</div>
+<p>For more information, refer to <code>help(Attr)</code>.</p>
+<h2 id="validated-types">Validated Types<a class="headerlink" href="#validated-types" title="Permanent link">&para;</a></h2>
+<p>Spec-classes type-checks all attributes by default. Sometimes, however, simple
+type-checks are insufficient to guarantee a valid value. For example, the <code>age</code>
+field might require a non-negative integer, and so type-checking against <code>int</code>
+would not be sufficient. To help with these cases, <code>spec_classes</code> offers several
+validation types (all of which are implemented in
+<code>spec_classes.types.validated</code>). These are detailed below.</p>
+<h3 id="validatedtype"><code>ValidatedType</code><a class="headerlink" href="#validatedtype" title="Permanent link">&para;</a></h3>
+<p>This is the base class that powers all validated type checking offered by
+<code>spec_classes</code>. It translates <code>isinstance(obj, ValidatedType)</code> into
+<code>ValidatedType.validate(obj)</code>, allowing for arbitrary validation logic. To
+leverage this you can either subclass this class, or use the <code>validated</code> wrapper
+below.</p>
+<p>An example subclass of <code>ValidatedType</code> might look something like:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="nb">classmethod</span>
+<span class="kn">from</span> <span class="nn">spec_classes.types</span> <span class="kn">import</span> <span class="n">ValidatedType</span>
+
+<span class="k">class</span> <span class="nc">PositiveInt</span><span class="p">(</span><span class="n">ValidatedType</span><span class="p">):</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">obj</span> <span class="o">&gt;</span> <span class="mi">0</span>
+</code></pre></div>
+<p>This object could then be used just like any other type annotation:
+<div class="highlight"><pre><span></span><code><span class="nd">@spec_class</span>
+<span class="k">class</span> <span class="nc">MySpec</span><span class="p">:</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">PositiveInt</span>
+</code></pre></div></p>
+<h3 id="validated"><code>validated</code><a class="headerlink" href="#validated" title="Permanent link">&para;</a></h3>
+<p><code>validated</code> is a wrapper around <code>ValidatedType</code> that bypasses the need to
+manually subclass. Instead, you  can just call this function to generate a type
+and use it inline or via variable. This signature of this function is:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">validated</span><span class="p">(</span>
+    <span class="n">validator</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">bool</span><span class="p">],</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;validated&quot;</span>
+<span class="p">):</span> <span class="o">...</span>
+</code></pre></div>
+<p>An example use-case is:
+<div class="highlight"><pre><span></span><code><span class="nd">@spec_class</span>
+<span class="k">class</span> <span class="nc">MySpec</span><span class="p">:</span>
+    <span class="n">proper_noun</span><span class="p">:</span> <span class="n">validated</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;ProperNoun&#39;</span><span class="p">)</span>
+
+<span class="n">MySpec</span><span class="p">(</span><span class="n">proper_noun</span><span class="o">=</span><span class="s2">&quot;hi&quot;</span><span class="p">)</span>  <span class="c1"># TypeError: Attempt to set `MySpec.proper_noun` with an invalid type [got `&#39;hi&#39;`; expecting `ProperNoun`].</span>
+</code></pre></div></p>
+<h3 id="bounded"><code>bounded</code><a class="headerlink" href="#bounded" title="Permanent link">&para;</a></h3>
+<p><code>bounded</code> is a pre-rolled special case of <code>validated</code> which allows you to put
+upper and lower bounds on numerical types. The signature of <code>bounded</code> is:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">bounded</span><span class="p">(</span>
+    <span class="n">numeric_type</span><span class="p">:</span> <span class="n">Type</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">ge</span><span class="p">:</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Number</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">gt</span><span class="p">:</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Number</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">le</span><span class="p">:</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Number</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">lt</span><span class="p">:</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Number</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span> <span class="o">...</span>
+</code></pre></div>
+<p>and you can refer to <code>help(bounded)</code> for more details.</p>
+<p>An example use-case might be:</p>
+<div class="highlight"><pre><span></span><code><span class="nd">@spec_class</span>
+<span class="k">class</span> <span class="nc">Person</span><span class="p">:</span>
+    <span class="n">age</span><span class="p">:</span> <span class="n">bounded</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">Person</span><span class="p">(</span><span class="n">age</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># TypeError: Attempt to set `Person.age` with an invalid type [got `-1`; expecting `int∊[0,∞)`].</span>
+</code></pre></div>
+<h2 id="keyed-containers">Keyed Containers<a class="headerlink" href="#keyed-containers" title="Permanent link">&para;</a></h2>
+<p>Spec classes are able to optionally set a <a href="../basic/#keyed-spec-classes"><code>key</code>
+attribute</a> that is intended to uniquely identify
+instances within some context. It is useful to be able to use these keys to
+lookup items when they are stored in collections without having to iterate over
+all items in the collection to find them. For this purpose, <code>spec_classes</code>
+offers two special collection types (implemented in <code>spec_classes.types.keyed</code>):
+<code>KeyedList</code> and <code>KeyedSet</code> that act respectively like standard lists and sets,
+but also allow looking up and mutating elements by key. These are described in
+more detail below.</p>
+<h3 id="key-lookups">Key lookups<a class="headerlink" href="#key-lookups" title="Permanent link">&para;</a></h3>
+<p>The <code>Keyed*</code> containers in <code>spec_classes</code> both subclass from <code>KeyedBase</code>, which
+implements the default key lookup strategy (among several other things). The
+default key lookup strategy is:</p>
+<ol>
+<li>Check to see if item type is a spec-class, and if so if it has a key
+    attribute. If so, that is the key.</li>
+<li>Attempt to hash the object. If the item is hashable, the object itself is the
+    key.</li>
+</ol>
+<p>This can be overridden as detailed below.</p>
+<h3 id="keyedlist"><code>KeyedList</code><a class="headerlink" href="#keyedlist" title="Permanent link">&para;</a></h3>
+<p><code>KeyedList</code> is a generic container that behave exactly like a list, but also
+layers on the ability to look up items by key. The computational complexity for
+list-like operations is the same as the base <code>list</code> class, with additional
+dict-like operations with complexity as follows:</p>
+<ul>
+<li>O(1) lookups by key</li>
+<li>O(n) replacement by key</li>
+<li>O(n) deletes by key</li>
+</ul>
+<p>Under the hood these functionalities are achieved by storing both a <code>list</code> and a
+<code>dict</code> representation of the items stored in the container, and adding dict-like
+methods <code>.keys()</code>, <code>.items()</code>, <code>.get()</code> and a special <code>.index_for_key()</code> method
+that finds the list index for a nominated key.</p>
+<p>The constructor to <code>KeyedList</code> takes two optional arguments: <code>sequence</code> which
+takes a sequence of values to pre-fill the list, and <code>key</code> a method that takes
+an item and returns a key (used to override the default key lookup algorithm).
+You can also explicitly indicate the types that the container will store using
+regular python typing notation; that is: <code>KeyedList[&lt;item type&gt;, &lt;key type&gt;]</code>.</p>
+<p>When an object with the same key already exists in side a <code>KeyedList</code> a
+<code>ValueError</code> is raised.</p>
+<p>Examples:
+<div class="highlight"><pre><span></span><code><span class="n">l</span> <span class="o">=</span> <span class="n">KeyedList</span><span class="p">([</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">])</span>
+<span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># &#39;a&#39;</span>
+<span class="n">l</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]</span>  <span class="c1"># &#39;a&#39; (&#39;a&#39; is hashable, and so is its own key)</span>
+<span class="nb">set</span><span class="p">(</span><span class="n">l</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>  <span class="c1"># {&#39;a&#39;, &#39;b&#39;, &#39;c&#39;}</span>
+<span class="n">l</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>  <span class="c1"># ValueError: Item with key `&#39;a&#39;` already in `KeyedList`.</span>
+
+<span class="nd">@spec_class</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;key&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">KeyedSpec</span><span class="p">:</span>
+    <span class="n">key</span><span class="p">:</span> <span class="nb">str</span>
+
+<span class="n">l</span> <span class="o">=</span> <span class="n">KeyedList</span><span class="p">[</span><span class="n">KeyedSpec</span><span class="p">,</span> <span class="nb">str</span><span class="p">]()</span>
+<span class="n">l</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">KeyedSpec</span><span class="p">(</span><span class="s1">&#39;object_1&#39;</span><span class="p">))</span>
+<span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>  <span class="c1"># KeyedList[KeyedSpec, str]([KeyedSpec(key=&#39;object_1&#39;)])</span>
+<span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># KeyedSpec(key=&#39;object_1&#39;)</span>
+<span class="n">l</span><span class="p">[</span><span class="s1">&#39;object_1&#39;</span><span class="p">]</span>  <span class="c1"># KeyedSpec(key=&#39;object_1&#39;)</span>
+</code></pre></div></p>
+<h3 id="keyedset"><code>KeyedSet</code><a class="headerlink" href="#keyedset" title="Permanent link">&para;</a></h3>
+<p><code>KeyedSet</code> behaves almost identically to <code>KeyedList</code> except that order is not
+preserved, and key collisions are by default acceptable (resulting in existing
+objects with the same key being overridden). It behaves exactly like a <code>set</code> in
+that the <strong>keys</strong> (which are supposed to uniquely identify the objects) are
+stored by hash, and mapped to the values of the set. Internally this is just
+using a dictionary for storage.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Care should be taken when using <code>KeyedSet</code> where the key of the item
+is of the same type as the item itself. In such cases there is the risk of
+ambiguity about whether an item being referenced in the collection is being
+referenced by key or by value. For example, when <code>.discard(&lt;item&gt;)</code> is
+called, <code>KeyedSet</code> allows item or keys to be passed. Note that if an item
+is identical to its key there is no ambiguity.</p>
+</div>
+<p>The computational complexity for set-like operations is the same as the base
+<code>set</code> class, with additional dict-like operations with complexity as
+follows:</p>
+<ul>
+<li>O(1) lookups by key</li>
+<li>O(1) deletes by key</li>
+</ul>
+<p>If it is important to you that attempts to override objects with the same key
+fail unless the objects are equivalent, you can set <code>enforce_item_equivalence</code>
+to <code>True</code> in the constructor.</p>
+<p>Examples:
+<div class="highlight"><pre><span></span><code><span class="n">l</span> <span class="o">=</span> <span class="n">KeyedSet</span><span class="p">([</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">])</span>
+<span class="s1">&#39;a&#39;</span> <span class="ow">in</span> <span class="n">l</span>
+<span class="n">l</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]</span>  <span class="c1"># &#39;a&#39; (&#39;a&#39; is hashable, and so is its own key)</span>
+<span class="nb">set</span><span class="p">(</span><span class="n">l</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>  <span class="c1"># {&#39;a&#39;, &#39;b&#39;, &#39;c&#39;}</span>
+<span class="n">l</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>  <span class="c1"># This is fine.</span>
+
+<span class="nd">@spec_class</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;key&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">KeyedSpec</span><span class="p">:</span>
+    <span class="n">key</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="n">l</span> <span class="o">=</span> <span class="n">KeyedSet</span><span class="p">[</span><span class="n">KeyedSpec</span><span class="p">,</span> <span class="nb">str</span><span class="p">](</span><span class="n">enforce_item_equivalence</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">l</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">KeyedSpec</span><span class="p">(</span><span class="s1">&#39;object_1&#39;</span><span class="p">))</span>
+<span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>  <span class="c1"># KeyedSet[KeyedSpec, str]([KeyedSpec(key=&#39;object_1&#39;)])</span>
+<span class="n">l</span><span class="p">[</span><span class="s1">&#39;object_1&#39;</span><span class="p">]</span>  <span class="c1"># KeyedSpec(key=&#39;object_1&#39;)</span>
+<span class="n">l</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">KeyedSpec</span><span class="p">(</span><span class="s1">&#39;object_1&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">10</span><span class="p">))</span>  <span class="c1"># ValueError: Item for `&#39;object_1&#39;` already exists, and is not equal to the incoming item.</span>
+</code></pre></div></p>
+<h2 id="descriptors">Descriptors<a class="headerlink" href="#descriptors" title="Permanent link">&para;</a></h2>
+<p>The standard Python library offers various implementations of the <a href="https://docs.python.org/3/howto/descriptor.html">descriptor
+protocol</a>, which allows you to
+modify the way in which attributes are looked up on object instances. One of the
+most common of these is <code>property</code>. You can continue to use <code>property</code> with
+spec-classes, but the down-side of <code>property</code> is that it (unless you also
+manually supply a <code>setter</code>) makes the attribute read-only. Since spec-classes
+are often used to store configuration it is often useful to be able treat
+<code>property</code>s as "default" values, and still override them by default. For this
+reason we provide <code>spec_property</code>, detailed below, which behaves like a
+<code>property</code> but has a setter by default, as well as providing support for
+caching. We also provide <code>AttrProxy</code> which is for even more esoteric cases where
+you want two attributes to be linked not only for read operations, but also
+write operations. Both are detailed below, and can be used inside of
+spec-classes or non-spec-classes alike.</p>
+<h3 id="spec_property"><code>spec_property</code><a class="headerlink" href="#spec_property" title="Permanent link">&para;</a></h3>
+<p><code>spec_property</code> is implemented in <code>spec_classes.types.spec_property</code>, and
+behaves exactly like <code>property</code> except that it provides a setter by default
+allowing it be overwritten (and reset using deletion), and provides caching. You
+can use <code>spec_property</code> as follows:</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">MyClass</span><span class="p">:</span>
+    <span class="nd">@spec_property</span>
+    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="mi">1</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">MyClass</span><span class="p">()</span>
+<span class="n">m</span><span class="o">.</span><span class="n">value</span>  <span class="c1"># 1</span>
+<span class="n">m</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">m</span><span class="o">.</span><span class="n">value</span>  <span class="c1"># 10</span>
+</code></pre></div>
+<p>The behavior of <code>spec_property</code> can also be customized as follows (with defaults
+as shown):</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">MyClass</span><span class="p">:</span>
+    <span class="nd">@spec_property</span><span class="p">(</span>
+        <span class="n">overridable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># Whether to allow overriding by default.</span>
+        <span class="n">warn_on_override</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># Whether to warn the user when the property getter</span>
+            <span class="c1"># is overridden. Can be a boolean, string, or `Warning` instance.</span>
+            <span class="c1"># If non-boolean, then it is treated as the message to present to</span>
+            <span class="c1"># the user using `warnings.warn`.</span>
+        <span class="n">cache</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># Whether to cache the result after first evaluation.</span>
+        <span class="n">invalidated_by</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="c1"># An iterable of attributes which when mutated</span>
+            <span class="c1"># invalidate the cache (only supported when used with spec-classes)</span>
+        <span class="n">allow_attribute_error</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># Whether to allow properties to raise</span>
+            <span class="c1"># `AttributeErrors` which are often masked during attribute lookup.</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">method</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="o">...</span>
+
+    <span class="c1"># And of course you can override the setters as you would with regular properties</span>
+    <span class="nd">@method</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="o">...</span>
+</code></pre></div>
+<p>As always you can refer to the inline <code>help(spec_property)</code> for more details.</p>
+<h3 id="classproperty"><code>classproperty</code><a class="headerlink" href="#classproperty" title="Permanent link">&para;</a></h3>
+<p><code>classproperty</code> is implemented in <code>spec_classes.types.classproperty</code>, and
+behaves exactly like <code>spec_property</code> except that it acts on classmethods, and
+does not offer inbuilt access to spec-class state. You can use <code>classproperty</code>
+as follows:</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">MyClass</span><span class="p">:</span>
+    <span class="nd">@classproperty</span><span class="p">(</span>
+        <span class="n">overridable</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># Whether to allow overriding by default.</span>
+        <span class="n">warn_on_override</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># Whether to warn the user when the property getter</span>
+            <span class="c1"># is overridden. Can be a boolean, string, or `Warning` instance.</span>
+            <span class="c1"># If non-boolean, then it is treated as the message to present to</span>
+            <span class="c1"># the user using `warnings.warn`.</span>
+        <span class="n">cache</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># Whether to cache the result after first evaluation.</span>
+        <span class="n">cache_per_subclass</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># Whether cache should be stored per subclass</span>
+            <span class="c1"># rather than once for all classes.</span>
+        <span class="n">allow_attribute_error</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># Whether to allow properties to raise</span>
+            <span class="c1"># `AttributeErrors` which are often masked during attribute lookup.</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">method</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="o">...</span>
+
+    <span class="c1"># And of course you can override the setters as you would with regular properties</span>
+    <span class="nd">@method</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">method</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="o">...</span>
+</code></pre></div>
+<h3 id="attrproxy"><code>AttrProxy</code><a class="headerlink" href="#attrproxy" title="Permanent link">&para;</a></h3>
+<p><code>AttrProxy</code> is implemented in <code>spec_classes.types.attr_proxy</code>, and allows one
+attribute to proxy another attribute. This is especially useful if you have
+changed the name of an attribute and need to provide backwards compatibility for
+an indefinite period; or if one attribute is supposed to mirror another
+attribute unless overwritten (e.g. the label of a class might be the "key"
+unless overwritten). This functionality could obviously be implemented directly
+using <code>property</code>, which may be advisable if readability is more important than
+concision.</p>
+<p>You can construct an <code>AttrProxy</code> instance using:</p>
+<div class="highlight"><pre><span></span><code><span class="n">AttrProxy</span><span class="p">(</span>
+    <span class="n">attr</span><span class="o">=</span><span class="s2">&quot;&lt;attribute to proxy on same instance&gt;&quot;</span><span class="p">,</span>  <span class="c1"># Required!</span>
+    <span class="n">transform</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span>  <span class="c1"># Optional transform on attribute value.</span>
+    <span class="n">passthrough</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># Defaults to `False`, whether to pass on mutations back through to the proxied attribute</span>
+    <span class="n">fallback</span><span class="o">=</span><span class="n">MISSING</span><span class="p">,</span>  <span class="c1"># Defaults to `MISSING`; the value to return if the proxied attribute is not set.</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>Example:
+<div class="highlight"><pre><span></span><code><span class="nd">@spec_class</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;key&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">MyObject</span><span class="p">:</span>
+    <span class="n">key</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">AttrProxy</span><span class="p">(</span><span class="s2">&quot;key&quot;</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="k">lambda</span> <span class="n">key</span><span class="p">:</span> <span class="n">key</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">title</span><span class="p">())</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">MyObject</span><span class="p">(</span><span class="s2">&quot;object_1&quot;</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">label</span>  <span class="c1"># &#39;Object 1&#39;</span>
+<span class="n">m</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="s2">&quot;My Object&quot;</span>
+<span class="n">m</span><span class="o">.</span><span class="n">label</span>  <span class="c1"># &#39;My Object&#39;</span>
+</code></pre></div></p>
+<h2 id="sentinels">Sentinels<a class="headerlink" href="#sentinels" title="Permanent link">&para;</a></h2>
+<p>It is often useful to have at least one value reserved for use as a sentinel.
+Depending on the context they can be interpreted as an failure state or trigger
+some fallback behavior. In <code>spec_classes</code>, we use <code>MISSING</code>.</p>
+<h3 id="missing"><code>MISSING</code><a class="headerlink" href="#missing" title="Permanent link">&para;</a></h3>
+<p>In <code>spec_classes</code>, <code>spec_classes.MISSING</code> is the sentinel used to indicate that
+an attribute or argument value has not (yet) been provided. If you are using
+spec-classes in your project, you can feel free to use this sentinel also.</p>
+<p><code>MISSING</code> is implemented in <code>spec_classes.types.missing</code>, and is an instance of
+the singleton class <code>_MissingType</code> (every instantiation will return the same
+instance). <code>MISSING</code> is falsey (<code>bool(MISSING) is False</code>), but otherwise cannot
+be compared to anything else. Its string representation is <code>'MISSING'</code>.</p>
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+        
+          <a href="#" class="md-top md-icon" data-md-component="top" data-md-state="hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"/></svg>
+            Back to top
+          </a>
+        
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        
+        <a href="../methods/collections/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Collection Methods" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Collection Methods
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../advanced/" class="md-footer__link md-footer__link--next" aria-label="Next: Advanced Usage" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Advanced Usage
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        
+          Made with
+          <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+            Material for MkDocs
+          </a>
+        
+        
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs", "navigation.top", "navigation.tracking", "toc.integrate"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../assets/javascripts/workers/search.8397ff9e.min.js", "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.1e84347e.min.js"></script>
+      
+    
+  </body>
+</html>

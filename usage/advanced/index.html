@@ -1,0 +1,960 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.4">
+    
+    
+      
+        <title>Advanced Usage - Spec Classes</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.db9e7362.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.3f5d1f46.min.css">
+        
+      
+    
+    
+    
+      
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>:root{--md-text-font-family:"Roboto";--md-code-font-family:"Roboto Mono"}</style>
+      
+    
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/colors.css">
+    
+    
+      
+
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="none" data-md-color-accent="none">
+  
+    
+    <script>function __prefix(e){return new URL("../..",location).pathname+"."+e}function __get(e,t=localStorage){return JSON.parse(t.getItem(__prefix(e)))}</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#post-init-or-copy-hooks" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Spec Classes" class="md-header__button md-logo" aria-label="Spec Classes" data-md-component="logo">
+      
+  <img src="../../assets/images/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Spec Classes
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Advanced Usage
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-tabs__inner md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../.." class="md-tabs__link">
+      Introduction
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../examples/" class="md-tabs__link">
+        Examples
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+    
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../" class="md-tabs__link md-tabs__link--active">
+        Usage
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../implementation/how_it_works/" class="md-tabs__link">
+        Implementation Details
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Spec Classes" class="md-nav__button md-logo" aria-label="Spec Classes" data-md-component="logo">
+      
+  <img src="../../assets/images/logo.svg" alt="logo">
+
+    </a>
+    Spec Classes
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" type="checkbox" id="__nav_2" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2">
+          Examples
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Examples" data-md-level="1">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Examples
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/basic/" class="md-nav__link">
+        Basic
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/collections/" class="md-nav__link">
+        Collections
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/dataclasses/" class="md-nav__link">
+        Dataclass Interoperability
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/preparation/" class="md-nav__link">
+        Preparation/Typecasting
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3">
+          Usage
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Usage" data-md-level="1">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          Usage
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../basic/" class="md-nav__link">
+        Basic Usage
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_3" type="checkbox" id="__nav_3_3" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3_3">
+          Helper Methods
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Helper Methods" data-md-level="2">
+        <label class="md-nav__title" for="__nav_3_3">
+          <span class="md-nav__icon md-icon"></span>
+          Helper Methods
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../methods/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../methods/toplevel/" class="md-nav__link">
+        Toplevel Methods
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../methods/scalars/" class="md-nav__link">
+        Scalar Methods
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../methods/collections/" class="md-nav__link">
+        Collection Methods
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../special_types/" class="md-nav__link">
+        Special Types
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Advanced Usage
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Advanced Usage
+      </a>
+      
+        
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#post-init-or-copy-hooks" class="md-nav__link">
+    Post init or copy hooks
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#typecastingpreparation" class="md-nav__link">
+    Typecasting/preparation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#init-overflow-attributes" class="md-nav__link">
+    Init overflow attributes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#frozen-spec-classes" class="md-nav__link">
+    Frozen spec classes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#avoiding-copies-of-large-attributes" class="md-nav__link">
+    Avoiding copies of large attributes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#immediate-bootstrapping" class="md-nav__link">
+    Immediate bootstrapping
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#avoiding-cyclic-import-issues" class="md-nav__link">
+    Avoiding cyclic import issues
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#overriding-dunder-methods" class="md-nav__link">
+    Overriding dunder methods
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#subclassing" class="md-nav__link">
+    Subclassing
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4" type="checkbox" id="__nav_4" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4">
+          Implementation Details
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Implementation Details" data-md-level="1">
+        <label class="md-nav__title" for="__nav_4">
+          <span class="md-nav__icon md-icon"></span>
+          Implementation Details
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../implementation/how_it_works/" class="md-nav__link">
+        How It Works
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../implementation/performance/" class="md-nav__link">
+        Performance Implications
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                
+                  <h1>Advanced Usage</h1>
+                
+                <h2 id="post-init-or-copy-hooks">Post init or copy hooks<a class="headerlink" href="#post-init-or-copy-hooks" title="Permanent link">&para;</a></h2>
+<p>If you want to run some code immediately after instantiation or after you 
+spec-class is (deep-)copied, you can implement the <code>__post_init__()</code> and 
+<code>__post_copy()__</code> methods respectively.</p>
+<div class="highlight"><pre><span></span><code><span class="nd">@spec_class</span>
+<span class="k">class</span> <span class="nc">MySpec</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__copy_count</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">__post_copy__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__copy_count</span> <span class="o">+=</span> <span class="mi">1</span>
+</code></pre></div>
+<h2 id="typecastingpreparation">Typecasting/preparation<a class="headerlink" href="#typecastingpreparation" title="Permanent link">&para;</a></h2>
+<p>While preparation of attribute values can still be done using custom
+constructors or property overrides, spec-classes provides a simpler mechanism
+for typecasting/preparing attribute values (as shown in
+<a href="../../examples/preparation/">one of the examples</a>). The <a href="../special_types/#Attr"><code>Attr</code></a>
+object has two optional attributes: <code>prepare</code> and <code>prepare_item</code>. Both of these
+should be <code>Callable</code> objects if provided, and are respectively used to prepare
+the attribute value and items within an attribute collection. When both are
+present, <code>prepare</code> is called first. There are two ways to populate these
+attributes: by providing a <code>_prepare_&lt;attr&gt;</code> and/or a <code>_prepare_&lt;attr_singular&gt;</code>
+method; or by setting the attribute to an <code>Attr</code> instance and using the
+<code>Attr.preparer</code> and <code>Attr.item_preparer</code> decorators. Both are demonstrated
+in the aforementioned <a href="../../examples/preparation/">example</a>.</p>
+<h2 id="init-overflow-attributes">Init overflow attributes<a class="headerlink" href="#init-overflow-attributes" title="Permanent link">&para;</a></h2>
+<p>If you want your spec-class to accept arbitrary arguments in its constructor,
+including those that are not registered attributes, you can pass an arbitrary
+attribute name to <code>init_overflow_attr</code> in the <code>spec_class</code> decorator. During
+instance construction, spec-classes will then collect all additional keyword
+arguments and place them as a dictionary in nominated attribute.</p>
+<div class="highlight"><pre><span></span><code><span class="nd">@spec_class</span><span class="p">(</span><span class="n">init_overflow_attr</span><span class="o">=</span><span class="s1">&#39;kwargs&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Spec</span><span class="p">:</span>
+    <span class="k">pass</span>
+
+<span class="n">Spec</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="c1"># Spec(kwargs={&#39;a&#39;: 1, &#39;b&#39;: 2})</span>
+</code></pre></div>
+<h2 id="frozen-spec-classes">Frozen spec classes<a class="headerlink" href="#frozen-spec-classes" title="Permanent link">&para;</a></h2>
+<p>By default, instances of spec-classes behave much like any other instance in
+that you can mutate attributes in-place. If you would like to prevent in-place mutation, you
+can use the <code>frozen</code> keyword argument to the constructor. For example:</p>
+<div class="highlight"><pre><span></span><code><span class="nd">@spec_class</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">MyClass</span><span class="p">:</span>
+    <span class="n">my_str</span><span class="p">:</span> <span class="nb">str</span>
+
+<span class="n">MyClass</span><span class="p">()</span><span class="o">.</span><span class="n">my_str</span> <span class="o">=</span> <span class="s2">&quot;hi&quot;</span>  <span class="c1"># FrozenInstanceError: Cannot mutate attribute `my_str` of frozen spec class `MySpec`.</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Frozen spec class instances can still be updated using the copy-on-write
+helper methods (introduced below):</p>
+<div class="highlight"><pre><span></span><code><span class="n">MySpec</span><span class="p">()</span><span class="o">.</span><span class="n">with_my_str</span><span class="p">(</span><span class="s2">&quot;hi&quot;</span><span class="p">)</span>  <span class="c1"># MyClass(my_str=&quot;hi&quot;)</span>
+</code></pre></div>
+</div>
+<h2 id="avoiding-copies-of-large-attributes">Avoiding copies of large attributes<a class="headerlink" href="#avoiding-copies-of-large-attributes" title="Permanent link">&para;</a></h2>
+<p>Spec-classes adopt a copy-on-write approach when mutating classes via the
+helper methods (e.g. <code>.with_&lt;attr&gt;()</code>). In some instances, however, that is
+undesirable, for example when one or more attributes consumes a lot of memory.
+To help with this, spec-classes allows entire spec-classes and/or attributes
+thereof to opt-out of being copied. When decorating a spec-class you can pass
+<code>do_not_copy=True</code> to <code>spec_class</code> to disable all copying (effectively making all mutations
+in-place), or pass <code>do_not_copy=['attributes', 'to', 'avoid', 'copying']</code>, which
+will populate the <code>Attr</code> attribute <code>do_not_copy</code> for the nominated attributes,
+and pass these attributes by reference (rather than value) when copying
+spec-classes. You can also directly specify attributes to using <code>Attr</code>, as
+documented <a href="../special_types/#Attr">here</a>.</p>
+<div class="highlight"><pre><span></span><code><span class="nd">@spec_class</span><span class="p">(</span><span class="n">do_not_copy</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">])</span>
+<span class="k">class</span> <span class="nc">DataAnalyzer</span><span class="p">:</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">Any</span> <span class="c1"># Potentially LARGE data object</span>
+    <span class="n">another_obj</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">Attr</span><span class="p">(</span><span class="n">do_not_copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="immediate-bootstrapping">Immediate bootstrapping<a class="headerlink" href="#immediate-bootstrapping" title="Permanent link">&para;</a></h2>
+<p>Spec-classes is typically lazy in its "bootstrapping" of classes (it doesn't
+actually mutate the class straight away with all of the helper methods). This is
+because it is often the case that type-annotated code becomes cyclic very
+quickly, and since spec-classes needs type information during the generation of
+methods, immediately bootstrapping would cause cyclic import issues.</p>
+<p>Instead, spec-classes adds a <code>__new__</code> method and a placeholder <code>__spec_class__</code>
+metadata, and lazily bootstraps until the first instantiation or the first
+lookup of the <code>__spec_class__</code> attribute. In the vast majority of cases, this
+works well, but it is possible that more advanced class introspections require
+the class to be bootstrapped immediately. You can achieve this by passing
+<code>bootstrap=True</code> to the <code>spec_class</code> decorator.</p>
+<div class="highlight"><pre><span></span><code><span class="nd">@spec_class</span><span class="p">(</span><span class="n">bootstrap</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Spec</span><span class="p">:</span>
+    <span class="o">...</span>
+</code></pre></div>
+<h2 id="avoiding-cyclic-import-issues">Avoiding cyclic import issues<a class="headerlink" href="#avoiding-cyclic-import-issues" title="Permanent link">&para;</a></h2>
+<p>As mentioned above, cyclic import issues are common in type-annotated code,
+especially if the type annotations are required at run-time (as is the case for
+spec-classes). Sometimes there is just no way to import the types necessary
+at a module level without having all classes in a single file. To avoid this,
+spec-classes allows you to lazily import types that are used to annotate
+attributes by importing them in a method that is only evaluated immediately
+before the types are used. You can also use this mechanism to alias types.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="nd">@spec_class</span>
+<span class="k">class</span> <span class="nc">Spec</span><span class="p">:</span>
+
+    <span class="n">data</span><span class="p">:</span> <span class="n">DataFrame</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">my_alias</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">ANNOTATION_TYPES</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">pandas</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;DataFrame&#39;</span><span class="p">:</span> <span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+            <span class="s1">&#39;my_alias&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="p">}</span>
+</code></pre></div>
+<h2 id="overriding-dunder-methods">Overriding dunder methods<a class="headerlink" href="#overriding-dunder-methods" title="Permanent link">&para;</a></h2>
+<p>The dunder methods that spec-classes introduces are: <code>__init__</code>, <code>__repr__</code>,
+<code>__eq__</code>, <code>__getattr__</code>, <code>__setattr__</code>, <code>__delattr__</code> and <code>__deepcopy__</code>.
+Overriding <code>__getattr__</code>, <code>__setattr__</code>, <code>__delattr__</code> and <code>__deepcopy__</code> is
+<strong>not</strong> supported (they are essential for the behavior of spec-classes), and you
+will be responsible for making things work properly if you do. <code>__init__</code>,
+<code>__repr__</code> and <code>__eq__</code> can be overridden safely, however.</p>
+<p>In the rare circumstances that it becomes necessary for you to overwrite these
+methods, you can just implement these on the class. Since spec-classes never
+overwrites methods that a user has written, these methods will <em>not</em> be
+overridden by spec-classes. If you want to completely remove these methods, you
+can pass <code>init=False</code>, <code>repr=False</code> and/or <code>eq=False</code> to the <code>spec_class</code>
+decorator. For your convenience, spec-classes will <em>always</em> register
+spec-classes' implementation of these methods as <code>__spec_class_init__</code>,
+<code>__spec_class_repr__</code> and <code>__spec_class_eq__</code> so that you can leverage them in
+your overrides (this is necessary because spec-classes does not touch your
+classes' MRO, and so no <code>super()</code> calls to spec-classes' methods are possible).</p>
+<h2 id="subclassing">Subclassing<a class="headerlink" href="#subclassing" title="Permanent link">&para;</a></h2>
+<p>Spec-classes fully supports subclassing, including the honoring of overridden
+constructors in super-classes. Spec-classes remembers where spec-class
+attributes were defined, and calls the appropriate constructor to initialize
+them. For example:
+<div class="highlight"><pre><span></span><code><span class="nd">@spec_class</span>
+<span class="k">class</span> <span class="nc">Base</span><span class="p">:</span>
+    <span class="n">x</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">y</span><span class="p">:</span> <span class="nb">int</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">x</span> <span class="o">*</span> <span class="n">y</span>
+
+<span class="nd">@spec_class</span>
+<span class="k">class</span> <span class="nc">Sub</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="mi">100</span> <span class="c1"># Sub provides a new default value but is not the owner of `x`</span>
+    <span class="n">y</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span>  <span class="c1"># Sub becomes the owner of `y`</span>
+    <span class="n">z</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">300</span>
+
+<span class="n">Sub</span><span class="p">()</span>
+<span class="c1"># Sub(x=101, y=100, z=300)</span>
+<span class="n">Sub</span><span class="p">()</span><span class="o">.</span><span class="n">a</span>
+<span class="c1"># 1000  # (x = 100) * (y = 10), since parent constructors are only passed</span>
+        <span class="c1"># attributes they own.</span>
+</code></pre></div></p>
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+        
+          <a href="#" class="md-top md-icon" data-md-component="top" data-md-state="hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"/></svg>
+            Back to top
+          </a>
+        
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        
+        <a href="../special_types/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Special Types" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Special Types
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../../implementation/how_it_works/" class="md-footer__link md-footer__link--next" aria-label="Next: How It Works" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              How It Works
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        
+          Made with
+          <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+            Material for MkDocs
+          </a>
+        
+        
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs", "navigation.top", "navigation.tracking", "toc.integrate"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../assets/javascripts/workers/search.8397ff9e.min.js", "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.1e84347e.min.js"></script>
+      
+    
+  </body>
+</html>
